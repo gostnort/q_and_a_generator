@@ -122,7 +122,7 @@ async function loadCSVDataFromZip() {
         imageUrlMap = {};
         
         // Ensure JS7z is loaded before proceeding
-        await ensureJS7zLoaded();
+            await ensureJS7zLoaded();
         
         const arrayBuffer = await selectedZipFile.arrayBuffer();
         
@@ -130,59 +130,59 @@ async function loadCSVDataFromZip() {
             onExit: (exitCode) => {
                 if (exitCode === 0) {
                     try {
-                        const files = js7z.FS.readdir('/output');
-                        console.log('Extracted files:', files);
+        const files = js7z.FS.readdir('/output');
+        console.log('Extracted files:', files);
         
-                        // Process all files - create object URLs for images
-                        console.log("Processing extracted files for images...");
-                        for (const filename of files) {
-                            if (filename === '.' || filename === '..') continue;
-                            
-                            const lowerFilename = filename.toLowerCase();
-                            if (lowerFilename.endsWith('.jpg') || 
-                                lowerFilename.endsWith('.jpeg') || 
+        // Process all files - create object URLs for images
+        console.log("Processing extracted files for images...");
+        for (const filename of files) {
+            if (filename === '.' || filename === '..') continue;
+            
+            const lowerFilename = filename.toLowerCase();
+            if (lowerFilename.endsWith('.jpg') || 
+                lowerFilename.endsWith('.jpeg') || 
                                 lowerFilename.endsWith('.png') ) {
-                                try {
-                                    console.log(`Found image file: ${filename}`);
-                                    const imageData = js7z.FS.readFile('/output/' + filename, {encoding: 'binary'});
+                try {
+                    console.log(`Found image file: ${filename}`);
+                    const imageData = js7z.FS.readFile('/output/' + filename, {encoding: 'binary'});
                                     let mimeType = 'image/jpeg';
-                                    if (lowerFilename.endsWith('.png')) mimeType = 'image/png';
-                                    else if (lowerFilename.endsWith('.gif')) mimeType = 'image/gif';
-                                    const blob = new Blob([imageData], {type: mimeType});
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    imageUrlMap[filename] = url;
-                                    imageUrlMap['/output/' + filename] = url;
-                                    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'));
-                                    if (filenameNoExt) {
-                                        imageUrlMap[filenameNoExt] = url;
-                                    }
-                                } catch (readError) {
-                                    console.error('Error reading image file:', filename, readError);
-                                }
-                            }
-                        }
-                        
-                        console.log("Finished processing images. Available images:", Object.keys(imageUrlMap));
-                        
-                        // Look for CSV files
-                        let csvContent = null;
-                        let csvFileName = '';
-                        for (const filename of files) {
-                            if (filename.toLowerCase().endsWith('.csv')) {
-                                csvFileName = filename;
-                                try {
-                                    csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
-                                    break;
-                                } catch (readError) {
-                                    console.error('Error reading file:', filename, readError);
-                                    continue;
-                                }
-                            }
-                        }
-                        
-                        if (!csvContent) {
-                            alert('No CSV file found in the ZIP archive. Falling back to test.csv');
+                    if (lowerFilename.endsWith('.png')) mimeType = 'image/png';
+                    else if (lowerFilename.endsWith('.gif')) mimeType = 'image/gif';
+                    const blob = new Blob([imageData], {type: mimeType});
+                    const url = URL.createObjectURL(blob);
+                    
+                    imageUrlMap[filename] = url;
+                    imageUrlMap['/output/' + filename] = url;
+                    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'));
+                    if (filenameNoExt) {
+                        imageUrlMap[filenameNoExt] = url;
+                    }
+                } catch (readError) {
+                    console.error('Error reading image file:', filename, readError);
+                }
+            }
+        }
+        
+        console.log("Finished processing images. Available images:", Object.keys(imageUrlMap));
+        
+        // Look for CSV files
+        let csvContent = null;
+        let csvFileName = '';
+        for (const filename of files) {
+            if (filename.toLowerCase().endsWith('.csv')) {
+                csvFileName = filename;
+                try {
+                    csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
+                    break;
+                } catch (readError) {
+                    console.error('Error reading file:', filename, readError);
+                    continue;
+                }
+            }
+        }
+        
+        if (!csvContent) {
+            alert('No CSV file found in the ZIP archive. Falling back to test.csv');
                             loadCSVDataFromFile().then(() => {
                                 isFirstGenerate = false;
                                 regenerateQuiz();
@@ -190,11 +190,11 @@ async function loadCSVDataFromZip() {
                             return;
                         }
                         
-                        csvData = parseCSV(csvContent);
-                        console.log('CSV Data loaded from ZIP:', csvData);
+        csvData = parseCSV(csvContent);
+        console.log('CSV Data loaded from ZIP:', csvData);
                         isFirstGenerate = false;
                         regenerateQuiz();
-
+        
                     } catch (e) {
                         alert('Error processing extracted files. Falling back to test.csv file.');
                         console.error('Error processing extracted files:', e);
@@ -466,7 +466,7 @@ function submitAnswers() {
         
         const correctOptionsInQuestion = question.options.filter(opt => opt.startsWith('`'));
         totalPossiblePoints += correctOptionsInQuestion.length;
-
+        
         let questionPoints = 0;
         let incorrectSelectionMade = false;
 
@@ -510,7 +510,7 @@ function submitAnswers() {
         }
         
         if (!questionIsWrong) {
-            totalCorrect++;
+                totalCorrect++;
         }
     });
 
@@ -526,6 +526,352 @@ function submitAnswers() {
 
 function printQuiz() {
     window.print();
+}
+
+function shareQuiz() {
+    // Check if quiz has been generated
+    if (questions.length === 0) {
+        alert('Please generate a quiz first');
+        return;
+    }
+    
+    // Get the current quiz content
+    const questionsContainer = document.getElementById('questionsContainer');
+    
+    // Get the current CSS styles
+    const cssStyles = Array.from(document.styleSheets)
+        .filter(sheet => sheet.href === null || sheet.href.startsWith(window.location.origin))
+        .map(sheet => {
+            try {
+                return Array.from(sheet.cssRules)
+                    .map(rule => rule.cssText)
+                    .join('\n');
+            } catch (e) {
+                console.warn('Cannot access cssRules from stylesheet', e);
+                return '';
+            }
+        })
+        .join('\n');
+    
+    // Create a copy of questions with embedded images
+    const embeddedQuestions = questions.map(q => {
+        // Create a deep copy of the question
+        const questionCopy = { ...q };
+        
+        // If there's an image, convert it to base64 if it's a blob URL
+        if (q.image && q.image.startsWith('blob:')) {
+            // We'll replace this with base64 data later
+            questionCopy.imageToEmbed = q.image;
+        }
+        
+        // Obfuscate the correct answers by removing the backtick marker
+        // but keep track of correct answers with a different method
+        questionCopy.options = q.options.map((opt, idx) => {
+            // Remove backtick but store correct answer info in a separate array
+            return opt.startsWith('`') ? opt.substring(1) : opt;
+        });
+        
+        // Store correct answer indices in a way that's not easily discoverable
+        // Use a simple obfuscation technique - convert to base64
+        const correctIndices = q.options
+            .map((opt, idx) => opt.startsWith('`') ? idx : -1)
+            .filter(idx => idx !== -1);
+        
+        // Store the correct indices in an obfuscated format
+        questionCopy._c = btoa(JSON.stringify(correctIndices));
+        
+        return questionCopy;
+    });
+    
+    // Function to fetch and convert blob URLs to base64
+    const convertBlobUrlsToBase64 = async (questions) => {
+        const promises = questions.map(async (question, index) => {
+            if (question.imageToEmbed && question.imageToEmbed.startsWith('blob:')) {
+                try {
+                    const response = await fetch(question.imageToEmbed);
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            // Replace the image URL with base64 data URL
+                            question.image = reader.result;
+                            delete question.imageToEmbed;
+                            resolve();
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error('Error converting image to base64:', error);
+                    // If conversion fails, keep the original URL
+                    question.image = question.imageToEmbed;
+                    delete question.imageToEmbed;
+                    return Promise.resolve();
+                }
+            }
+            return Promise.resolve();
+        });
+        
+        await Promise.all(promises);
+        return questions;
+    };
+    
+    // Show loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.position = 'fixed';
+    loadingDiv.style.top = '0';
+    loadingDiv.style.left = '0';
+    loadingDiv.style.width = '100%';
+    loadingDiv.style.height = '100%';
+    loadingDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    loadingDiv.style.display = 'flex';
+    loadingDiv.style.justifyContent = 'center';
+    loadingDiv.style.alignItems = 'center';
+    loadingDiv.style.zIndex = '9999';
+    loadingDiv.innerHTML = '<div style="background-color: white; padding: 20px; border-radius: 5px;">Preparing shared quiz...</div>';
+    document.body.appendChild(loadingDiv);
+    
+    // Convert images and generate the HTML
+    convertBlobUrlsToBase64(embeddedQuestions).then(questionsWithBase64 => {
+        // Create a standalone HTML document
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Quiz</title>
+    <style>
+        ${cssStyles}
+        
+        /* Additional styles for shared quiz */
+        .header {
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .header-right {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .regenerate-btn {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <h2>Shared Quiz</h2>
+        </div>
+        <div class="header-right">
+            <div class="score-label" id="scoreLabel"></div>
+            <button class="submit-btn" id="submitBtn">Submit</button>
+            <button class="regenerate-btn" id="regenerateBtn">Regenerate</button>
+            <button class="print-btn" id="printBtn">Print</button>
+        </div>
+    </div>
+    
+    <hr class="header-separator">
+    
+    <div id="questionsContainer"></div>
+    
+    <script>
+        // Standalone quiz functionality - no JS7z dependency
+        let questions = ${JSON.stringify(questionsWithBase64)};
+        
+        // Function to decode correct answers
+        function getCorrectIndices(question) {
+            try {
+                return JSON.parse(atob(question._c));
+            } catch (e) {
+                console.error('Error decoding correct answers', e);
+                return [];
+            }
+        }
+        
+        // Shuffle array function
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        // Check if question is multi-select
+        function isMultiSelect(question) {
+            return getCorrectIndices(question).length > 1;
+        }
+        
+        // Regenerate quiz with the same questions but shuffled
+        function regenerateQuiz() {
+            renderQuestions();
+            document.getElementById('scoreLabel').textContent = '';
+        }
+        
+        // Render questions
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            
+            questions.forEach((question, qIndex) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.setAttribute('data-question-id', qIndex);
+                
+                const isMulti = isMultiSelect(question);
+                const inputType = isMulti ? 'checkbox' : 'radio';
+                const inputName = \`question_\${qIndex}\`;
+                
+                let html = \`
+                    <div class="question-header">
+                        \${qIndex + 1}. \${question.text}
+                    </div>
+                \`;
+                
+                if (question.image) {
+                    html += \`
+                        <div class="question-image">
+                            <img src="\${question.image}" alt="Question image" 
+                                 onerror="this.style.display='none'">
+                        </div>
+                    \`;
+                }
+                
+                // Shuffle options
+                const shuffledOptions = shuffleArray(question.options.map((opt, idx) => ({text: opt, originalIndex: idx})));
+                
+                shuffledOptions.forEach((option, optIndex) => {
+                    const optionId = \`\${inputName}_\${optIndex}\`;
+                    html += \`
+                        <div class="option" data-original-index="\${option.originalIndex}">
+                            <input type="\${inputType}" id="\${optionId}" name="\${inputName}" value="\${optIndex}">
+                            <label for="\${optionId}" class="option-text">\${option.text}</label>
+                            <span class="result-icon"></span>
+                        </div>
+                    \`;
+                });
+                
+                questionDiv.innerHTML = html;
+                container.appendChild(questionDiv);
+            });
+        }
+        
+        // Submit answers
+        function submitAnswers() {
+            let totalQuestions = questions.length;
+            let totalCorrect = 0;
+            let totalPossiblePoints = 0;
+            let userPoints = 0;
+
+            questions.forEach((question, qIndex) => {
+                const questionDiv = document.querySelector(\`[data-question-id="\${qIndex}"]\`);
+                const options = questionDiv.querySelectorAll('.option');
+                const inputs = questionDiv.querySelectorAll('input');
+                
+                const correctIndices = getCorrectIndices(question);
+                totalPossiblePoints += correctIndices.length;
+                
+                let questionPoints = 0;
+                let incorrectSelectionMade = false;
+
+                options.forEach((optionDiv, optIndex) => {
+                    const input = inputs[optIndex];
+                    const resultIcon = optionDiv.querySelector('.result-icon');
+                    const originalIndex = parseInt(optionDiv.getAttribute('data-original-index'));
+                    const isCorrect = correctIndices.includes(originalIndex);
+                    
+                    // Clear previous results
+                    optionDiv.classList.remove('correct-answer', 'show-correct');
+                    resultIcon.innerHTML = '';
+                    resultIcon.className = 'result-icon';
+                    
+                    if (input.checked) {
+                        if (isCorrect) {
+                            resultIcon.innerHTML = '✓';
+                            resultIcon.classList.add('correct-mark');
+                            questionPoints++;
+                        } else {
+                            resultIcon.innerHTML = '✗';
+                            resultIcon.classList.add('incorrect-mark');
+                            incorrectSelectionMade = true;
+                        }
+                    }
+                });
+                
+                userPoints += questionPoints;
+                const missedCorrectSelection = questionPoints < correctIndices.length;
+                const questionIsWrong = incorrectSelectionMade || missedCorrectSelection;
+                
+                if (questionIsWrong) {
+                    options.forEach((optionDiv) => {
+                        const originalIndex = parseInt(optionDiv.getAttribute('data-original-index'));
+                        if (correctIndices.includes(originalIndex)) {
+                            optionDiv.classList.add('correct-answer', 'show-correct');
+                        }
+                    });
+                }
+                
+                if (!questionIsWrong) {
+                    totalCorrect++;
+                }
+            });
+
+            // Calculate percentage
+            const percentage = totalPossiblePoints > 0 ? Math.round((userPoints / totalPossiblePoints) * 100) : 0;
+            const passed = percentage >= 90; // Default pass percentage
+            const status = passed ? 'Pass' : 'Fail';
+            
+            document.getElementById('scoreLabel').textContent = \`Score: \${percentage}% (\${userPoints}/\${totalPossiblePoints}) - \${status}\`;
+            document.getElementById('scoreLabel').style.backgroundColor = passed ? '#d4edda' : '#f8d7da';
+            document.getElementById('scoreLabel').style.color = passed ? '#155724' : '#721c24';
+        }
+        
+        // Print quiz
+        function printQuiz() {
+            window.print();
+        }
+        
+        // Initialize
+        document.getElementById('submitBtn').addEventListener('click', submitAnswers);
+        document.getElementById('regenerateBtn').addEventListener('click', regenerateQuiz);
+        document.getElementById('printBtn').addEventListener('click', printQuiz);
+        
+        // Initial render
+        renderQuestions();
+    </script>
+</body>
+</html>
+        `;
+        
+        // Create a blob and download link
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = 'shared_quiz.html';
+        
+        // Remove loading indicator
+        document.body.removeChild(loadingDiv);
+        
+        // Trigger download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }).catch(error => {
+        console.error('Error creating shared quiz:', error);
+        document.body.removeChild(loadingDiv);
+        alert('Error creating shared quiz. Please try again.');
+    });
 }
 
 // Cleanup function to revoke object URLs

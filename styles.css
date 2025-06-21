@@ -63,6 +63,11 @@ button {
     color: white;
 }
 
+.share-btn {
+    background-color: #17a2b8;
+    color: white;
+}
+
 .score-label {
     font-weight: bold;
     padding: 8px 12px;
