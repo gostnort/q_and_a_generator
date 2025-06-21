@@ -459,11 +459,18 @@ function submitAnswers() {
     let totalCorrect = 0;
     let totalPossiblePoints = 0;
     let userPoints = 0;
+    let unansweredQuestions = [];
 
     questions.forEach((question, qIndex) => {
         const questionDiv = document.querySelector(`[data-question-id="${question.id}"]`);
         const options = questionDiv.querySelectorAll('.option');
         const inputs = questionDiv.querySelectorAll('input');
+        
+        // Check if any option is selected for this question
+        const anySelected = Array.from(inputs).some(input => input.checked);
+        if (!anySelected) {
+            unansweredQuestions.push(qIndex + 1); // Store 1-based question number
+        }
         
         const correctOptionsInQuestion = question.options.filter(opt => opt.startsWith('`'));
         totalPossiblePoints += correctOptionsInQuestion.length;
@@ -514,6 +521,18 @@ function submitAnswers() {
                 totalCorrect++;
         }
     });
+
+    // Check if there are any unanswered questions
+    if (unansweredQuestions.length > 0) {
+        // Format the list of unanswered questions
+        const questionList = unansweredQuestions.join(', ');
+        const message = `Warning: You have not answered question${unansweredQuestions.length > 1 ? 's' : ''} ${questionList}. Do you want to continue?`;
+        
+        // Ask the user if they want to continue without answering all questions
+        if (!confirm(message)) {
+            return; // User chose to go back and answer all questions
+        }
+    }
 
     // Calculate percentage based on total possible points
     const percentage = totalPossiblePoints > 0 ? Math.round((userPoints / totalPossiblePoints) * 100) : 0;
@@ -769,11 +788,18 @@ function shareQuiz() {
             let totalCorrect = 0;
             let totalPossiblePoints = 0;
             let userPoints = 0;
+            let unansweredQuestions = [];
 
             questions.forEach((question, qIndex) => {
                 const questionDiv = document.querySelector(\`[data-question-id="\${qIndex}"]\`);
                 const options = questionDiv.querySelectorAll('.option');
                 const inputs = questionDiv.querySelectorAll('input');
+                
+                // Check if any option is selected for this question
+                const anySelected = Array.from(inputs).some(input => input.checked);
+                if (!anySelected) {
+                    unansweredQuestions.push(qIndex + 1); // Store 1-based question number
+                }
                 
                 const correctIndices = getCorrectIndices(question);
                 totalPossiblePoints += correctIndices.length;
@@ -822,6 +848,18 @@ function shareQuiz() {
                     totalCorrect++;
                 }
             });
+
+            // Check if there are any unanswered questions
+            if (unansweredQuestions.length > 0) {
+                // Format the list of unanswered questions
+                const questionList = unansweredQuestions.join(', ');
+                const message = \`Warning: You have not answered question\${unansweredQuestions.length > 1 ? 's' : ''} \${questionList}. Do you want to continue?\`;
+                
+                // Ask the user if they want to continue without answering all questions
+                if (!confirm(message)) {
+                    return; // User chose to go back and answer all questions
+                }
+            }
 
             // Calculate percentage
             const percentage = totalPossiblePoints > 0 ? Math.round((userPoints / totalPossiblePoints) * 100) : 0;
