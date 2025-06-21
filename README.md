@@ -10,6 +10,7 @@ This project is a web-based Q&A quiz generator. It dynamically creates a quiz fr
 - **Password Protection**: Supports password-protected `.zip` archives using the `js7z` library.
 - **Customizable Quizzes**: Allows users to set the number of questions and the passing percentage.
 - **Interactive Feedback**: Provides immediate scoring and visual feedback on correct/incorrect answers.
+- **Share Quiz**: Generates a standalone HTML file containing the current quiz. This file can be shared with others without requiring them to have the original ZIP file or any server setup. The shared quiz maintains all functionality including the ability to regenerate questions and submit answers.
 
 ## How to Use
 
@@ -45,12 +46,13 @@ This project is a web-based Q&A quiz generator. It dynamically creates a quiz fr
 
 The interface is designed for a simple, focused workflow:
 
--   **Quiz Title**: The name of the `.zip` file you select is automatically used as the title for the quiz, displayed at the top left of the page.
+-   **Quiz Title**: The name of the `.zip` file you select (without the file extension) is automatically used as the title for the quiz, displayed at the top left of the page.
 -   **Generate Quiz Button**: This is the main button to start or refresh the quiz.
     -   **On first use**: Clicking this opens a file selection dialog. After you select a `.zip` file, a settings window appears where you can set the password, number of questions, and passing percentage.
     -   **On subsequent clicks**: If a quiz is already loaded, clicking this button will immediately re-generate a new set of questions from the same `.zip` file, using the same settings as before.
 -   **Submit Answers Button**: After you have made your selections for each question, click this button to grade the quiz. Your score will be displayed at the top, and you will see visual feedback on your answers.
 -   **Print Quiz Button**: Clicking this allows you to print the current quiz. This is useful for creating paper copies for offline use or for saving your results as a PDF.
+-   **Share Quiz Button**: Clicking this generates a standalone HTML file containing the current quiz. This file can be shared with others without requiring them to have the original ZIP file or any server setup. The shared quiz maintains all functionality including the ability to regenerate questions and submit answers.
 
 ---
 
@@ -66,6 +68,7 @@ The interface is designed for a simple, focused workflow:
 - **密码保护**: 使用`js7z`库支持受密码保护的`.zip`压缩文件。
 - **可定制的测验**: 允许用户设置问题数量和及格百分比。
 - **交互式反馈**: 提供即时评分和关于正确/错误答案的视觉反馈。
+- **分享测验**: 点击此按钮会生成一个包含当前测验的独立HTML文件。此文件可以分享给其他人，而无需他们拥有原始ZIP文件或任何服务器设置。分享的测验保留所有功能，包括重新生成问题和提交答案的能力。
 
 ## 如何使用
 
@@ -102,11 +105,12 @@ The interface is designed for a simple, focused workflow:
 
 界面设计简洁，操作流程如下：
 
--   **测验标题**: 您所选择的`.zip`文件名会自动用作测验的标题，并显示在页面左上方。
+-   **测验标题**: 您所选择的`.zip`文件名（不含文件扩展名）会自动用作测验的标题，并显示在页面左上方。
 -   **生成测验按钮**: 这是用于开始或刷新测验的主要按钮。
     -   **首次使用时**: 点击此按钮会打开文件选择对话框。在您选择`.zip`文件后，会弹出一个设置窗口，您可以在其中设置密码、问题数量和及格分数线。
     -   **再次点击时**: 如果已经加载了测验，再次点击此按钮将立即使用与之前相同的设置，从同一个`.zip`文件中重新生成一套新的问题。
 -   **提交答案按钮**: 在您完成所有问题的选择后，点击此按钮为测验评分。您的分数将显示在顶部，同时您会看到关于答案的视觉反馈。
 -   **打印测验按钮**: 点击此按钮可以打印当前测验。这个功能很实用，可以用于创建纸质版测验以供线下使用，或将您的作答结果保存为PDF文件。
+-   **分享测验按钮**: 点击此按钮会生成一个包含当前测验的独立HTML文件。此文件可以分享给其他人，而无需他们拥有原始ZIP文件或任何服务器设置。分享的测验保留所有功能，包括重新生成问题和提交答案的能力。
 
 ![Screenshot of the Q&A Generator application interface](README.jpg)

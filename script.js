@@ -75,7 +75,8 @@ function handleZipFile(event) {
     const file = event.target.files[0];
     if (file) {
         selectedZipFile = file;
-        document.getElementById('zipName').textContent = file.name;
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        document.getElementById('zipName').textContent = fileNameWithoutExt;
         console.log('Zip file selected:', file.name);
         
         // Show settings modal after file selection
