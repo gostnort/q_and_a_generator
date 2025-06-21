@@ -19,20 +19,38 @@ This project is a web-based Q&A quiz generator. It dynamically creates a quiz fr
     *   Place the `.csv` file and any image files into a single `.zip` archive. You can optionally password-protect it.
 
 2.  **Run the application**:
-    *   Due to browser security policies (CORS), you cannot run this application by simply opening `index.html`. You must serve it from a local web server.
-    *   If you have Python installed, navigate to the project directory in your terminal and run:
-        ```bash
-        python -m http.server
-        ```
-    *   If you have Node.js installed, you can use the `serve` package:
-        ```bash
-        npx serve
-        ```
-    *   Alternatively, you can use a tool like the "Live Server" extension in VS Code.
+    *   **Option 1: Use a Local Web Server (Recommended)**
+        *   Due to browser security policies (CORS), you cannot run this application by simply opening `index.html`. You must serve it from a local web server.
+        *   If you have Python installed, navigate to the project directory in your terminal and run:
+            ```bash
+            python -m http.server
+            ```
+        *   If you have Node.js installed, you can use the `serve` package:
+            ```bash
+            npx serve
+            ```
+        *   Alternatively, you can use a tool like the "Live Server" extension in VS Code.
+    *   **Option 2: Use the Windows Batch Script (No Server Needed)**
+        *   For Windows users without Python or Node.js, a convenience script is provided. Simply double-click `launch_dev_chrome.bat`.
+        *   This will automatically find Chrome on your system and launch it in a special development mode that allows the application to run from local files.
+        *   **Security Warning:** This mode disables certain browser security features. Only use the browser window it opens for this application. Do not browse other websites. Close the browser and the command window when you are finished.
 
 3.  **Open the Quiz**:
     *   Open your web browser and navigate to `http://localhost:8000` (or the address provided by your server tool).
     *   Click the "Generate" button, select your `.zip` file, enter the password if required, and configure your quiz settings.
+
+---
+
+## Interface and Controls
+
+The interface is designed for a simple, focused workflow:
+
+-   **Quiz Title**: The name of the `.zip` file you select is automatically used as the title for the quiz, displayed at the top left of the page.
+-   **Generate Quiz Button**: This is the main button to start or refresh the quiz.
+    -   **On first use**: Clicking this opens a file selection dialog. After you select a `.zip` file, a settings window appears where you can set the password, number of questions, and passing percentage.
+    -   **On subsequent clicks**: If a quiz is already loaded, clicking this button will immediately re-generate a new set of questions from the same `.zip` file, using the same settings as before.
+-   **Submit Answers Button**: After you have made your selections for each question, click this button to grade the quiz. Your score will be displayed at the top, and you will see visual feedback on your answers.
+-   **Print Quiz Button**: Clicking this allows you to print the current quiz. This is useful for creating paper copies for offline use or for saving your results as a PDF.
 
 ---
 
@@ -57,17 +75,38 @@ This project is a web-based Q&A quiz generator. It dynamically creates a quiz fr
     *   将`.csv`文件和所有相关的图像文件放入一个`.zip`压缩包中。您可以选择使用密码保护它。
 
 2.  **运行应用程序**:
-    *   由于浏览器的安全策略（CORS），您不能通过简单地双击打开`index.html`来运行此应用。您必须通过本地Web服务器来运行它。
-    *   如果您安装了Python，请在终端中进入项目目录并运行：
-        ```bash
-        python -m http.server
-        ```
-    *   如果您安装了Node.js，您可以使用`serve`包：
-        ```bash
-        npx serve
-        ```
-    *   或者，您也可以使用像VS Code中的"Live Server"之类的工具。
+    *   **方法一：使用本地Web服务器（推荐）**
+        *   由于浏览器的安全策略（CORS），您不能通过简单地双击打开`index.html`来运行此应用。您必须通过本地Web服务器来运行它。
+        *   如果您安装了Python，请在终端中进入项目目录并运行：
+            ```bash
+            python -m http.server
+            ```
+        *   如果您安装了Node.js，您可以使用`serve`包：
+            ```bash
+            npx serve
+            ```
+        *   或者，您也可以使用像VS Code中的"Live Server"之类的工具。
+    *   **方法二：使用Windows批处理脚本（无需服务器）**
+        *   对于没有安装Python或Node.js的Windows用户，我们提供了一个便捷的脚本。只需双击 `launch_dev_chrome.bat` 文件。
+        *   该脚本会自动查找您系统上安装的Chrome浏览器，并以一种特殊的开发模式启动它，从而允许应用程序从本地文件运行。
+        *   **安全警告：** 此模式会禁用部分浏览器安全功能。请仅将打开的浏览器窗口用于此应用程序，不要用它浏览其他网站。完成使用后，请关闭浏览器和命令行窗口。
 
 3.  **开始测验**:
     *   打开您的网络浏览器并访问`http://localhost:8000`（或您的服务器工具提供的地址）。
     *   点击"Generate"按钮，选择您的`.zip`文件，如果需要，请输入密码，并配置您的测验设置。
+
+
+---
+
+## 界面与控件说明
+
+界面设计简洁，操作流程如下：
+
+-   **测验标题**: 您所选择的`.zip`文件名会自动用作测验的标题，并显示在页面左上方。
+-   **生成测验按钮**: 这是用于开始或刷新测验的主要按钮。
+    -   **首次使用时**: 点击此按钮会打开文件选择对话框。在您选择`.zip`文件后，会弹出一个设置窗口，您可以在其中设置密码、问题数量和及格分数线。
+    -   **再次点击时**: 如果已经加载了测验，再次点击此按钮将立即使用与之前相同的设置，从同一个`.zip`文件中重新生成一套新的问题。
+-   **提交答案按钮**: 在您完成所有问题的选择后，点击此按钮为测验评分。您的分数将显示在顶部，同时您会看到关于答案的视觉反馈。
+-   **打印测验按钮**: 点击此按钮可以打印当前测验。这个功能很实用，可以用于创建纸质版测验以供线下使用，或将您的作答结果保存为PDF文件。
+
+![Screenshot of the Q&A Generator application interface](README.jpg)
