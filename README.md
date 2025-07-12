@@ -174,3 +174,77 @@ npx serve
 This application is designed for simplicity and ease of deployment. The architecture uses client-side storage for session management, making it suitable for static hosting platforms like Netlify without requiring a backend server.
 
 For production use with many concurrent users, consider implementing a proper backend with WebSocket support for real-time features.
+
+---
+
+# Q&A Generator - 中文简介
+
+基于Web的问答测验生成器，采用管理员/客户端架构，支持Netlify部署。
+
+## 主要功能
+
+- **管理员/客户端架构**：统一登录界面，基于角色的访问控制
+- **动态测验生成**：管理员从 `/zip` 文件夹选择测验文件
+- **实时统计**：管理员可查看客户端答题统计和正确答案
+- **会话管理**：自动登出和会话控制
+- **一键部署**：完全配置好的Netlify部署方案
+
+## 使用方法
+
+### 管理员操作
+1. **登录**：输入已注册的邮箱地址
+2. **选择测验**：从 `/zip` 文件夹中选择测验文件
+3. **监控结果**：查看题目、正确答案和客户端统计
+4. **登出**：结束会话并停用所有客户端的测验
+
+### 客户端操作
+1. **登录**：在测验激活时输入任意标识符
+2. **答题**：完成随机排序的题目
+3. **查看结果**：查看得分和正确答案
+4. **自动登出**：管理员登出时自动返回登录页面
+
+## 部署到Netlify
+
+### 方法1：拖拽部署
+1. 将整个项目文件夹压缩
+2. 访问 [Netlify](https://netlify.com)
+3. 将ZIP文件拖拽到部署区域
+4. 网站立即上线
+
+### 方法2：Git集成
+1. 将代码推送到GitHub仓库
+2. 将仓库连接到Netlify
+3. 每次推送自动部署
+
+## 配置管理员
+
+编辑 `config.js` 添加授权管理员邮箱：
+
+```javascript
+const ownerIdentities = [
+    'admin@example.com',
+    'owner@example.com'
+];
+```
+
+## 测验文件格式
+
+ZIP文件应包含：
+- **CSV文件**：题目和答案
+  - 第1行：题目文本
+  - 第2行：图片文件名（可选）
+  - 第3行起：答案选项（正确答案前加 `` ` ``）
+- **图片文件**：CSV中引用的图片（可选）
+- **密码保护**：支持（可选）
+
+## 添加测验文件
+
+通过GitHub将ZIP文件上传到 `/zip` 文件夹，然后提交推送即可。
+
+## 技术特点
+
+- **客户端ZIP处理**：使用js7z库
+- **会话存储**：localStorage实现会话管理
+- **实时更新**：存储事件实现跨标签页通信
+- **响应式设计**：支持桌面和移动设备
+- **静态部署**：无需后端服务器

@@ -5,32 +5,45 @@ let selectedZipFile = null;
 let imageUrlMap = {};
 let currentUser = null;
 let isOwner = false;
+let isLoadingQuiz = false;
 
 // Session management
 const SESSION_KEY = 'quizSession';
 const QUIZ_STATE_KEY = 'quizState';
+const ACTIVE_OWNER_KEY = 'activeOwner';
+const CLIENT_ANSWERS_KEY = 'clientAnswers';
 
 // Initialize app
 window.onload = function() {
     checkSession();
-    setInterval(checkSession, 1000); // Check session every second
+    // Don't start auto-refresh immediately - only after quiz is loaded
 };
 
 // Check current session state
 function checkSession() {
+    // Don't interfere during quiz loading
+    if (isLoadingQuiz) {
+        return;
+    }
+    
     const session = localStorage.getItem(SESSION_KEY);
     const quizState = localStorage.getItem(QUIZ_STATE_KEY);
+    const activeOwner = localStorage.getItem(ACTIVE_OWNER_KEY);
     
     if (session) {
         const sessionData = JSON.parse(session);
         currentUser = sessionData.user;
-        isOwner = sessionData.isOwner;
         
-        if (isOwner) {
+        // Check if this user is still the active owner
+        if (sessionData.isOwner && currentUser === activeOwner) {
+            isOwner = true;
             showOwnerInterface();
         } else if (quizState) {
+            // User is a client (including former owners)
+            isOwner = false;
             showClientInterface();
         } else {
+            // No active quiz, back to login
             showLoginInterface();
         }
     } else {
@@ -52,6 +65,10 @@ function showOwnerInterface() {
     document.getElementById('clientInterface').style.display = 'none';
     
     document.getElementById('ownerEmail').textContent = currentUser;
+    
+    // Reset quiz selection container visibility
+    document.querySelector('.owner-controls').style.display = 'block';
+    
     fetchZipFiles();
 }
 
@@ -72,19 +89,22 @@ function login() {
         return;
     }
     
-    if (isValidOwner(identity)) {
-        // Owner login
+    const activeOwner = localStorage.getItem(ACTIVE_OWNER_KEY);
+    
+    if (isValidOwner(identity) && !activeOwner) {
+        // Owner login - become the active owner
         const sessionData = {
             user: identity,
             isOwner: true,
             timestamp: Date.now()
         };
         localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        localStorage.setItem(ACTIVE_OWNER_KEY, identity);
         currentUser = identity;
         isOwner = true;
         showOwnerInterface();
     } else {
-        // Client login - check if quiz is active
+        // Client login (including other owners when someone is already active owner)
         const quizState = localStorage.getItem(QUIZ_STATE_KEY);
         if (quizState) {
             const sessionData = {
@@ -97,7 +117,11 @@ function login() {
             isOwner = false;
             showClientInterface();
         } else {
-            alert('No active quiz available. Please wait for the owner to start a quiz.');
+            if (activeOwner) {
+                alert(`Quiz not started yet. ${activeOwner} is the active owner.`);
+            } else {
+                alert('No active quiz available. Please wait for an owner to start a quiz.');
+            }
         }
     }
 }
@@ -106,9 +130,31 @@ function login() {
 function logout() {
     localStorage.removeItem(SESSION_KEY);
     if (isOwner) {
+        // Owner logout - clear ALL data for fresh start
         localStorage.removeItem(QUIZ_STATE_KEY);
-        localStorage.removeItem('quizAnswers');
+        localStorage.removeItem(ACTIVE_OWNER_KEY);
+        localStorage.removeItem(CLIENT_ANSWERS_KEY);
+        
+        // Clear in-memory data
+        csvData = [];
+        questions = [];
+        selectedZipFile = null;
+        
+        // Clear image URLs and revoke blob URLs
+        Object.values(imageUrlMap).forEach(url => {
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
+        });
+        imageUrlMap = {};
     }
+    
+    // Clear session check interval
+    if (window.sessionCheckInterval) {
+        clearInterval(window.sessionCheckInterval);
+        window.sessionCheckInterval = null;
+    }
+    
     currentUser = null;
     isOwner = false;
     showLoginInterface();
@@ -132,7 +178,9 @@ async function fetchZipFiles() {
             zipFiles.forEach(file => {
                 const option = document.createElement('option');
                 option.value = file;
-                option.textContent = file.replace('.zip', '');
+                // Decode URL-encoded characters for display
+                const decodedName = decodeURIComponent(file).replace('.zip', '');
+                option.textContent = decodedName;
                 select.appendChild(option);
             });
             return;
@@ -152,7 +200,9 @@ async function fetchZipFiles() {
             if (response.ok) {
                 const option = document.createElement('option');
                 option.value = file;
-                option.textContent = file.replace('.zip', '');
+                // Decode URL-encoded characters for display
+                const decodedName = decodeURIComponent(file).replace('.zip', '');
+                option.textContent = decodedName;
                 select.appendChild(option);
             }
         } catch (error) {
@@ -167,36 +217,63 @@ async function fetchZipFiles() {
 
 // Load quiz (owner function)
 async function loadQuiz() {
+    console.log('loadQuiz() called');
+    isLoadingQuiz = true;
+    
     const select = document.getElementById('zipFiles');
     const selectedFile = select.value;
     
+    console.log('Selected file:', selectedFile);
+    
     if (!selectedFile) {
         alert('Please select a quiz file');
+        isLoadingQuiz = false;
         return;
     }
     
     try {
+        console.log('Fetching file:', `/zip/${selectedFile}`);
         const response = await fetch(`/zip/${selectedFile}`);
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         selectedZipFile = await response.blob();
+        console.log('ZIP file loaded, size:', selectedZipFile.size);
+        
         await loadCSVDataFromZip();
         
-        // Set quiz state for clients
+        // Set quiz state for clients with extracted data
         const quizState = {
             zipFile: selectedFile,
             timestamp: Date.now(),
-            active: true
+            active: true,
+            csvData: csvData,
+            imageUrlMap: imageUrlMap
         };
         localStorage.setItem(QUIZ_STATE_KEY, JSON.stringify(quizState));
+        console.log('Quiz state set:', quizState);
         
-        document.getElementById('zipName').textContent = selectedFile.replace('.zip', '');
+        // Decode URL-encoded characters for display
+        const decodedName = decodeURIComponent(selectedFile).replace('.zip', '');
+        document.getElementById('zipName').textContent = decodedName;
+        
+        // Note: UI hiding will be done after quiz processing completes
+        
+        // Start auto-refresh only after quiz is loaded
+        if (!window.sessionCheckInterval) {
+            window.sessionCheckInterval = setInterval(checkSession, 5000);
+        }
+        
+        console.log('Quiz loaded successfully');
         
     } catch (error) {
         console.error('Error loading quiz:', error);
         alert('Failed to load quiz. Please check if the file exists.');
+    } finally {
+        isLoadingQuiz = false;
     }
 }
 
@@ -214,21 +291,20 @@ async function loadClientQuiz() {
         return;
     }
     
-    try {
-        const response = await fetch(`/zip/${state.zipFile}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    // Use the data that owner already extracted - no password needed!
+    if (state.csvData && state.imageUrlMap) {
+        csvData = state.csvData;
+        imageUrlMap = state.imageUrlMap;
+        questions = processQuestions();
         
-        selectedZipFile = await response.blob();
-        await loadCSVDataFromZip();
-        
-        document.getElementById('zipName').textContent = state.zipFile.replace('.zip', '');
+        // Decode URL-encoded characters for display
+        const decodedName = decodeURIComponent(state.zipFile).replace('.zip', '');
+        document.getElementById('zipName').textContent = decodedName;
         regenerateQuiz();
-        
-    } catch (error) {
-        console.error('Error loading client quiz:', error);
-        alert('Failed to load quiz');
+    } else {
+        // Fallback: if no extracted data, show error
+        alert('Quiz data not available. Please wait for owner to reload the quiz.');
+        showLoginInterface();
     }
 }
 
@@ -253,6 +329,175 @@ function ensureJS7zLoaded() {
             }
         }, 100);
     });
+}
+
+// Extract ZIP with password handling - returns true/false (NO dialogs)
+async function extractZipWithPassword(arrayBuffer, password = null) {
+    return new Promise(async (resolve) => {
+        // Temporarily disable window.prompt to prevent JS7z from showing default dialogs
+        const originalPrompt = window.prompt;
+        window.prompt = () => null;
+        
+        try {
+            const js7z = await JS7z({
+                onExit: (exitCode) => {
+                    // Restore original prompt
+                    window.prompt = originalPrompt;
+                    
+                    if (exitCode === 0) {
+                        // Success - process files
+                        const files = js7z.FS.readdir('/output');
+                        
+                        // Load images
+                        for (const filename of files) {
+                            if (filename === '.' || filename === '..') continue;
+                            const lowerFilename = filename.toLowerCase();
+                            if (lowerFilename.endsWith('.jpg') || lowerFilename.endsWith('.jpeg') || lowerFilename.endsWith('.png')) {
+                                const imageData = js7z.FS.readFile('/output/' + filename, {encoding: 'binary'});
+                                let mimeType = 'image/jpeg';
+                                if (lowerFilename.endsWith('.png')) mimeType = 'image/png';
+                                const blob = new Blob([imageData], {type: mimeType});
+                                const url = URL.createObjectURL(blob);
+                                imageUrlMap[filename] = url;
+                            }
+                        }
+                        
+                        // Load CSV
+                        let csvContent = null;
+                        for (const filename of files) {
+                            if (filename.toLowerCase().endsWith('.csv')) {
+                                csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
+                                break;
+                            }
+                        }
+                        
+                        if (!csvContent) {
+                            console.error('No CSV file found in ZIP');
+                            resolve(false);
+                            return;
+                        }
+                        
+                        csvData = parseCSV(csvContent);
+                        questions = processQuestions();
+                        
+                        if (isOwner) {
+                            renderOwnerQuestions();
+                        } else {
+                            regenerateQuiz();
+                        }
+                        
+                        resolve(true); // Success
+                        
+                    } else {
+                        // Extraction failed - wrong password or corrupted file
+                        resolve(false);
+                    }
+                },
+                onAbort: (reason) => {
+                    // Restore original prompt
+                    window.prompt = originalPrompt;
+                    console.error('JS7z aborted:', reason);
+                    resolve(false);
+                }
+            });
+            
+            js7z.FS.writeFile('/input.zip', new Uint8Array(arrayBuffer));
+            js7z.FS.mkdir('/output');
+            
+            // Try extraction with or without password
+            const extractArgs = ['x', '/input.zip', '-o/output'];
+            if (password) {
+                extractArgs.push(`-p${password}`);
+            }
+            js7z.callMain(extractArgs);
+            
+        } catch (error) {
+            // Restore original prompt in case of error
+            window.prompt = originalPrompt;
+            resolve(false);
+        }
+    });
+}
+
+// Custom password dialog
+function showPasswordDialog() {
+    return new Promise((resolve) => {
+        // Create modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        `;
+        
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 300px;
+        `;
+        
+        dialog.innerHTML = `
+            <h3 style="margin: 0 0 15px 0;">Enter Password</h3>
+            <input type="password" id="passwordInput" placeholder="Enter password for ZIP file" 
+                   style="width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box;">
+            <div style="text-align: right; margin-top: 15px;">
+                <button id="cancelBtn" style="margin-right: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button id="okBtn" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">OK</button>
+            </div>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        const input = dialog.querySelector('#passwordInput');
+        const okBtn = dialog.querySelector('#okBtn');
+        const cancelBtn = dialog.querySelector('#cancelBtn');
+        
+        input.focus();
+        
+        // OK button - return password
+        okBtn.onclick = () => {
+            const password = input.value.trim();
+            document.body.removeChild(modal);
+            resolve(password);
+        };
+        
+        // Cancel button - return null
+        cancelBtn.onclick = () => {
+            document.body.removeChild(modal);
+            resolve(null);
+        };
+        
+        // Enter key = OK
+        input.onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                okBtn.click();
+            }
+        };
+    });
+}
+
+// Handle password prompting with proper retry logic
+async function handlePasswordExtraction(arrayBuffer) {
+    // First try without password
+    if (await extractZipWithPassword(arrayBuffer)) {
+        return; // Success!
+    }
+    
+    // Keep trying with password until success or user cancels
+    while (true) {
+        const pw = await showPasswordDialog();
+        if (!pw) {
+            // User clicked cancel - just return without error
+            return;
+        }
+        
+        if (await extractZipWithPassword(arrayBuffer, pw)) {
+            return; // Success!
+        }
+        // Wrong password, try again (continue loop)
+    }
 }
 
 // Parse CSV data
@@ -303,74 +548,8 @@ async function loadCSVDataFromZip() {
         
         const arrayBuffer = await selectedZipFile.arrayBuffer();
         
-        const js7z = await JS7z({
-            onExit: (exitCode) => {
-                if (exitCode === 0) {
-                    try {
-                        const files = js7z.FS.readdir('/output');
-                        
-                        // Load images
-                        for (const filename of files) {
-                            if (filename === '.' || filename === '..') continue;
-                            const lowerFilename = filename.toLowerCase();
-                            if (lowerFilename.endsWith('.jpg') || lowerFilename.endsWith('.jpeg') || lowerFilename.endsWith('.png')) {
-                                try {
-                                    const imageData = js7z.FS.readFile('/output/' + filename, {encoding: 'binary'});
-                                    let mimeType = 'image/jpeg';
-                                    if (lowerFilename.endsWith('.png')) mimeType = 'image/png';
-                                    const blob = new Blob([imageData], {type: mimeType});
-                                    const url = URL.createObjectURL(blob);
-                                    imageUrlMap[filename] = url;
-                                } catch (readError) {
-                                    console.error('Error reading image:', filename, readError);
-                                }
-                            }
-                        }
-                        
-                        // Load CSV
-                        let csvContent = null;
-                        for (const filename of files) {
-                            if (filename.toLowerCase().endsWith('.csv')) {
-                                try {
-                                    csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
-                                    break;
-                                } catch (readError) {
-                                    console.error('Error reading CSV:', filename, readError);
-                                }
-                            }
-                        }
-                        
-                        if (!csvContent) {
-                            alert('No CSV file found in ZIP');
-                            return;
-                        }
-                        
-                        csvData = parseCSV(csvContent);
-                        questions = processQuestions();
-                        
-                        if (isOwner) {
-                            renderOwnerQuestions();
-                        } else {
-                            regenerateQuiz();
-                        }
-                        
-                    } catch (e) {
-                        console.error('Error processing files:', e);
-                        alert('Error processing ZIP contents');
-                    }
-                } else {
-                    alert('Error extracting ZIP file');
-                }
-            },
-            onAbort: (reason) => {
-                console.error('JS7z aborted:', reason);
-                alert('ZIP extraction aborted');
-            }
-        });
-        
-        js7z.FS.writeFile('/input.zip', new Uint8Array(arrayBuffer));
-        js7z.FS.mkdir('/output');
-        js7z.callMain(['x', '/input.zip', '-o/output']);
+        // Try extraction with password handling
+        await handlePasswordExtraction(arrayBuffer);
         
     } catch (error) {
         console.error('Error setting up ZIP extraction:', error);
@@ -457,24 +636,39 @@ function renderOwnerQuestions() {
     });
     
     updateClientCounts();
+    
+    // Hide the quiz selection container after successful load
+    if (isOwner) {
+        document.querySelector('.owner-controls').style.display = 'none';
+    }
 }
 
 // Update client answer counts
 function updateClientCounts() {
-    const answers = JSON.parse(localStorage.getItem('quizAnswers') || '[]');
+    const clientAnswers = JSON.parse(localStorage.getItem(CLIENT_ANSWERS_KEY) || '{}');
     const counts = {};
+    const clientNames = [];
     
-    answers.forEach(submission => {
-        submission.forEach(answer => {
-            if (!counts[answer.questionId]) {
-                counts[answer.questionId] = {};
-            }
-            answer.selectedOptions.forEach(optionIndex => {
-                counts[answer.questionId][optionIndex] = (counts[answer.questionId][optionIndex] || 0) + 1;
+    // Process answers from all clients
+    Object.keys(clientAnswers).forEach(clientName => {
+        clientNames.push(clientName);
+        const clientSubmissions = clientAnswers[clientName];
+        
+        // Get the latest submission for this client
+        if (clientSubmissions.length > 0) {
+            const latestSubmission = clientSubmissions[clientSubmissions.length - 1];
+            latestSubmission.answers.forEach(answer => {
+                if (!counts[answer.questionId]) {
+                    counts[answer.questionId] = {};
+                }
+                answer.selectedOptions.forEach(optionIndex => {
+                    counts[answer.questionId][optionIndex] = (counts[answer.questionId][optionIndex] || 0) + 1;
+                });
             });
-        });
+        }
     });
     
+    // Update display
     questions.forEach(question => {
         const questionDiv = document.querySelector(`[data-question-id="${question.id}"]`);
         if (questionDiv) {
@@ -487,6 +681,49 @@ function updateClientCounts() {
             });
         }
     });
+    
+    // Show client list
+    updateClientList(clientNames, clientAnswers);
+}
+
+// Update client list display for owner
+function updateClientList(clientNames, clientAnswers) {
+    if (!isOwner) return;
+    
+    let clientListDiv = document.getElementById('clientList');
+    if (!clientListDiv) {
+        clientListDiv = document.createElement('div');
+        clientListDiv.id = 'clientList';
+        clientListDiv.style.cssText = `
+            background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 8px;
+            border: 1px solid #dee2e6;
+        `;
+        
+        const ownerQuestions = document.getElementById('ownerQuestions');
+        ownerQuestions.parentNode.insertBefore(clientListDiv, ownerQuestions);
+    }
+    
+    if (clientNames.length === 0) {
+        clientListDiv.innerHTML = '<h4>Connected Clients</h4><p>No clients have submitted answers yet.</p>';
+        return;
+    }
+    
+    let html = '<h4>Connected Clients</h4>';
+    clientNames.forEach(clientName => {
+        const submissions = clientAnswers[clientName];
+        const latestSubmission = submissions[submissions.length - 1];
+        const score = latestSubmission.score;
+        const timestamp = new Date(latestSubmission.timestamp).toLocaleTimeString();
+        
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee;">
+                <span><strong>${clientName}</strong></span>
+                <span>Score: ${score}% (${timestamp})</span>
+            </div>
+        `;
+    });
+    
+    clientListDiv.innerHTML = html;
 }
 
 // Shuffle array
@@ -634,10 +871,17 @@ function submitAnswers() {
         }
     }
     
-    // Save answers
-    const existingAnswers = JSON.parse(localStorage.getItem('quizAnswers') || '[]');
-    existingAnswers.push(answers);
-    localStorage.setItem('quizAnswers', JSON.stringify(existingAnswers));
+    // Save answers with client identity
+    const clientAnswers = JSON.parse(localStorage.getItem(CLIENT_ANSWERS_KEY) || '{}');
+    if (!clientAnswers[currentUser]) {
+        clientAnswers[currentUser] = [];
+    }
+    clientAnswers[currentUser].push({
+        answers: answers,
+        timestamp: Date.now(),
+        score: percentage
+    });
+    localStorage.setItem(CLIENT_ANSWERS_KEY, JSON.stringify(clientAnswers));
     
     const percentage = totalPossiblePoints > 0 ? Math.round((userPoints / totalPossiblePoints) * 100) : 0;
     const passed = percentage >= 90;
@@ -750,7 +994,11 @@ function getEmbeddedQuizScript() {
 
 // Listen for storage changes to update owner view
 window.addEventListener('storage', (event) => {
-    if (event.key === 'quizAnswers' && isOwner) {
+    if (event.key === CLIENT_ANSWERS_KEY && isOwner) {
         updateClientCounts();
+    }
+    if (event.key === ACTIVE_OWNER_KEY || event.key === QUIZ_STATE_KEY) {
+        // Check if session state changed
+        checkSession();
     }
 }); 
