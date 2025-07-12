@@ -5,28 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Generator</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Load JS7z library -->
     <script src="js7z/js7z.js" type="text/javascript"></script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-left">
-            <h2 class="zip-name" id="zipName">Quiz</h2>
-        </div>
-        <div class="header-right">
-            <div class="score-label" id="scoreLabel"></div>
-            <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
-            <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
-            <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
+    <!-- Login Interface -->
+    <div id="loginInterface" class="login-container">
+        <div class="login-box">
+            <h1>Q&A Generator</h1>
+            <input type="email" id="ownerIdentity" placeholder="Enter owner identity">
+            <button onclick="login()">Login</button>
         </div>
     </div>
-    
-    <hr class="header-separator">
-    
-    <div id="questionsContainer"></div>
-    
 
-    <!-- Load main script after JS7z -->
+    <!-- Owner Interface -->
+    <div id="ownerInterface" class="owner-container" style="display: none;">
+        <div class="header">
+            <div class="header-left">
+                <h2>Owner Dashboard</h2>
+                <span id="ownerEmail" class="owner-email"></span>
+            </div>
+            <div class="header-right">
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        
+        <div class="owner-controls">
+            <div class="zip-selector">
+                <label for="zipFiles">Select Quiz:</label>
+                <select id="zipFiles"></select>
+                <button onclick="loadQuiz()">Load Quiz</button>
+            </div>
+        </div>
+        
+        <div id="ownerQuestions"></div>
+    </div>
+
+    <!-- Client Quiz Interface -->
+    <div id="clientInterface" class="client-container" style="display: none;">
+        <div class="header">
+            <div class="header-left">
+                <h2 class="zip-name" id="zipName">Quiz</h2>
+            </div>
+            <div class="header-right">
+                <div class="score-label" id="scoreLabel"></div>
+                <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
+                <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
+                <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
+            </div>
+        </div>
+        
+        <hr class="header-separator">
+        
+        <div id="questionsContainer"></div>
+    </div>
+
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 

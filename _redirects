@@ -1,0 +1,6 @@
+# Netlify redirects for Q&A Generator
+# Handle directory listing for /zip folder
+/zip/*  /zip/:splat  200
+
+# Fallback to index.html for all other routes
+/*  /index.html  200 
