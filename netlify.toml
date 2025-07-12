@@ -1,0 +1,15 @@
+[build]
+  publish = "."
+  
+[[headers]]
+  for = "/zip/*"
+  [headers.values]
+    Content-Type = "application/octet-stream"
+
+[[headers]]
+  for = "*.zip"
+  [headers.values]
+    Content-Type = "application/zip"
+    
+[context.production]
+  environment = { NODE_ENV = "production" } 
