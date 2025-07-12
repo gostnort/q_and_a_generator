@@ -1,40 +1,71 @@
-# Q&A Generator - Netlify Ready
+# Q&A Generator - Multi-Client Edition
 
-A web-based Q&A quiz generator with owner/client architecture. The owner logs in to select quiz files, and clients can take the quiz once it's activated.
+A web-based Q&A quiz generator with advanced multi-client tracking and owner/client architecture. Features real-time client monitoring, custom password dialogs, and seamless session management.
 
-## Features
+## ✨ New Features (v0.2)
 
-- **Owner/Client Architecture**: Single login interface with role-based access
-- **Dynamic Quiz Generation**: Owner selects from ZIP files in the `/zip` folder
-- **Real-time Tracking**: Owner sees client answers and statistics in real-time
-- **Secure Session Management**: Automatic logout and session control
-- **Netlify Ready**: Configured for easy deployment to Netlify
+### 🔥 **Multi-Client Tracking**
+- **Real client identification** based on login names
+- **Individual client statistics** with scores and timestamps
+- **Live client list** showing all connected users
+- **Per-client answer history** with submission tracking
+
+### 🔐 **Enhanced Password Security**
+- **Custom password dialogs** with proper OK/Cancel handling
+- **No unwanted browser prompts** - complete dialog control
+- **Retry logic** for incorrect passwords
+- **Clean cancellation** without error messages
+
+### 👥 **Owner Priority System**
+- **First owner becomes active** - controls the quiz
+- **Other owners become clients** when someone else is active
+- **Seamless role switching** when active owner logs out
+- **Multi-owner support** with clear active owner indication
+
+### 🎨 **Improved User Experience**
+- **Clean UI** - quiz selection disappears after loading
+- **Real-time updates** across all client sessions
+- **Better session management** with automatic cleanup
+- **Responsive design** with proper spacing
 
 ## How It Works
 
 ### For Owners
 1. **Login**: Enter your registered email address
-2. **Select Quiz**: Choose from available ZIP files in the `/zip` folder
-3. **Monitor Results**: View questions with correct answers and client statistics
-4. **Logout**: End session and deactivate quiz for all clients
+2. **Become Active Owner**: First owner to login controls the quiz
+3. **Select Quiz**: Choose from available ZIP files in the `/zip` folder
+4. **Monitor Real Clients**: View individual client names, scores, and answer statistics
+5. **See Live Updates**: Watch as clients submit answers in real-time
+6. **Logout**: End session and deactivate quiz for all clients
 
-### For Clients
+### For Clients (Including Other Owners)
 1. **Login**: Enter any identifier when a quiz is active
 2. **Take Quiz**: Complete the randomized questions
-3. **View Results**: See your score and correct answers
-4. **Automatic Logout**: Return to login when owner logs out
+3. **Individual Tracking**: Your answers are tracked separately by your login name
+4. **View Results**: See your score and correct answers
+5. **Automatic Logout**: Return to login when active owner logs out
+
+### Multi-Client Scenarios
+```
+Example with 3 owners configured:
+- owner1@email.com logs in first → Becomes active owner
+- owner2@email.com logs in → Becomes client (sees "owner1@email.com is active owner")
+- owner3@email.com logs in → Also becomes client
+- Regular users (John, Mary) → Also become clients
+- All tracked separately with individual statistics
+```
 
 ## File Structure
 
 ```
 /
 ├── index.html          # Single entry point for all users
-├── script.js           # Main application logic
-├── styles.css          # All styling
+├── script.js           # Main application logic with multi-client support
+├── styles.css          # Enhanced styling with client list
 ├── config.js           # Owner email configuration
 ├── zip/                # Quiz files directory
 │   ├── .gitkeep       # Ensures directory is tracked
-│   └── sample*.zip    # Sample quiz file
+│   └── sample*.zip    # Sample quiz files
 ├── js7z/              # ZIP extraction library
 ├── _redirects         # Netlify routing configuration
 ├── netlify.toml       # Netlify build configuration
@@ -49,7 +80,7 @@ ZIP files in the `/zip` folder should contain:
   - Row 2: Image filename (optional)
   - Row 3+: Answer options (prefix with `` ` `` for correct answers)
 - **Image files**: Referenced in the CSV (optional)
-- **Password protection**: Supported (optional)
+- **Password protection**: Fully supported with custom dialogs
 
 ### Example CSV Structure:
 ```
@@ -68,8 +99,27 @@ Edit `config.js` to add authorized owner emails:
 ```javascript
 const ownerIdentities = [
     'owner@example.com',
-    'admin@example.com'
+    'admin@example.com',
+    'teacher@school.edu'
 ];
+```
+
+## Multi-Client Data Structure
+
+Client answers are stored with individual tracking:
+```javascript
+{
+    "John": [
+        {answers: [...], timestamp: 123456, score: 85},
+        {answers: [...], timestamp: 123789, score: 92}
+    ],
+    "Mary": [
+        {answers: [...], timestamp: 123567, score: 78}
+    ],
+    "owner2@email.com": [
+        {answers: [...], timestamp: 123678, score: 95}
+    ]
+}
 ```
 
 ## Deployment to Netlify
@@ -122,25 +172,35 @@ npx serve
 # Double-click launch_dev_chrome.bat
 ```
 
-## Session Management
+## Advanced Session Management
 
-- **Owner Session**: Controls quiz availability for all clients
-- **Client Session**: Dependent on active owner session
-- **Automatic Cleanup**: Logout clears all session data
-- **Real-time Sync**: All clients automatically update when owner changes state
+### Owner Session Control
+- **Active Owner Tracking**: Only one owner can be active at a time
+- **Complete Data Cleanup**: All quiz data cleared on owner logout
+- **Session Isolation**: Each owner session is independent
+- **Automatic Client Logout**: All clients return to login when owner logs out
+
+### Client Session Features
+- **Individual Identity Tracking**: Each login name = unique client
+- **Answer History**: Multiple submissions tracked per client
+- **Real-time Synchronization**: Instant updates across all sessions
+- **Automatic Role Detection**: Owners become clients when another owner is active
 
 ## Security Features
 
 - **Email-based Owner Authentication**: Only registered emails can access owner features
-- **Session Isolation**: Each session is independent
-- **Automatic Logout**: Prevents unauthorized access
+- **Owner Priority System**: First-come-first-served owner activation
+- **Session Isolation**: Each session is completely independent
+- **Automatic Cleanup**: All data cleared on owner logout
 - **Answer Obfuscation**: Shared quizzes don't reveal correct answers easily
+- **Custom Password Dialogs**: No browser security prompts
 
 ## Browser Compatibility
 
 - **Modern Browsers**: Chrome, Firefox, Safari, Edge (latest versions)
 - **JavaScript Required**: Full functionality requires JavaScript enabled
 - **File API Support**: Required for ZIP file processing
+- **LocalStorage Support**: Required for multi-client tracking
 
 ## Troubleshooting
 
@@ -148,60 +208,116 @@ npx serve
 - Check if ZIP file exists in `/zip` folder
 - Verify ZIP file contains valid CSV
 - Check browser console for errors
+- Try entering password if ZIP is protected
 
 ### Owner Can't Login
 - Verify email is listed in `config.js`
+- Check if another owner is already active
 - Check for typos in email address
 - Clear browser cache and try again
 
 ### Clients Can't Access Quiz
-- Ensure owner is logged in and has selected a quiz
+- Ensure an owner is logged in and has selected a quiz
 - Check if quiz file loaded successfully
 - Verify client is using correct URL
+- Wait for active owner to start a quiz
+
+### Password Dialog Issues
+- Custom dialog should appear for password-protected ZIPs
+- Click "OK" to submit password (dialog disappears immediately)
+- Click "Cancel" to select different quiz
+- Try again with correct password if extraction fails
 
 ## Technical Details
 
 - **ZIP Processing**: Uses js7z library for client-side extraction
-- **Session Storage**: localStorage for session management
+- **Session Storage**: localStorage for session management with multi-client support
 - **Real-time Updates**: Storage events for cross-tab communication
+- **Multi-Client Tracking**: Individual client identification and statistics
+- **Password Handling**: Custom dialogs with proper event handling
 - **Responsive Design**: Works on desktop and mobile devices
 - **Print Support**: Built-in print functionality for quizzes
 
+## Architecture Notes
+
+### Client-Side Architecture
+- **No Backend Required**: Pure client-side application
+- **Static Hosting Compatible**: Perfect for Netlify, GitHub Pages, etc.
+- **LocalStorage Based**: Multi-client tracking using browser storage
+- **Real-time Sync**: Storage events for instant updates
+
+### Scalability Considerations
+- **Small to Medium Groups**: Ideal for classrooms, workshops, small teams
+- **Single Device Limitation**: All clients must use the same browser/device family
+- **Storage Limits**: LocalStorage has size limitations for very large datasets
+
+### Production Recommendations
+For large-scale deployment with many concurrent users across different devices, consider:
+- **Backend Server**: For true multi-device support
+- **WebSocket Support**: For real-time features across devices
+- **Database Storage**: For persistent client data
+- **User Authentication**: For secure multi-device sessions
+
 ---
 
-## Development Notes
+## Version History
 
-This application is designed for simplicity and ease of deployment. The architecture uses client-side storage for session management, making it suitable for static hosting platforms like Netlify without requiring a backend server.
+### v0.2 (Current)
+- ✅ Multi-client tracking with individual identification
+- ✅ Custom password dialogs with proper event handling
+- ✅ Owner priority system with role switching
+- ✅ Enhanced session management and cleanup
+- ✅ Real-time client statistics and monitoring
+- ✅ Improved UI/UX with clean interfaces
 
-For production use with many concurrent users, consider implementing a proper backend with WebSocket support for real-time features.
+### v0.1
+- ✅ Basic owner/client architecture
+- ✅ ZIP file quiz loading
+- ✅ Simple session management
+- ✅ Basic quiz functionality
 
 ---
 
 # Q&A Generator - 中文简介
 
-基于Web的问答测验生成器，采用管理员/客户端架构，支持Netlify部署。
+基于Web的问答测验生成器，具有先进的多客户端跟踪和管理员/客户端架构。
 
-## 主要功能
+## 新功能特性 (v0.2)
 
-- **管理员/客户端架构**：统一登录界面，基于角色的访问控制
-- **动态测验生成**：管理员从 `/zip` 文件夹选择测验文件
-- **实时统计**：管理员可查看客户端答题统计和正确答案
-- **会话管理**：自动登出和会话控制
-- **一键部署**：完全配置好的Netlify部署方案
+### 🔥 **多客户端跟踪**
+- **真实客户端识别** - 基于登录名称
+- **个人客户端统计** - 包含分数和时间戳
+- **实时客户端列表** - 显示所有连接用户
+- **每客户端答题历史** - 提交记录跟踪
+
+### 🔐 **增强密码安全**
+- **自定义密码对话框** - 正确的确定/取消处理
+- **无浏览器提示** - 完全对话框控制
+- **重试逻辑** - 密码错误重试
+- **干净取消** - 无错误消息
+
+### 👥 **管理员优先系统**
+- **首个管理员激活** - 控制测验
+- **其他管理员成为客户端** - 当有人已激活时
+- **无缝角色切换** - 活跃管理员登出时
+- **多管理员支持** - 明确活跃管理员指示
 
 ## 使用方法
 
 ### 管理员操作
 1. **登录**：输入已注册的邮箱地址
-2. **选择测验**：从 `/zip` 文件夹中选择测验文件
-3. **监控结果**：查看题目、正确答案和客户端统计
-4. **登出**：结束会话并停用所有客户端的测验
+2. **成为活跃管理员**：首个登录的管理员控制测验
+3. **选择测验**：从 `/zip` 文件夹中选择测验文件
+4. **监控真实客户端**：查看个人客户端姓名、分数和答题统计
+5. **查看实时更新**：观看客户端实时提交答案
+6. **登出**：结束会话并停用所有客户端的测验
 
-### 客户端操作
+### 客户端操作（包括其他管理员）
 1. **登录**：在测验激活时输入任意标识符
-2. **答题**：完成随机排序的题目
-3. **查看结果**：查看得分和正确答案
-4. **自动登出**：管理员登出时自动返回登录页面
+2. **参加测验**：完成随机排序的题目
+3. **个人跟踪**：您的答案按登录名称单独跟踪
+4. **查看结果**：查看得分和正确答案
+5. **自动登出**：活跃管理员登出时自动返回登录页面
 
 ## 部署到Netlify
 
@@ -216,35 +332,15 @@ For production use with many concurrent users, consider implementing a proper ba
 2. 将仓库连接到Netlify
 3. 每次推送自动部署
 
-## 配置管理员
-
-编辑 `config.js` 添加授权管理员邮箱：
-
-```javascript
-const ownerIdentities = [
-    'admin@example.com',
-    'owner@example.com'
-];
-```
-
-## 测验文件格式
-
-ZIP文件应包含：
-- **CSV文件**：题目和答案
-  - 第1行：题目文本
-  - 第2行：图片文件名（可选）
-  - 第3行起：答案选项（正确答案前加 `` ` ``）
-- **图片文件**：CSV中引用的图片（可选）
-- **密码保护**：支持（可选）
-
-## 添加测验文件
-
-通过GitHub将ZIP文件上传到 `/zip` 文件夹，然后提交推送即可。
-
 ## 技术特点
 
-- **客户端ZIP处理**：使用js7z库
-- **会话存储**：localStorage实现会话管理
-- **实时更新**：存储事件实现跨标签页通信
-- **响应式设计**：支持桌面和移动设备
-- **静态部署**：无需后端服务器
+- **多客户端跟踪**：基于登录名称的个人识别
+- **自定义密码对话框**：完全控制的密码处理
+- **管理员优先系统**：智能角色分配
+- **实时同步**：跨标签页即时更新
+- **完整数据清理**：管理员登出时清空所有数据
+- **响应式设计**：桌面和移动设备完美适配
+
+---
+
+**版本**: v0.2 | **最后更新**: 2024年 | **许可证**: MIT
