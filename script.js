@@ -539,6 +539,23 @@ function cleanupImageUrls() {
     imageUrlMap = {};
 }
 
+async function populateZipDropdown() {
+    try {
+        const response = await fetch('zip/manifest.json');
+        const files = await response.json();
+        const select = document.getElementById('zipFiles');
+        select.innerHTML = '';
+        files.forEach(file => {
+            const option = document.createElement('option');
+            option.value = file;
+            option.textContent = file;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error('Failed to load zip manifest:', e);
+    }
+}
+
 function login() {
     const username = document.getElementById('ownerIdentity').value.trim();
     if (!username) {
@@ -549,6 +566,7 @@ function login() {
     document.getElementById('loginInterface').style.display = 'none';
     document.getElementById('ownerInterface').style.display = 'block';
     document.getElementById('ownerEmail').textContent = username;
+    populateZipDropdown();
 }
 
 // Initialize
