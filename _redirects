@@ -1,3 +1,12 @@
-# Netlify redirects for Q&A Generator
-# Handle directory listing for /zip folder
-/zip/*  /zip/:splat  200 
+# Allow static assets in /test to resolve to root
+/test/styles.css   /styles.css   200
+/test/script.js    /script.js    200
+/test/config.js    /config.js    200
+/test/js7z/*       /js7z/:splat  200
+
+# Block public access to zip folder
+/test/zip/*        /test/404.html 404
+/zip/*             /404.html      404
+
+# SPA fallback for /test (must be last!)
+/test/*            /index.html   200 

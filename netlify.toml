@@ -2,50 +2,6 @@
   publish = "."
   base = "."
 
-# Block public access to zip folder
-[[redirects]]
-  from = "/test/zip/*"
-  to = "/test/404.html"
-  status = 404
-
-[[redirects]]
-  from = "/zip/*"
-  to = "/404.html"
-  status = 404
-
-# Static assets - serve from root with proper paths
-[[redirects]]
-  from = "/test/styles.css"
-  to = "/styles.css"
-  status = 200
-
-[[redirects]]
-  from = "/test/script.js"
-  to = "/script.js"
-  status = 200
-
-[[redirects]]
-  from = "/test/config.js"
-  to = "/config.js"
-  status = 200
-
-[[redirects]]
-  from = "/test/js7z/*"
-  to = "/js7z/:splat"
-  status = 200
-
-# Main redirect for /test subdirectory - rewrite to root index.html
-[[redirects]]
-  from = "/test"
-  to = "/index.html"
-  status = 200
-
-# SPA routing fallback for other /test paths
-[[redirects]]
-  from = "/test/*"
-  to = "/index.html"
-  status = 200
-
 # Headers for zip files in subdirectory
 [[headers]]
   for = "/test/zip/*"
