@@ -598,16 +598,11 @@ function loadQuiz() {
         })
         .then(blob => {
             console.log('Fetched blob:', blob);
-            // Create a File object from the blob (simulate file input)
             selectedZipFile = new File([blob], selectedFile);
             console.log('Created File object:', selectedZipFile);
             document.getElementById('zipName').textContent = selectedFile.replace(/\.[^/.]+$/, "");
-            // Show settings modal or load quiz as needed
-            if (isFirstGenerate) {
-                showModal();
-            } else {
-                loadCSVDataFromZip();
-            }
+            // Always show password modal before extraction
+            showModal();
         })
         .catch(err => {
             alert('Failed to load the selected zip file.');
