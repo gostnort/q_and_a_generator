@@ -110,10 +110,12 @@ let imageUrlMap = {};
 async function loadCSVDataFromZip() {
     if (!selectedZipFile) {
         alert('Please select a ZIP file first');
+        console.error('No selectedZipFile in loadCSVDataFromZip');
         return;
     }
 
     try {
+        console.log('Starting extraction with selectedZipFile:', selectedZipFile);
         // Clear previous image URLs
         Object.values(imageUrlMap).forEach(url => {
             if (url.startsWith('blob:')) {
@@ -126,9 +128,11 @@ async function loadCSVDataFromZip() {
         await ensureJS7zLoaded();
         
         const arrayBuffer = await selectedZipFile.arrayBuffer();
+        console.log('ArrayBuffer from selectedZipFile:', arrayBuffer);
         
         const js7z = await JS7z({
             onExit: (exitCode) => {
+                console.log('JS7z onExit, exitCode:', exitCode);
                 if (exitCode === 0) {
                     try {
                         const files = js7z.FS.readdir('/output');
@@ -206,6 +210,7 @@ async function loadCSVDataFromZip() {
                     }
                 } else {
                     alert('Error extracting ZIP file: Incorrect password or corrupted archive. Falling back to test.csv file.');
+                    console.error('JS7z extraction failed, exitCode:', exitCode);
                     loadCSVDataFromFile().then(() => {
                         isFirstGenerate = false;
                         regenerateQuiz();
@@ -592,8 +597,10 @@ function loadQuiz() {
             return response.blob();
         })
         .then(blob => {
+            console.log('Fetched blob:', blob);
             // Create a File object from the blob (simulate file input)
             selectedZipFile = new File([blob], selectedFile);
+            console.log('Created File object:', selectedZipFile);
             document.getElementById('zipName').textContent = selectedFile.replace(/\.[^/.]+$/, "");
             // Show settings modal or load quiz as needed
             if (isFirstGenerate) {
