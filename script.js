@@ -581,9 +581,16 @@ function loadQuiz() {
         alert('Please select a quiz file.');
         return;
     }
-    // Fetch the selected zip file from /zip/ and set selectedZipFile
-    fetch('/zip/' + selectedFile)
-        .then(response => response.blob())
+    const fetchUrl = '/zip/' + selectedFile;
+    console.log('Attempting to fetch zip file from:', fetchUrl);
+    fetch(fetchUrl)
+        .then(response => {
+            console.log('Fetch response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.blob();
+        })
         .then(blob => {
             // Create a File object from the blob (simulate file input)
             selectedZipFile = new File([blob], selectedFile);
@@ -597,7 +604,7 @@ function loadQuiz() {
         })
         .catch(err => {
             alert('Failed to load the selected zip file.');
-            console.error(err);
+            console.error('Error fetching zip file:', err);
         });
 }
 
