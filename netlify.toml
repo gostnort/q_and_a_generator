@@ -1,9 +1,6 @@
 [build]
   publish = "."
-  
-# Base path for subdirectory deployment
-[context.production]
-  environment = { NODE_ENV = "production", BASE_PATH = "/test" }
+  base = "."
 
 # Block public access to zip folder
 [[redirects]]
