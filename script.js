@@ -582,7 +582,7 @@ function loadQuiz() {
         return;
     }
     // Fetch the selected zip file from /zip/ and set selectedZipFile
-    fetch('zip/' + selectedFile)
+    fetch('/zip/' + selectedFile)
         .then(response => response.blob())
         .then(blob => {
             // Create a File object from the blob (simulate file input)
