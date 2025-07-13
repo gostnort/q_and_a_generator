@@ -539,6 +539,18 @@ function cleanupImageUrls() {
     imageUrlMap = {};
 }
 
+function login() {
+    const username = document.getElementById('ownerIdentity').value.trim();
+    if (!username) {
+        alert('Please enter a username.');
+        return;
+    }
+    // Show owner interface, hide login
+    document.getElementById('loginInterface').style.display = 'none';
+    document.getElementById('ownerInterface').style.display = 'block';
+    document.getElementById('ownerEmail').textContent = username;
+}
+
 // Initialize
 window.addEventListener('load', function() {
     console.log('Page loaded');
