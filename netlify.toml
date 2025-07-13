@@ -1,15 +1,40 @@
 [build]
   publish = "."
   
+# Base path for subdirectory deployment
+[context.production]
+  environment = { NODE_ENV = "production", BASE_PATH = "/test" }
+
+# Block public access to zip folder
+[[redirects]]
+  from = "/test/zip/*"
+  to = "/test/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/zip/*"
+  to = "/404.html"
+  status = 404
+
+# Headers for zip files in subdirectory
 [[headers]]
-  for = "/zip/*"
+  for = "/test/zip/*"
   [headers.values]
     Content-Type = "application/octet-stream"
 
 [[headers]]
+  for = "/test/*.zip"
+  [headers.values]
+    Content-Type = "application/zip"
+
+# Fallback for any zip files at root level (backup)
+[[headers]]
   for = "*.zip"
   [headers.values]
     Content-Type = "application/zip"
-    
-[context.production]
-  environment = { NODE_ENV = "production" } 
+
+# SPA routing fallback for subdirectory
+[[redirects]]
+  from = "/test/*"
+  to = "/test/index.html"
+  status = 200 
