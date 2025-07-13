@@ -5,10 +5,32 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Generator</title>
+    <script>
+        // Detect if we're in /test subdirectory and set base path
+        const isTestPath = window.location.pathname.startsWith('/test');
+        const basePath = isTestPath ? '/test/' : '/';
+        
+        // Set base tag dynamically
+        document.write('<base href="' + basePath + '">');
+        
+        // Only show content if we're in /test path
+        if (!isTestPath) {
+            document.write('<style>body { display: none; }</style>');
+        }
+    </script>
     <link rel="stylesheet" href="styles.css">
     <script src="js7z/js7z.js" type="text/javascript"></script>
 </head>
 <body>
+    <script>
+        // Hide content if not in /test path
+        if (!window.location.pathname.startsWith('/test')) {
+            document.body.style.display = 'none';
+            document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; color: #666;">404 - Page not found</div>';
+            document.body.style.display = 'block';
+        }
+    </script>
+    
     <!-- Login Interface -->
     <div id="loginInterface" class="login-container">
         <div class="login-box">

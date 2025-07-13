@@ -13,6 +13,17 @@
   to = "/404.html"
   status = 404
 
+# Main redirect for /test subdirectory - rewrite to root index.html
+[[redirects]]
+  from = "/test"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/test/*"
+  to = "/index.html"
+  status = 200
+
 # Headers for zip files in subdirectory
 [[headers]]
   for = "/test/zip/*"
@@ -28,10 +39,4 @@
 [[headers]]
   for = "*.zip"
   [headers.values]
-    Content-Type = "application/zip"
-
-# SPA routing fallback for subdirectory
-[[redirects]]
-  from = "/test/*"
-  to = "/test/index.html"
-  status = 200 
+    Content-Type = "application/zip" 
