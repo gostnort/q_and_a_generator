@@ -1,9 +1,7 @@
 let csvData = [];
 let questions = [];
 let isFirstGenerate = true;
-let selectedZipFile = null;
 let settings = {
-    password: '',
     numQuestions: '',
     passPercentage: 90
 };
@@ -11,47 +9,48 @@ let settings = {
 // Fallback embedded CSV data in case no file is found
 const embeddedCSVData = `Unable to load CSV data`;
 
-// Check if JS7z is loaded or wait for it to load
-function ensureJS7zLoaded() {
-    return new Promise((resolve, reject) => {
-        // If JS7z is already defined, resolve immediately
-        if (typeof JS7z !== 'undefined') {
-            console.log('JS7z is already loaded');
-            resolve();
-            return;
-        }
-
-        console.log('Waiting for JS7z to load...');
-        
-        // Check every 100ms if JS7z is loaded
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max
-        
-        const checkInterval = setInterval(() => {
-            attempts++;
-            if (typeof JS7z !== 'undefined') {
-                console.log('JS7z loaded after waiting');
-                clearInterval(checkInterval);
-                resolve();
-            } else if (attempts >= maxAttempts) {
-                console.error('Timeout waiting for JS7z to load');
-                clearInterval(checkInterval);
-                reject(new Error('JS7z failed to load after timeout'));
-            }
-        }, 100);
+// Fetch quiz list from /tests (simulate by hardcoding for now)
+async function populateQuizDropdown() {
+    // In a real app, you might fetch a manifest or list subfolders via an API
+    // For now, hardcode the available quizzes
+    const quizzes = ['sample'];
+    const select = document.getElementById('zipFiles');
+    select.innerHTML = '';
+    quizzes.forEach(quiz => {
+        const option = document.createElement('option');
+        option.value = quiz;
+        option.textContent = quiz;
+        select.appendChild(option);
     });
 }
 
-// Parse CSV data
+// Load CSV data from /tests/{quiz}/test.csv
+async function loadCSVDataFromQuizFolder(quizName) {
+    try {
+        const folder = `/tests/${quizName}/`;
+        const response = await fetch(folder + 'test.csv');
+        if (!response.ok) throw new Error('Quiz CSV not found');
+        const csvText = await response.text();
+        csvData = parseCSV(csvText);
+        isFirstGenerate = false;
+        regenerateQuiz();
+    } catch (error) {
+        alert('Failed to load quiz CSV. Make sure there is a test.csv file in the test folder.');
+        console.error('Error loading quiz CSV:', error);
+        csvData = parseCSV(embeddedCSVData);
+        isFirstGenerate = false;
+        regenerateQuiz();
+    }
+}
+
+// Parse CSV data (unchanged)
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     const data = [];
-    
     for (let line of lines) {
         const row = [];
         let current = '';
         let inQuotes = false;
-        
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
             if (char === '"') {
@@ -66,216 +65,18 @@ function parseCSV(csvText) {
         row.push(current.trim());
         data.push(row);
     }
-    
     return data;
 }
 
-// Handle zip file selection
-function handleZipFile(event) {
-    const file = event.target.files[0];
-    if (file) {
-        selectedZipFile = file;
-        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-        document.getElementById('zipName').textContent = fileNameWithoutExt;
-        console.log('Zip file selected:', file.name);
-        
-        // Show settings modal after file selection
-        if (isFirstGenerate) {
-            showPasswordModal(async function(password) {
-                settings.password = password;
-                await loadCSVDataFromZip();
-            }, function() {
-                // Cancel: do nothing or reset UI if needed
-            });
-        }
-    }
-}
-
-// Load CSV data from test.csv (fallback)
-async function loadCSVDataFromFile() {
-    try {
-        const response = await fetch('test.csv');
-        const csvText = await response.text();
-        csvData = parseCSV(csvText);
-        console.log('CSV Data loaded from test.csv:', csvData);
-        return true;
-    } catch (error) {
-        console.error('Error loading test.csv, using embedded data:', error);
-        // Use embedded data as final fallback
-        csvData = parseCSV(embeddedCSVData);
-        console.log('Using embedded CSV data:', csvData);
-        return true;
-    }
-}
-
-// Global object to store image URLs
-let imageUrlMap = {};
-
-// Extract CSV data from zip file using JS7z
-async function loadCSVDataFromZip() {
-    if (!selectedZipFile) {
-        alert('Please select a ZIP file first');
-        console.error('No selectedZipFile in loadCSVDataFromZip');
-        return;
-    }
-
-    try {
-        console.log('Starting extraction with selectedZipFile:', selectedZipFile);
-        // Clear previous image URLs
-        Object.values(imageUrlMap).forEach(url => {
-            if (url.startsWith('blob:')) {
-                URL.revokeObjectURL(url);
-            }
-        });
-        imageUrlMap = {};
-        
-        // Ensure JS7z is loaded before proceeding
-        await ensureJS7zLoaded();
-        
-        const arrayBuffer = await selectedZipFile.arrayBuffer();
-        console.log('ArrayBuffer from selectedZipFile:', arrayBuffer);
-        
-        const js7z = await JS7z({
-            onExit: async (exitCode) => {
-                console.log('JS7z onExit, exitCode:', exitCode);
-                if (exitCode === 0) {
-                    try {
-                        const files = js7z.FS.readdir('/output');
-                        console.log('Extracted files:', files);
-        
-                        // Process all files - create object URLs for images
-                        console.log("Processing extracted files for images...");
-                        for (const filename of files) {
-                            if (filename === '.' || filename === '..') continue;
-                            
-                            const lowerFilename = filename.toLowerCase();
-                            if (lowerFilename.endsWith('.jpg') || 
-                                lowerFilename.endsWith('.jpeg') || 
-                                lowerFilename.endsWith('.png') ) {
-                                try {
-                                    console.log(`Found image file: ${filename}`);
-                                    const imageData = js7z.FS.readFile('/output/' + filename, {encoding: 'binary'});
-                                    let mimeType = 'image/jpeg';
-                                    if (lowerFilename.endsWith('.png')) mimeType = 'image/png';
-                                    else if (lowerFilename.endsWith('.gif')) mimeType = 'image/gif';
-                                    const blob = new Blob([imageData], {type: mimeType});
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    imageUrlMap[filename] = url;
-                                    imageUrlMap['/output/' + filename] = url;
-                                    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'));
-                                    if (filenameNoExt) {
-                                        imageUrlMap[filenameNoExt] = url;
-                                    }
-                                } catch (readError) {
-                                    console.error('Error reading image file:', filename, readError);
-                                }
-                            }
-                        }
-                        
-                        console.log("Finished processing images. Available images:", Object.keys(imageUrlMap));
-                        
-                        // Look for CSV files
-                        let csvContent = null;
-                        let csvFileName = '';
-                        for (const filename of files) {
-                            if (filename.toLowerCase().endsWith('.csv')) {
-                                csvFileName = filename;
-                                try {
-                                    csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
-                                } catch (readError) {
-                                    console.error('Error reading CSV file from /output/:', filename, readError);
-                                    continue;
-                                }
-                                break;
-                            }
-                        }
-                        
-                        if (!csvContent) {
-                            alert('No CSV file found in the ZIP archive. Falling back to test.csv');
-                            loadCSVDataFromFile().then(() => {
-                                isFirstGenerate = false;
-                                regenerateQuiz();
-                            });
-                            return;
-                        }
-                        
-                        try {
-                            csvData = parseCSV(csvContent);
-                            console.log('CSV Data loaded from ZIP:', csvData);
-                        } catch (parseError) {
-                            alert('Error parsing CSV file from ZIP. Please check the file format.');
-                            console.error('Error parsing CSV file:', parseError, 'Content:', csvContent);
-                            await loadCSVDataFromFile();
-                            isFirstGenerate = false;
-                            regenerateQuiz();
-                            return;
-                        }
-                        isFirstGenerate = false;
-                        regenerateQuiz();
-
-                    } catch (e) {
-                        alert('Error processing extracted files. Falling back to test.csv file.');
-                        console.error('Error processing extracted files:', e);
-                        loadCSVDataFromFile().then(() => {
-                            isFirstGenerate = false;
-                            regenerateQuiz();
-                        });
-                    }
-                } else {
-                    alert('Error extracting ZIP file: Incorrect password or corrupted archive. Falling back to test.csv file.');
-                    console.error('JS7z extraction failed, exitCode:', exitCode);
-                    loadCSVDataFromFile().then(() => {
-                        isFirstGenerate = false;
-                        regenerateQuiz();
-                    });
-                }
-            },
-            onAbort: (reason) => {
-                alert('JS7z aborted. Falling back to test.csv file.');
-                console.error('JS7z aborted:', reason);
-                loadCSVDataFromFile().then(() => {
-                    isFirstGenerate = false;
-                    regenerateQuiz();
-                });
-            },
-        });
-        
-        // Write ZIP file to virtual filesystems
-        js7z.FS.writeFile('/input.zip', new Uint8Array(arrayBuffer));
-        js7z.FS.mkdir('/output');
-        
-        // Extract with password (if provided)
-        const extractArgs = ['x', '/input.zip', '-o/output'];
-        if (settings.password) {
-            extractArgs.push(`-p${settings.password}`);
-        }
-        
-        console.log('Extracting with args:', extractArgs);
-        js7z.callMain(extractArgs);
-        
-    } catch (error) {
-        console.error('Error setting up ZIP extraction:', error);
-        alert('Error preparing ZIP file for extraction. Falling back to test.csv file.');
-        await loadCSVDataFromFile();
-        isFirstGenerate = false;
-        regenerateQuiz();
-    }
-}
-
-// Convert CSV data to questions format
+// Convert CSV data to questions format (update image path)
 function processQuestions() {
     if (csvData.length < 3) return [];
-    
     const questionsData = [];
     const numColumns = Math.max(...csvData.map(row => row.length));
-    
     for (let col = 0; col < numColumns; col++) {
         const questionText = csvData[0][col];
         const imageName = csvData[1][col];
-        
         if (!questionText || questionText.trim() === '') continue;
-        
         const options = [];
         for (let row = 2; row < csvData.length; row++) {
             const option = csvData[row][col];
@@ -283,178 +84,39 @@ function processQuestions() {
                 options.push(option.trim());
             }
         }
-        
-        if (options.length > 0) {
-            // Process image name - use the full filename from the CSV's second row
-            let imageUrl = null;
-            if (imageName && imageName.trim() !== '') {
-                const trimmedImageName = imageName.trim();
-                
-                // First try the exact name as provided in the CSV
-                imageUrl = imageUrlMap[trimmedImageName] || null;
-                
-                // If not found, try looking for the filename in different forms
-                if (!imageUrl) {
-                    console.log(`Looking for image: ${trimmedImageName}`);
-                    
-                    // Log all available image keys for debugging
-                    console.log("Available image keys:", Object.keys(imageUrlMap));
-                    
-                    // Try with just the filename (without path)
-                    const filenameParts = trimmedImageName.split(/[\/\\]/);
-                    const justFilename = filenameParts[filenameParts.length - 1];
-                    if (justFilename !== trimmedImageName) {
-                        imageUrl = imageUrlMap[justFilename] || null;
-                        console.log(`Tried just filename: ${justFilename}, found: ${imageUrl !== null}`);
-                    }
-                    
-                    // If still not found, try with common image extensions
-                    if (!imageUrl) {
-                        const baseNames = [trimmedImageName, justFilename];
-                        const extensions = ['.png', '.jpg', '.jpeg', '.gif'];
-                        
-                        for (const baseName of baseNames) {
-                            // Try exact name first (might already have extension)
-                            if (imageUrlMap[baseName]) {
-                                imageUrl = imageUrlMap[baseName];
-                                console.log(`Found image with base name: ${baseName}`);
-                                break;
-                            }
-                            
-                            // Try with extensions
-                            for (const ext of extensions) {
-                                const nameWithExt = baseName.endsWith(ext) ? baseName : baseName + ext;
-                                if (imageUrlMap[nameWithExt]) {
-                                    imageUrl = imageUrlMap[nameWithExt];
-                                    console.log(`Found image with extension: ${nameWithExt}`);
-                                    break;
-                                }
-                            }
-                            
-                            if (imageUrl) break;
-                        }
-                    }
-                }
-                
-                // If still not found, use the original name as fallback
-                if (!imageUrl) {
-                    console.log(`Image not found in ZIP: ${trimmedImageName}, using as direct path`);
-                    imageUrl = trimmedImageName;
-                }
-            }
-            
-            questionsData.push({
-                text: questionText.trim(),
-                image: imageUrl,
-                options: options,
-                id: col
-            });
+        let imageUrl = null;
+        if (imageName && imageName.trim() !== '') {
+            imageUrl = `/tests/${getCurrentQuizName()}/${imageName.trim()}`;
         }
+        questionsData.push({
+            text: questionText.trim(),
+            image: imageUrl,
+            options: options,
+            id: col
+        });
     }
-    
     return questionsData;
 }
 
-// Shuffle array
-function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-}
-
-// Check if question is multi-select
-function isMultiSelect(options) {
-    return options.filter(opt => opt.startsWith('`')).length > 1;
-}
-
-// Generate quiz
-function generateQuiz() {
-    // Clear score label
-    document.getElementById('scoreLabel').textContent = '';
-    
-    if (isFirstGenerate || csvData.length === 0) {
-        // Open file dialog to select ZIP file
-        document.getElementById('zipFileInput').click();
-    } else {
-        // Just regenerate with existing data
-        regenerateQuiz();
-    }
-}
-
-// Dynamically create and show password modal
-function showPasswordModal(onSubmit, onCancel) {
-    // Remove any existing modal
-    const oldModal = document.getElementById('passwordModal');
-    if (oldModal) oldModal.remove();
-
-    // Create modal container
-    const modal = document.createElement('div');
-    modal.id = 'passwordModal';
-    modal.className = 'modal';
-    modal.style.display = 'block';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h3>Enter ZIP Password</h3>
-            <input type="password" id="zipPassword" placeholder="Password" autofocus>
-            <div class="modal-buttons">
-                <button id="passwordCancel">Cancel</button>
-                <button id="passwordOk">OK</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    // Focus input
-    setTimeout(() => {
-        const input = document.getElementById('zipPassword');
-        if (input) input.focus();
-    }, 100);
-
-    // OK button handler
-    document.getElementById('passwordOk').onclick = function() {
-        const pwd = document.getElementById('zipPassword').value;
-        modal.remove();
-        if (onSubmit) onSubmit(pwd);
-    };
-    // Cancel button handler
-    document.getElementById('passwordCancel').onclick = function() {
-        modal.remove();
-        if (onCancel) onCancel();
-    };
-    // Enter key submits
-    document.getElementById('zipPassword').onkeydown = function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('passwordOk').click();
-        }
-    };
+function getCurrentQuizName() {
+    const select = document.getElementById('zipFiles');
+    return select ? select.value : '';
 }
 
 function regenerateQuiz() {
-    // Defensive check for scoreLabel
     const scoreLabel = document.getElementById('scoreLabel');
     if (scoreLabel) scoreLabel.textContent = '';
-    
     const allQuestions = processQuestions();
-    
+    // Defensive: check for numQuestions input
     const numQuestionsInput = document.getElementById('numQuestions');
-    numQuestionsInput.max = allQuestions.length;
-
-    // If numQuestions setting is invalid or not set, default to all questions.
+    if (numQuestionsInput) numQuestionsInput.max = allQuestions.length;
     if (!settings.numQuestions || settings.numQuestions > allQuestions.length) {
         settings.numQuestions = allQuestions.length;
     }
-    numQuestionsInput.value = settings.numQuestions;
-    
-    // Randomly select questions
+    if (numQuestionsInput) numQuestionsInput.value = settings.numQuestions;
     const shuffledQuestions = shuffleArray(allQuestions);
     questions = shuffledQuestions.slice(0, Math.min(settings.numQuestions, shuffledQuestions.length));
-    
-    // Clear previous results
-    document.getElementById('scoreLabel').textContent = '';
-    
+    if (scoreLabel) scoreLabel.textContent = '';
     renderQuestions();
 }
 
@@ -588,29 +250,7 @@ function printQuiz() {
 
 // Cleanup function to revoke object URLs
 function cleanupImageUrls() {
-    Object.values(imageUrlMap).forEach(url => {
-        if (url.startsWith('blob:')) {
-            URL.revokeObjectURL(url);
-        }
-    });
-    imageUrlMap = {};
-}
-
-async function populateZipDropdown() {
-    try {
-        const response = await fetch('zip/manifest.json');
-        const files = await response.json();
-        const select = document.getElementById('zipFiles');
-        select.innerHTML = '';
-        files.forEach(file => {
-            const option = document.createElement('option');
-            option.value = file;
-            option.textContent = file;
-            select.appendChild(option);
-        });
-    } catch (e) {
-        console.error('Failed to load zip manifest:', e);
-    }
+    // No imageUrlMap to revoke as images are directly fetched
 }
 
 function login() {
@@ -623,7 +263,7 @@ function login() {
     document.getElementById('loginInterface').style.display = 'none';
     document.getElementById('ownerInterface').style.display = 'block';
     document.getElementById('ownerEmail').textContent = username;
-    populateZipDropdown();
+    populateQuizDropdown();
 }
 
 function logout() {
@@ -633,43 +273,19 @@ function logout() {
 
 function loadQuiz() {
     const select = document.getElementById('zipFiles');
-    const selectedFile = select.value;
-    if (!selectedFile) {
-        alert('Please select a quiz file.');
+    const selectedQuiz = select.value;
+    if (!selectedQuiz) {
+        alert('Please select a quiz.');
         return;
     }
-    const fetchUrl = '/zip/' + selectedFile;
-    console.log('Attempting to fetch zip file from:', fetchUrl);
-    fetch(fetchUrl)
-        .then(response => {
-            console.log('Fetch response status:', response.status);
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.status);
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            console.log('Fetched blob:', blob);
-            selectedZipFile = new File([blob], selectedFile);
-            console.log('Created File object:', selectedZipFile);
-            document.getElementById('zipName').textContent = selectedFile.replace(/\.[^/.]+$/, "");
-            // Always show password modal before extraction
-            showPasswordModal(async function(password) {
-                settings.password = password;
-                await loadCSVDataFromZip();
-            }, function() {
-                // Cancel: do nothing or reset UI if needed
-            });
-        })
-        .catch(err => {
-            alert('Failed to load the selected zip file.');
-            console.error('Error fetching zip file:', err);
-        });
+    document.getElementById('zipName').textContent = selectedQuiz;
+    loadCSVDataFromQuizFolder(selectedQuiz);
 }
 
 // Initialize
 window.addEventListener('load', function() {
     console.log('Page loaded');
+    populateQuizDropdown(); // Populate dropdown on load
 });
 
 // Cleanup on page unload
