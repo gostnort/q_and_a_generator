@@ -81,7 +81,12 @@ function handleZipFile(event) {
         
         // Show settings modal after file selection
         if (isFirstGenerate) {
-            showModal();
+            showPasswordModal(async function(password) {
+                settings.password = password;
+                await loadCSVDataFromZip();
+            }, function() {
+                // Cancel: do nothing or reset UI if needed
+            });
         }
     }
 }
@@ -370,22 +375,52 @@ function generateQuiz() {
     }
 }
 
-function showModal() {
-    document.getElementById('settingsModal').style.display = 'block';
-}
+// Dynamically create and show password modal
+function showPasswordModal(onSubmit, onCancel) {
+    // Remove any existing modal
+    const oldModal = document.getElementById('passwordModal');
+    if (oldModal) oldModal.remove();
 
-function closeModal() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.id = 'passwordModal';
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Enter ZIP Password</h3>
+            <input type="password" id="zipPassword" placeholder="Password" autofocus>
+            <div class="modal-buttons">
+                <button id="passwordCancel">Cancel</button>
+                <button id="passwordOk">OK</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 
-async function applySettings() {
-    settings.password = document.getElementById('zipPassword').value;
-    settings.numQuestions = parseInt(document.getElementById('numQuestions').value);
-    settings.passPercentage = parseInt(document.getElementById('passPercentage').value);
-    
-    closeModal();
-    
-    await loadCSVDataFromZip();
+    // Focus input
+    setTimeout(() => {
+        const input = document.getElementById('zipPassword');
+        if (input) input.focus();
+    }, 100);
+
+    // OK button handler
+    document.getElementById('passwordOk').onclick = function() {
+        const pwd = document.getElementById('zipPassword').value;
+        modal.remove();
+        if (onSubmit) onSubmit(pwd);
+    };
+    // Cancel button handler
+    document.getElementById('passwordCancel').onclick = function() {
+        modal.remove();
+        if (onCancel) onCancel();
+    };
+    // Enter key submits
+    document.getElementById('zipPassword').onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('passwordOk').click();
+        }
+    };
 }
 
 function regenerateQuiz() {
@@ -602,7 +637,12 @@ function loadQuiz() {
             console.log('Created File object:', selectedZipFile);
             document.getElementById('zipName').textContent = selectedFile.replace(/\.[^/.]+$/, "");
             // Always show password modal before extraction
-            showModal();
+            showPasswordModal(async function(password) {
+                settings.password = password;
+                await loadCSVDataFromZip();
+            }, function() {
+                // Cancel: do nothing or reset UI if needed
+            });
         })
         .catch(err => {
             alert('Failed to load the selected zip file.');
