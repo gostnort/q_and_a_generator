@@ -105,8 +105,8 @@ function loadQuizPreview() {
     }
 }
 
-// Load quiz and show preview
-function loadQuiz() {
+// Load quiz and show preview - make sure it's globally accessible
+window.loadQuiz = function loadQuiz() {
     console.log('loadQuiz function called');
     
     const select = document.getElementById('tests');
@@ -391,8 +391,8 @@ function updateSubmissionCount(count) {
     }
 }
 
-// Logout function
-function logout() {
+// Logout function - make sure it's globally accessible
+window.logout = function logout() {
     // Stop monitoring first
     stopClientMonitoring();
     
