@@ -9,10 +9,14 @@ let currentUsername = '';
 // Fetch quiz list from /tests (simulate by hardcoding for now)
 async function populateQuizDropdown() {
     if (typeof testFolders === 'undefined' || !Array.isArray(testFolders)) {
-        alert('No testFolders defined in config.js');
+        console.error('No testFolders defined in config.js');
         return;
     }
     const select = document.getElementById('tests');
+    if (!select) {
+        console.error('Tests dropdown element not found');
+        return;
+    }
     select.innerHTML = '';
     testFolders.forEach(quiz => {
         const option = document.createElement('option');
@@ -281,18 +285,20 @@ function login() {
         document.getElementById('ownerInterface').classList.remove('hide');
         document.getElementById('clientInterface').classList.add('hide');
         document.getElementById('ownerEmail').textContent = username;
-        populateQuizDropdown();
-        // Show questions for owner in original order
-        // (Owner loads quiz via Load Quiz button)
+        // Small delay to ensure DOM elements are available
+        setTimeout(() => {
+            populateQuizDropdown();
+        }, 50);
     } else {
         userRole = 'client';
         document.getElementById('loginInterface').classList.add('hide');
         document.getElementById('ownerInterface').classList.add('hide');
         document.getElementById('clientInterface').classList.remove('hide');
         document.getElementById('zipName').textContent = '';
-        // For client, wait for quiz to be loaded and then show shuffled questions
-        // (Client loads quiz via Load Quiz button or auto-load)
-        populateQuizDropdown();
+        // Small delay to ensure DOM elements are available
+        setTimeout(() => {
+            populateQuizDropdown();
+        }, 50);
     }
 }
 
