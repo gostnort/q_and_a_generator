@@ -9,8 +9,8 @@
 </head>
 <body>
     <script>
-        // Hide content if not in /test path
-        if (!window.location.pathname.startsWith('/test')) {
+        // Hide content if not in /test path (only on production/Netlify)
+        if (window.location.hostname.includes('netlify') && !window.location.pathname.startsWith('/test')) {
             document.body.style.display = 'none';
             document.body.innerHTML = '<div class="not-found-message">404 - Page not found</div>';
             document.body.style.display = 'block';
