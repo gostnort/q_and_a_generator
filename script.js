@@ -277,18 +277,18 @@ function login() {
     // Determine role using isValidOwner from config.js
     if (typeof isValidOwner === 'function' && isValidOwner(username)) {
         userRole = 'owner';
-        document.getElementById('loginInterface').style.display = 'none';
-        document.getElementById('ownerInterface').style.display = 'block';
-        document.getElementById('clientInterface').style.display = 'none';
+        document.getElementById('loginInterface').classList.add('hide');
+        document.getElementById('ownerInterface').classList.remove('hide');
+        document.getElementById('clientInterface').classList.add('hide');
         document.getElementById('ownerEmail').textContent = username;
         populateQuizDropdown();
         // Show questions for owner in original order
         // (Owner loads quiz via Load Quiz button)
     } else {
         userRole = 'client';
-        document.getElementById('loginInterface').style.display = 'none';
-        document.getElementById('ownerInterface').style.display = 'none';
-        document.getElementById('clientInterface').style.display = 'block';
+        document.getElementById('loginInterface').classList.add('hide');
+        document.getElementById('ownerInterface').classList.add('hide');
+        document.getElementById('clientInterface').classList.remove('hide');
         document.getElementById('zipName').textContent = '';
         // For client, wait for quiz to be loaded and then show shuffled questions
         // (Client loads quiz via Load Quiz button or auto-load)

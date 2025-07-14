@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Generator</title>
     <link rel="icon" href="review.ico">
@@ -13,7 +12,7 @@
         // Hide content if not in /test path
         if (!window.location.pathname.startsWith('/test')) {
             document.body.style.display = 'none';
-            document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; color: #666;">404 - Page not found</div>';
+            document.body.innerHTML = '<div class="not-found-message">404 - Page not found</div>';
             document.body.style.display = 'block';
         }
     </script>
@@ -28,7 +27,7 @@
     </div>
 
     <!-- Owner Interface -->
-    <div id="ownerInterface" class="owner-container" style="display: none;">
+    <div id="ownerInterface" class="owner-container hide">
         <div class="header">
             <div class="header-left">
                 <h2>Owner Dashboard</h2>
@@ -51,7 +50,7 @@
     </div>
 
     <!-- Client Quiz Interface -->
-    <div id="clientInterface" class="client-container" style="display: none;">
+    <div id="clientInterface" class="client-container hide">
         <div class="header">
             <div class="header-left">
                 <h2 class="zip-name" id="zipName">Quiz</h2>
