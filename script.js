@@ -1,15 +1,10 @@
 let csvData = [];
 let questions = [];
-let isFirstGenerate = true;
 let settings = {
-    numQuestions: '',
     passPercentage: 90
 };
 let userRole = null; // 'owner' or 'client'
 let currentUsername = '';
-
-// Fallback embedded CSV data in case no file is found
-const embeddedCSVData = `Unable to load CSV data`;
 
 // Fetch quiz list from /tests (simulate by hardcoding for now)
 async function populateQuizDropdown() {
@@ -27,22 +22,18 @@ async function populateQuizDropdown() {
     });
 }
 
-// Load CSV data from /tests/{quiz}/test.csv
+// Load CSV data from /tests/{quiz}/quiz.csv
 async function loadCSVDataFromQuizFolder(quizName) {
     try {
         const folder = `/tests/${quizName}/`;
-        const response = await fetch(folder + 'test.csv');
+        const response = await fetch(folder + 'quiz.csv');
         if (!response.ok) throw new Error('Quiz CSV not found');
         const csvText = await response.text();
         csvData = parseCSV(csvText);
-        isFirstGenerate = false;
         regenerateQuiz();
     } catch (error) {
-        alert('Failed to load quiz CSV. Make sure there is a test.csv file in the test folder.');
+        alert('Failed to load quiz CSV. Make sure there is a quiz.csv file in the quiz folder.');
         console.error('Error loading quiz CSV:', error);
-        csvData = parseCSV(embeddedCSVData);
-        isFirstGenerate = false;
-        regenerateQuiz();
     }
 }
 
@@ -116,23 +107,22 @@ function shuffleArray(array) {
     return arr;
 }
 
+// Check if question has multiple correct answers (checkbox vs radio)
+function isMultiSelect(options) {
+    const correctCount = options.filter(opt => opt.startsWith('`')).length;
+    return correctCount > 1;
+}
+
 function regenerateQuiz() {
     const scoreLabel = document.getElementById('scoreLabel');
     if (scoreLabel) scoreLabel.textContent = '';
     const allQuestions = processQuestions();
-    // Defensive: check for numQuestions input
-    const numQuestionsInput = document.getElementById('numQuestions');
-    if (numQuestionsInput) numQuestionsInput.max = allQuestions.length;
-    if (!settings.numQuestions || settings.numQuestions > allQuestions.length) {
-        settings.numQuestions = allQuestions.length;
-    }
-    if (numQuestionsInput) numQuestionsInput.value = settings.numQuestions;
+    
     let selectedQuestions;
     if (userRole === 'client') {
-        const shuffledQuestions = shuffleArray(allQuestions);
-        selectedQuestions = shuffledQuestions.slice(0, Math.min(settings.numQuestions, shuffledQuestions.length));
+        selectedQuestions = shuffleArray(allQuestions);
     } else {
-        selectedQuestions = allQuestions.slice(0, Math.min(settings.numQuestions, allQuestions.length));
+        selectedQuestions = allQuestions;
     }
     questions = selectedQuestions;
     if (scoreLabel) scoreLabel.textContent = '';
@@ -261,9 +251,20 @@ function printQuiz() {
     window.print();
 }
 
-// Cleanup function to revoke object URLs
-function cleanupImageUrls() {
-    // No imageUrlMap to revoke as images are directly fetched
+function shareQuiz() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: 'Q&A Quiz',
+            url: url
+        }).catch(console.error);
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Quiz URL copied to clipboard!');
+        }).catch(() => {
+            alert(`Share this URL: ${url}`);
+        });
+    }
 }
 
 function login() {
@@ -309,15 +310,21 @@ function loadQuiz() {
     }
     document.getElementById('zipName').textContent = selectedQuiz;
     loadCSVDataFromQuizFolder(selectedQuiz);
+    
+    // Show questions for owner in original order
+    if (userRole === 'owner') {
+        setTimeout(() => {
+            const ownerContainer = document.getElementById('ownerQuestions');
+            const clientContainer = document.getElementById('questionsContainer');
+            if (ownerContainer && clientContainer) {
+                ownerContainer.innerHTML = clientContainer.innerHTML;
+            }
+        }, 100); // Small delay to ensure questions are rendered
+    }
 }
 
 // Initialize
 window.addEventListener('load', function() {
     console.log('Page loaded');
     populateQuizDropdown(); // Populate dropdown on load
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', function() {
-    cleanupImageUrls();
 }); 

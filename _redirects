@@ -2,11 +2,9 @@
 /test/styles.css   /styles.css   200
 /test/script.js    /script.js    200
 /test/config.js    /config.js    200
-/test/js7z/*       /js7z/:splat  200
 
-# Block public access to zip folder
-/test/zip/*        /test/404.html 404
-/zip/*             /404.html      404
+# Allow access to tests folder
+/test/tests/*      /tests/:splat  200
 
 # SPA fallback for /test (must be last!)
 /test/*            /index.html   200 
