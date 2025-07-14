@@ -11,12 +11,13 @@ const embeddedCSVData = `Unable to load CSV data`;
 
 // Fetch quiz list from /tests (simulate by hardcoding for now)
 async function populateQuizDropdown() {
-    // In a real app, you might fetch a manifest or list subfolders via an API
-    // For now, hardcode the available quizzes
-    const quizzes = ['sample'];
-    const select = document.getElementById('zipFiles');
+    if (typeof testFolders === 'undefined' || !Array.isArray(testFolders)) {
+        alert('No testFolders defined in config.js');
+        return;
+    }
+    const select = document.getElementById('tests');
     select.innerHTML = '';
-    quizzes.forEach(quiz => {
+    testFolders.forEach(quiz => {
         const option = document.createElement('option');
         option.value = quiz;
         option.textContent = quiz;
@@ -99,7 +100,7 @@ function processQuestions() {
 }
 
 function getCurrentQuizName() {
-    const select = document.getElementById('zipFiles');
+    const select = document.getElementById('tests');
     return select ? select.value : '';
 }
 
@@ -272,7 +273,7 @@ function logout() {
 }
 
 function loadQuiz() {
-    const select = document.getElementById('zipFiles');
+    const select = document.getElementById('tests');
     const selectedQuiz = select.value;
     if (!selectedQuiz) {
         alert('Please select a quiz.');

@@ -279,25 +279,25 @@ button {
     margin: 20px 0;
 }
 
-.zip-selector {
+.test-selector {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-.zip-selector label {
+.test-selector label {
     font-weight: bold;
     min-width: 100px;
 }
 
-.zip-selector select {
+.test-selector select {
     flex: 1;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
 
-.zip-selector button {
+.test-selector button {
     background-color: #28a745;
     color: white;
     padding: 8px 16px;
@@ -306,7 +306,7 @@ button {
     cursor: pointer;
 }
 
-.zip-selector button:hover {
+.test-selector button:hover {
     background-color: #218838;
 }
 

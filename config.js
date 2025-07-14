@@ -5,3 +5,5 @@ const ownerIdentities = [
 function isValidOwner(identity) {
     return ownerIdentities.includes(identity.toLowerCase());
 }
+
+const testFolders = ['sample'];
