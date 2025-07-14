@@ -183,13 +183,11 @@ async function loadCSVDataFromZip() {
                                 csvFileName = filename;
                                 try {
                                     csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
-                                    console.log('CSV file found:', filename);
-                                    console.log('CSV file content:', csvContent);
-                                    break;
                                 } catch (readError) {
-                                    console.error('Error reading file:', filename, readError);
+                                    console.error('Error reading CSV file from /output/:', filename, readError);
                                     continue;
                                 }
+                                break;
                             }
                         }
                         
