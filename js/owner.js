@@ -29,6 +29,11 @@ window.addEventListener('load', function() {
     // Populate quiz dropdown
     populateQuizDropdown('tests');
     
+    // Initialize load button state
+    const loadBtn = document.getElementById('loadQuizBtn');
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Select a Quiz';
+    
     // Check if there's an active session
     checkActiveSession();
 });
@@ -42,13 +47,93 @@ function checkActiveSession() {
     }
 }
 
-// Start a new quiz session
-function startQuizSession() {
+// Load quiz preview when dropdown changes
+function loadQuizPreview() {
+    const select = document.getElementById('tests');
+    const loadBtn = document.getElementById('loadQuizBtn');
+    
+    if (select.value) {
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Load Quiz';
+    } else {
+        loadBtn.disabled = true;
+        loadBtn.textContent = 'Select a Quiz';
+    }
+}
+
+// Load quiz and show preview
+async function loadQuiz() {
     const select = document.getElementById('tests');
     const selectedQuiz = select.value;
     if (!selectedQuiz) {
         alert('Please select a quiz.');
         return;
+    }
+    
+    try {
+        // Load and parse the quiz
+        const response = await fetch(`../${selectedQuiz}/quiz.csv`);
+        const csvData = await response.text();
+        const questions = parseCSV(csvData);
+        
+        if (questions.length === 0) {
+            alert('No questions found in the quiz.');
+            return;
+        }
+        
+        // Show preview
+        showQuizPreview(questions, selectedQuiz);
+        
+        // Auto-start the session immediately
+        startQuizSession(selectedQuiz);
+        
+    } catch (error) {
+        console.error('Error loading quiz:', error);
+        alert('Failed to load quiz. Please check the quiz file.');
+    }
+}
+
+// Show quiz preview
+function showQuizPreview(questions, quizName) {
+    const previewDiv = document.getElementById('quizPreview');
+    const contentDiv = document.getElementById('previewContent');
+    
+    let html = '';
+    questions.forEach((question, index) => {
+        html += `
+            <div class="question">
+                <div class="question-header">${index + 1}. ${question.question}</div>
+                ${question.image ? `<div class="question-image"><img src="../${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                <div class="options">
+        `;
+        
+        question.options.forEach(option => {
+            const isCorrect = option === question.correctAnswer;
+            html += `
+                <div class="option ${isCorrect ? 'correct-answer owner-correct-answer' : ''}">
+                    <input type="radio" disabled>
+                    <span class="option-text">${option}</span>
+                    ${isCorrect ? '<span class="result-icon correct-mark">✓ Correct</span>' : ''}
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+    });
+    
+    contentDiv.innerHTML = html;
+    previewDiv.classList.remove('hide');
+}
+
+// Start a new quiz session (modified to accept quiz name parameter)
+function startQuizSession(selectedQuiz = null) {
+    if (!selectedQuiz) {
+        const select = document.getElementById('tests');
+        selectedQuiz = select.value;
+        if (!selectedQuiz) {
+            alert('Please select a quiz.');
+            return;
+        }
     }
     
     // Set active quiz in shared state
@@ -61,7 +146,7 @@ function startQuizSession() {
     // Start monitoring clients
     startClientMonitoring();
     
-    alert(`Quiz session started! Clients can now access the "${selectedQuiz}" quiz.`);
+    console.log(`Quiz session started! Clients can now access the "${selectedQuiz}" quiz.`);
 }
 
 // End current quiz session

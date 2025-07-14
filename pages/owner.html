@@ -37,9 +37,15 @@
         
         <div class="owner-controls">
             <div class="test-selector">
-                <label for="tests">Select Quiz for Clients:</label>
-                <select id="tests"></select>
-                <button onclick="startQuizSession()">Start Quiz Session</button>
+                <label for="tests">Select Quiz:</label>
+                <select id="tests" onchange="loadQuizPreview()"></select>
+                <button id="loadQuizBtn" onclick="loadQuiz()" class="generate-btn">Load Quiz</button>
+            </div>
+            
+            <!-- Quiz Preview Section -->
+            <div id="quizPreview" class="quiz-preview hide">
+                <h3>Quiz Preview (Original Order)</h3>
+                <div id="previewContent"></div>
             </div>
             
             <div id="sessionInfo" class="session-info hide">
