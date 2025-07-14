@@ -435,6 +435,10 @@ function showPasswordModal(onSubmit, onCancel) {
 }
 
 function regenerateQuiz() {
+    // Defensive check for scoreLabel
+    const scoreLabel = document.getElementById('scoreLabel');
+    if (scoreLabel) scoreLabel.textContent = '';
+    
     const allQuestions = processQuestions();
     
     const numQuestionsInput = document.getElementById('numQuestions');
@@ -458,6 +462,10 @@ function regenerateQuiz() {
 
 function renderQuestions() {
     const container = document.getElementById('questionsContainer');
+    if (!container) {
+        console.error('questionsContainer not found!');
+        return;
+    }
     container.innerHTML = '';
     
     questions.forEach((question, qIndex) => {
