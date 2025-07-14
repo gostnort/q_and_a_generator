@@ -22,23 +22,32 @@ A web-based Q&A quiz generator with owner/client architecture and role-based que
 ## How It Works
 
 ### For Owners
-1. **Login**: Enter your registered email address
-2. **Select Quiz**: Choose from available quizzes in the dropdown
-3. **Monitor**: View questions in original order for reference
-4. **Control**: Manage the quiz session and monitor client progress
+1. **Login**: Enter your registered email address on the main page
+2. **Dashboard**: Automatically redirected to dedicated owner dashboard
+3. **Select Quiz**: Choose from available quizzes in the dropdown
+4. **Monitor**: View questions in original order with correct answers highlighted
+5. **Logout**: Return to login page when finished
 
 ### For Clients
-1. **Login**: Enter any username to access the quiz
-2. **Take Quiz**: Complete randomized questions with shuffled options
-3. **Submit**: Get immediate feedback with correct answers highlighted
-4. **Results**: View score and performance summary
+1. **Login**: Enter any username on the main page
+2. **Quiz Interface**: Automatically redirected to dedicated client interface
+3. **Select Quiz**: Choose from available quizzes
+4. **Take Quiz**: Complete randomized questions with shuffled options
+5. **Submit**: Get immediate feedback with correct answers highlighted
+6. **Results**: View score and performance summary
 
 ## File Structure
 
 ```
 /
-├── index.html          # Single entry point for all users
-├── script.js           # Main application logic with role-based features
+├── index.html          # Login page (main entry point)
+├── pages/              # Application pages
+│   ├── owner.html      # Owner dashboard
+│   └── client.html     # Client quiz interface
+├── js/                 # JavaScript modules
+│   ├── common.js       # Shared utilities
+│   ├── owner.js        # Owner-specific logic
+│   └── client.js       # Client-specific logic
 ├── styles.css          # Mobile-first responsive styling
 ├── config.js           # Owner email and quiz configuration
 ├── tests/              # Quiz directory
@@ -96,9 +105,12 @@ const testFolders = ['sample', 'quiz2', 'quiz3'];
 
 ## Technical Features
 
+- **Modular Architecture**: Clean separation between owner and client functionality
 - **Pure Client-Side**: No backend required, runs entirely in browser
 - **Mobile-Optimized**: 100% mobile-first design for cellphone use
-- **Role-Based Logic**: Smart differentiation between owners and clients
+- **Role-Based Routing**: Automatic redirection to appropriate interface
+- **Dedicated Pages**: Separate HTML pages for owner dashboard and client quiz
+- **Shared Utilities**: Common JavaScript modules for efficiency
 - **CSV Processing**: Simple text-based quiz format
 - **Image Support**: Optional images for questions
 - **Touch-Friendly**: Large buttons and easy navigation
@@ -136,10 +148,13 @@ const testFolders = ['sample', 'quiz2', 'quiz3'];
 - **Responsive Text**: Font sizes optimized for small screens
 - **Minimal UI**: Clean, distraction-free interface
 
-### Role-Based Logic
-- **Owner Experience**: Questions in original order for monitoring
+### Modular Architecture
+- **Separate Pages**: Dedicated HTML files for each role (owner.html, client.html)
+- **Shared Components**: Common utilities in js/common.js for efficiency
+- **Role-Specific Logic**: Dedicated JavaScript files (owner.js, client.js)
+- **Clean Routing**: Login page redirects to appropriate interface
+- **Owner Experience**: Questions in original order with answer highlighting
 - **Client Experience**: Randomized questions and shuffled options
-- **Automatic Detection**: Role determined by email configuration
 - **Fair Assessment**: Each client gets unique but equivalent experience
 
 ### Static Hosting Compatible

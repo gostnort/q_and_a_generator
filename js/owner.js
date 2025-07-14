@@ -12,14 +12,14 @@ window.addEventListener('load', function() {
     
     if (!username) {
         // Redirect to login if no username
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     
     // Verify user is actually an owner
     if (checkUserRole(username) !== 'owner') {
         alert('Access denied. Owner credentials required.');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     
@@ -112,5 +112,5 @@ function logout() {
     // Clear session data
     sessionStorage.removeItem('username');
     // Redirect to login
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 } 

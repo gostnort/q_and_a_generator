@@ -12,7 +12,7 @@ window.addEventListener('load', function() {
     
     if (!username) {
         // Redirect to login if no username
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     
