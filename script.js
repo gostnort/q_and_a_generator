@@ -5,6 +5,8 @@ let settings = {
     numQuestions: '',
     passPercentage: 90
 };
+let userRole = null; // 'owner' or 'client'
+let currentUsername = '';
 
 // Fallback embedded CSV data in case no file is found
 const embeddedCSVData = `Unable to load CSV data`;
@@ -104,6 +106,16 @@ function getCurrentQuizName() {
     return select ? select.value : '';
 }
 
+// Fisher-Yates shuffle
+function shuffleArray(array) {
+    let arr = array.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 function regenerateQuiz() {
     const scoreLabel = document.getElementById('scoreLabel');
     if (scoreLabel) scoreLabel.textContent = '';
@@ -115,8 +127,14 @@ function regenerateQuiz() {
         settings.numQuestions = allQuestions.length;
     }
     if (numQuestionsInput) numQuestionsInput.value = settings.numQuestions;
-    const shuffledQuestions = shuffleArray(allQuestions);
-    questions = shuffledQuestions.slice(0, Math.min(settings.numQuestions, shuffledQuestions.length));
+    let selectedQuestions;
+    if (userRole === 'client') {
+        const shuffledQuestions = shuffleArray(allQuestions);
+        selectedQuestions = shuffledQuestions.slice(0, Math.min(settings.numQuestions, shuffledQuestions.length));
+    } else {
+        selectedQuestions = allQuestions.slice(0, Math.min(settings.numQuestions, allQuestions.length));
+    }
+    questions = selectedQuestions;
     if (scoreLabel) scoreLabel.textContent = '';
     renderQuestions();
 }
@@ -128,22 +146,18 @@ function renderQuestions() {
         return;
     }
     container.innerHTML = '';
-    
     questions.forEach((question, qIndex) => {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
         questionDiv.setAttribute('data-question-id', question.id);
-        
         const isMulti = isMultiSelect(question.options);
         const inputType = isMulti ? 'checkbox' : 'radio';
         const inputName = `question_${qIndex}`;
-        
         let html = `
             <div class="question-header">
                 ${qIndex + 1}. ${question.text}
             </div>
         `;
-        
         if (question.image) {
             html += `
                 <div class="question-image">
@@ -153,11 +167,10 @@ function renderQuestions() {
             `;
             console.log(`Rendering image with src: ${question.image}`);
         }
-        
-        // Shuffle options
-        const shuffledOptions = shuffleArray(question.options.map((opt, idx) => ({text: opt, originalIndex: idx})));
-        
-        shuffledOptions.forEach((option, optIndex) => {
+        // Shuffle options for clients only
+        let optionObjs = question.options.map((opt, idx) => ({text: opt, originalIndex: idx}));
+        const displayOptions = (userRole === 'client') ? shuffleArray(optionObjs) : optionObjs;
+        displayOptions.forEach((option, optIndex) => {
             const optionId = `${inputName}_${optIndex}`;
             const optionText = option.text.startsWith('`') ? option.text.substring(1) : option.text;
             html += `
@@ -168,7 +181,6 @@ function renderQuestions() {
                 </div>
             `;
         });
-        
         questionDiv.innerHTML = html;
         container.appendChild(questionDiv);
     });
@@ -260,11 +272,27 @@ function login() {
         alert('Please enter a username.');
         return;
     }
-    // Show owner interface, hide login
-    document.getElementById('loginInterface').style.display = 'none';
-    document.getElementById('ownerInterface').style.display = 'block';
-    document.getElementById('ownerEmail').textContent = username;
-    populateQuizDropdown();
+    currentUsername = username;
+    // Determine role using isValidOwner from config.js
+    if (typeof isValidOwner === 'function' && isValidOwner(username)) {
+        userRole = 'owner';
+        document.getElementById('loginInterface').style.display = 'none';
+        document.getElementById('ownerInterface').style.display = 'block';
+        document.getElementById('clientInterface').style.display = 'none';
+        document.getElementById('ownerEmail').textContent = username;
+        populateQuizDropdown();
+        // Show questions for owner in original order
+        // (Owner loads quiz via Load Quiz button)
+    } else {
+        userRole = 'client';
+        document.getElementById('loginInterface').style.display = 'none';
+        document.getElementById('ownerInterface').style.display = 'none';
+        document.getElementById('clientInterface').style.display = 'block';
+        document.getElementById('zipName').textContent = '';
+        // For client, wait for quiz to be loaded and then show shuffled questions
+        // (Client loads quiz via Load Quiz button or auto-load)
+        populateQuizDropdown();
+    }
 }
 
 function logout() {
