@@ -43,7 +43,8 @@ A web-based Q&A quiz generator with owner/client architecture and role-based que
 ├── index.html          # Login page (main entry point)
 ├── pages/              # Application pages
 │   ├── owner.html      # Owner dashboard
-│   └── client.html     # Client quiz interface
+│   ├── client.html     # Client quiz interface
+│   └── 404.html        # Error page
 ├── js/                 # JavaScript modules
 │   ├── common.js       # Shared utilities
 │   ├── owner.js        # Owner-specific logic
