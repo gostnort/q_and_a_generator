@@ -46,23 +46,15 @@ window.addEventListener('load', function() {
             }
         }, 100);
         
-        // Initialize load button state after dropdown is populated
+        // Keep the button always enabled and let loadQuiz() handle validation
         setTimeout(() => {
             const loadBtn = document.getElementById('loadQuizBtn');
-            const select = document.getElementById('tests');
-            
-            if (loadBtn && select) {
-                // Check if there's already a value selected
-                if (select.value && select.value.trim() !== '') {
-                    loadBtn.disabled = false;
-                    loadBtn.textContent = 'Load Quiz';
-                    console.log('Button enabled for pre-selected quiz:', select.value);
-                } else {
-                    loadBtn.disabled = true;
-                    loadBtn.textContent = 'Select a Quiz';
-                }
+            if (loadBtn) {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Quiz';
+                console.log('Load button enabled and ready');
             }
-        }, 200);
+        }, 100);
         
         // Check if there's an active session
         checkActiveSession();
