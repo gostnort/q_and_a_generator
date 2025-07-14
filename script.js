@@ -80,7 +80,7 @@ function processQuestions() {
         }
         let imageUrl = null;
         if (imageName && imageName.trim() !== '') {
-            imageUrl = `/tests/${getCurrentQuizName()}/${imageName.trim()}`;
+            imageUrl = `/tests/${getCurrentQuizName()}/${encodeURIComponent(imageName.trim())}`;
         }
         questionsData.push({
             text: questionText.trim(),
