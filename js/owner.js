@@ -104,67 +104,101 @@ function loadQuizPreview() {
 }
 
 // Load quiz and show preview
-async function loadQuiz() {
+function loadQuiz() {
+    console.log('loadQuiz function called');
+    
     const select = document.getElementById('tests');
+    if (!select) {
+        console.error('Tests select element not found');
+        alert('Quiz selector not found. Please refresh the page.');
+        return;
+    }
+    
     const selectedQuiz = select.value;
     if (!selectedQuiz) {
         alert('Please select a quiz.');
         return;
     }
     
-    try {
-        // Load and parse the quiz
-        const response = await fetch(`../${selectedQuiz}/quiz.csv`);
-        const csvData = await response.text();
-        const questions = parseCSV(csvData);
-        
-        if (questions.length === 0) {
-            alert('No questions found in the quiz.');
-            return;
-        }
-        
-        // Show preview
-        showQuizPreview(questions, selectedQuiz);
-        
-        // Auto-start the session immediately
-        startQuizSession(selectedQuiz);
-        
-    } catch (error) {
-        console.error('Error loading quiz:', error);
-        alert('Failed to load quiz. Please check the quiz file.');
-    }
+    console.log('Loading quiz:', selectedQuiz);
+    
+    // Use fetch with .then() instead of async/await to avoid potential issues
+    fetch(`../${selectedQuiz}/quiz.csv`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(csvData => {
+            console.log('CSV data loaded, parsing...');
+            const questions = parseCSV(csvData);
+            
+            if (questions.length === 0) {
+                alert('No questions found in the quiz.');
+                return;
+            }
+            
+            console.log('Questions parsed:', questions.length);
+            
+            // Show preview
+            showQuizPreview(questions, selectedQuiz);
+            
+            // Auto-start the session immediately
+            startQuizSession(selectedQuiz);
+        })
+        .catch(error => {
+            console.error('Error loading quiz:', error);
+            alert('Failed to load quiz. Please check the quiz file: ' + error.message);
+        });
 }
 
 // Show quiz preview
 function showQuizPreview(questions, quizName) {
+    console.log('showQuizPreview called with', questions.length, 'questions');
+    
     const previewDiv = document.getElementById('quizPreview');
     const contentDiv = document.getElementById('previewContent');
     
-    let html = '';
-    questions.forEach((question, index) => {
-        html += `
-            <div class="question">
-                <div class="question-header">${index + 1}. ${question.question}</div>
-                ${question.image ? `<div class="question-image"><img src="../${quizName}/${question.image}" alt="Question image"></div>` : ''}
-                <div class="options">
-        `;
-        
-        question.options.forEach(option => {
-            const isCorrect = option === question.correctAnswer;
+    if (!previewDiv || !contentDiv) {
+        console.error('Preview elements not found');
+        alert('Preview area not found. Please refresh the page.');
+        return;
+    }
+    
+    try {
+        let html = '';
+        questions.forEach((question, index) => {
             html += `
-                <div class="option ${isCorrect ? 'correct-answer owner-correct-answer' : ''}">
-                    <input type="radio" disabled>
-                    <span class="option-text">${option}</span>
-                    ${isCorrect ? '<span class="result-icon correct-mark">✓ Correct</span>' : ''}
-                </div>
+                <div class="question">
+                    <div class="question-header">${index + 1}. ${question.question}</div>
+                    ${question.image ? `<div class="question-image"><img src="../${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                    <div class="options">
             `;
+            
+            if (question.options && Array.isArray(question.options)) {
+                question.options.forEach(option => {
+                    const isCorrect = option === question.correctAnswer;
+                    html += `
+                        <div class="option ${isCorrect ? 'correct-answer owner-correct-answer' : ''}">
+                            <input type="radio" disabled>
+                            <span class="option-text">${option}</span>
+                            ${isCorrect ? '<span class="result-icon correct-mark">✓ Correct</span>' : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            html += '</div></div>';
         });
         
-        html += '</div></div>';
-    });
-    
-    contentDiv.innerHTML = html;
-    previewDiv.classList.remove('hide');
+        contentDiv.innerHTML = html;
+        previewDiv.classList.remove('hide');
+        console.log('Quiz preview shown successfully');
+    } catch (error) {
+        console.error('Error showing quiz preview:', error);
+        alert('Error displaying quiz preview: ' + error.message);
+    }
 }
 
 // Start a new quiz session (modified to accept quiz name parameter)
