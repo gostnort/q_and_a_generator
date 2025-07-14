@@ -142,4 +142,81 @@ function shareQuiz() {
             alert(`Share this URL: ${url}`);
         });
     }
+}
+
+// State Management System
+const STATE_KEYS = {
+    ACTIVE_QUIZ: 'activeQuiz',
+    QUIZ_SESSION: 'quizSession',
+    CLIENT_SUBMISSIONS: 'clientSubmissions'
+};
+
+// Quiz Session Management
+function setActiveQuiz(quizName) {
+    const sessionData = {
+        quizName: quizName,
+        startTime: new Date().toISOString(),
+        sessionId: generateSessionId()
+    };
+    localStorage.setItem(STATE_KEYS.QUIZ_SESSION, JSON.stringify(sessionData));
+    localStorage.setItem(STATE_KEYS.ACTIVE_QUIZ, quizName);
+    
+    // Clear previous submissions when starting new quiz
+    localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+    
+    console.log('Active quiz set:', quizName);
+}
+
+function getActiveQuiz() {
+    return localStorage.getItem(STATE_KEYS.ACTIVE_QUIZ);
+}
+
+function getQuizSession() {
+    const sessionData = localStorage.getItem(STATE_KEYS.QUIZ_SESSION);
+    return sessionData ? JSON.parse(sessionData) : null;
+}
+
+function clearQuizSession() {
+    localStorage.removeItem(STATE_KEYS.ACTIVE_QUIZ);
+    localStorage.removeItem(STATE_KEYS.QUIZ_SESSION);
+    localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+}
+
+// Client Submission Management
+function saveClientSubmission(clientName, submissionData) {
+    const submissions = getClientSubmissions();
+    const submission = {
+        clientName: clientName,
+        submissionTime: new Date().toISOString(),
+        answers: submissionData.answers,
+        score: submissionData.score,
+        percentage: submissionData.percentage,
+        passed: submissionData.passed
+    };
+    
+    // Remove existing submission from same client
+    const filteredSubmissions = submissions.filter(s => s.clientName !== clientName);
+    filteredSubmissions.push(submission);
+    
+    localStorage.setItem(STATE_KEYS.CLIENT_SUBMISSIONS, JSON.stringify(filteredSubmissions));
+    console.log('Client submission saved:', clientName);
+}
+
+function getClientSubmissions() {
+    const submissions = localStorage.getItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+    return submissions ? JSON.parse(submissions) : [];
+}
+
+function getClientSubmission(clientName) {
+    const submissions = getClientSubmissions();
+    return submissions.find(s => s.clientName === clientName) || null;
+}
+
+// Utility functions
+function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function formatTime(isoString) {
+    return new Date(isoString).toLocaleTimeString();
 } 

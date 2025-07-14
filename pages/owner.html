@@ -37,13 +37,27 @@
         
         <div class="owner-controls">
             <div class="test-selector">
-                <label for="tests">Select Quiz:</label>
+                <label for="tests">Select Quiz for Clients:</label>
                 <select id="tests"></select>
-                <button onclick="loadQuiz()">Load Quiz</button>
+                <button onclick="startQuizSession()">Start Quiz Session</button>
+            </div>
+            
+            <div id="sessionInfo" class="session-info hide">
+                <h3>Active Session</h3>
+                <div id="sessionDetails"></div>
+                <button onclick="endQuizSession()" class="end-session-btn">End Session</button>
             </div>
         </div>
         
-        <div id="ownerQuestions"></div>
+        <!-- Client Monitoring Section -->
+        <div id="clientMonitoring" class="client-monitoring hide">
+            <h3>Client Submissions</h3>
+            <div class="monitoring-controls">
+                <button onclick="refreshSubmissions()" class="refresh-btn">Refresh</button>
+                <span id="submissionCount" class="submission-count">No submissions yet</span>
+            </div>
+            <div id="submissionsList" class="submissions-list"></div>
+        </div>
     </div>
 
     <script src="../config.js"></script>

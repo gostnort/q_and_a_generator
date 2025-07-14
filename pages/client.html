@@ -26,11 +26,15 @@
     <!-- Client Quiz Interface -->
     <div class="client-container">
         <div class="header">
-            <div class="header-left">
-                <h2 class="zip-name" id="zipName">Quiz</h2>
+            <div class="header-top">
+                <div class="header-left">
+                    <h2 class="quiz-name" id="quizName">Waiting for Quiz...</h2>
+                </div>
+                <div class="header-right">
+                    <div class="score-label" id="scoreLabel"></div>
+                </div>
             </div>
-            <div class="header-right">
-                <div class="score-label" id="scoreLabel"></div>
+            <div class="header-bottom">
                 <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
                 <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
                 <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
@@ -39,16 +43,13 @@
         
         <hr class="header-separator">
         
-        <div id="questionsContainer"></div>
-        
-        <!-- Quiz selector for clients -->
-        <div class="client-controls">
-            <div class="test-selector">
-                <label for="tests">Select Quiz:</label>
-                <select id="tests"></select>
-                <button onclick="loadQuiz()">Load Quiz</button>
-            </div>
+        <!-- Quiz Status -->
+        <div id="quizStatus" class="quiz-status">
+            <div class="status-message">Waiting for owner to start a quiz session...</div>
         </div>
+        
+        <!-- Questions Container -->
+        <div id="questionsContainer"></div>
     </div>
 
     <script src="../config.js"></script>
