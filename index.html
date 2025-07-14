@@ -49,9 +49,9 @@
             // Determine role and redirect
             const role = checkUserRole(username);
             if (role === 'owner') {
-                window.location.href = `pages/owner.html?user=${encodeURIComponent(username)}`;
+                window.location.href = `/test/pages/owner.html?user=${encodeURIComponent(username)}`;
             } else {
-                window.location.href = `pages/client.html?user=${encodeURIComponent(username)}`;
+                window.location.href = `/test/pages/client.html?user=${encodeURIComponent(username)}`;
             }
         }
         
