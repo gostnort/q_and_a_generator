@@ -1,7 +1,9 @@
 # Allow static assets in /test to resolve to root
 /test/styles.css   /styles.css   200
-/test/script.js    /script.js    200
 /test/config.js    /config.js    200
+/test/js/*         /js/:splat    200
+/test/owner.html   /owner.html   200
+/test/client.html  /client.html  200
 
 # Allow access to tests folder
 /test/tests/*      /tests/:splat  200

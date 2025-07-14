@@ -333,6 +333,28 @@ button {
     box-sizing: border-box;
 }
 
+/* Owner-specific styles */
+.owner-correct-answer {
+    background-color: #d4edda;
+    border: 1px solid #28a745;
+}
+
+.correct-indicator {
+    color: #28a745;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Client controls (for quiz selection) */
+.client-controls {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 20px 0;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
 /* Owner Questions Display */
 #ownerQuestions .question {
     border: 2px solid #28a745;

@@ -32,49 +32,35 @@
         </div>
     </div>
 
-    <!-- Owner Interface -->
-    <div id="ownerInterface" class="owner-container hide">
-        <div class="header">
-            <div class="header-left">
-                <h2>Owner Dashboard</h2>
-                <span id="ownerEmail" class="owner-email"></span>
-            </div>
-            <div class="header-right">
-                <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-        </div>
-        
-        <div class="owner-controls">
-            <div class="test-selector">
-                <label for="tests">Select Quiz:</label>
-                <select id="tests"></select>
-                <button onclick="loadQuiz()">Load Quiz</button>
-            </div>
-        </div>
-        
-        <div id="ownerQuestions"></div>
-    </div>
-
-    <!-- Client Quiz Interface -->
-    <div id="clientInterface" class="client-container hide">
-        <div class="header">
-            <div class="header-left">
-                <h2 class="zip-name" id="zipName">Quiz</h2>
-            </div>
-            <div class="header-right">
-                <div class="score-label" id="scoreLabel"></div>
-                <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
-                <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
-                <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
-            </div>
-        </div>
-        
-        <hr class="header-separator">
-        
-        <div id="questionsContainer"></div>
-    </div>
-
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        // Simple login function that redirects to appropriate page
+        function login() {
+            const username = document.getElementById('ownerIdentity').value.trim();
+            if (!username) {
+                alert('Please enter a username.');
+                return;
+            }
+            
+            // Store username in session storage
+            sessionStorage.setItem('username', username);
+            
+            // Determine role and redirect
+            const role = checkUserRole(username);
+            if (role === 'owner') {
+                window.location.href = `owner.html?user=${encodeURIComponent(username)}`;
+            } else {
+                window.location.href = `client.html?user=${encodeURIComponent(username)}`;
+            }
+        }
+        
+        // Allow Enter key to trigger login
+        document.getElementById('ownerIdentity').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
 </body>
 </html> 
