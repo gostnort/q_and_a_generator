@@ -136,7 +136,7 @@ async function loadCSVDataFromZip() {
         console.log('ArrayBuffer from selectedZipFile:', arrayBuffer);
         
         const js7z = await JS7z({
-            onExit: (exitCode) => {
+            onExit: async (exitCode) => {
                 console.log('JS7z onExit, exitCode:', exitCode);
                 if (exitCode === 0) {
                     try {
@@ -183,6 +183,8 @@ async function loadCSVDataFromZip() {
                                 csvFileName = filename;
                                 try {
                                     csvContent = js7z.FS.readFile('/output/' + filename, {encoding: 'utf8'});
+                                    console.log('CSV file found:', filename);
+                                    console.log('CSV file content:', csvContent);
                                     break;
                                 } catch (readError) {
                                     console.error('Error reading file:', filename, readError);
@@ -200,8 +202,17 @@ async function loadCSVDataFromZip() {
                             return;
                         }
                         
-                        csvData = parseCSV(csvContent);
-                        console.log('CSV Data loaded from ZIP:', csvData);
+                        try {
+                            csvData = parseCSV(csvContent);
+                            console.log('CSV Data loaded from ZIP:', csvData);
+                        } catch (parseError) {
+                            alert('Error parsing CSV file from ZIP. Please check the file format.');
+                            console.error('Error parsing CSV file:', parseError, 'Content:', csvContent);
+                            await loadCSVDataFromFile();
+                            isFirstGenerate = false;
+                            regenerateQuiz();
+                            return;
+                        }
                         isFirstGenerate = false;
                         regenerateQuiz();
 
