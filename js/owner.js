@@ -46,12 +46,23 @@ window.addEventListener('load', function() {
             }
         }, 100);
         
-        // Initialize load button state
-        const loadBtn = document.getElementById('loadQuizBtn');
-        if (loadBtn) {
-            loadBtn.disabled = true;
-            loadBtn.textContent = 'Select a Quiz';
-        }
+        // Initialize load button state after dropdown is populated
+        setTimeout(() => {
+            const loadBtn = document.getElementById('loadQuizBtn');
+            const select = document.getElementById('tests');
+            
+            if (loadBtn && select) {
+                // Check if there's already a value selected
+                if (select.value && select.value.trim() !== '') {
+                    loadBtn.disabled = false;
+                    loadBtn.textContent = 'Load Quiz';
+                    console.log('Button enabled for pre-selected quiz:', select.value);
+                } else {
+                    loadBtn.disabled = true;
+                    loadBtn.textContent = 'Select a Quiz';
+                }
+            }
+        }, 200);
         
         // Check if there's an active session
         checkActiveSession();
@@ -91,12 +102,16 @@ function loadQuizPreview() {
             return;
         }
         
-        if (select.value) {
+        console.log('loadQuizPreview called, dropdown value:', select.value);
+        
+        if (select.value && select.value.trim() !== '') {
             loadBtn.disabled = false;
             loadBtn.textContent = 'Load Quiz';
+            console.log('Button enabled for quiz:', select.value);
         } else {
             loadBtn.disabled = true;
             loadBtn.textContent = 'Select a Quiz';
+            console.log('Button disabled, no quiz selected');
         }
     } catch (error) {
         console.error('Error in loadQuizPreview:', error);
