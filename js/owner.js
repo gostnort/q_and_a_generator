@@ -2,40 +2,73 @@
 let currentUsername = '';
 let refreshInterval = null;
 
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.error('JavaScript Error:', e.error);
+    console.error('File:', e.filename, 'Line:', e.lineno);
+});
+
 // Initialize owner interface
 window.addEventListener('load', function() {
     console.log('Owner page loaded');
     
-    // Get username from URL parameters or session storage
-    const urlParams = new URLSearchParams(window.location.search);
-    const username = urlParams.get('user') || sessionStorage.getItem('username');
-    
-    if (!username) {
-        // Redirect to login if no username
-        window.location.href = '/test/';
-        return;
+    try {
+        // Get username from URL parameters or session storage
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('user') || sessionStorage.getItem('username');
+        
+        if (!username) {
+            // Redirect to login if no username
+            window.location.href = '/test/';
+            return;
+        }
+        
+        // Verify user is actually an owner
+        if (checkUserRole(username) !== 'owner') {
+            alert('Access denied. Owner credentials required.');
+            window.location.href = '/test/';
+            return;
+        }
+        
+        currentUsername = username;
+        const ownerEmailElement = document.getElementById('ownerEmail');
+        if (ownerEmailElement) {
+            ownerEmailElement.textContent = username;
+        }
+        
+        // Populate quiz dropdown
+        setTimeout(() => {
+            try {
+                populateQuizDropdown('tests');
+            } catch (error) {
+                console.error('Error populating quiz dropdown:', error);
+                alert('Error loading quiz list. Please refresh the page.');
+            }
+        }, 100);
+        
+        // Initialize load button state
+        const loadBtn = document.getElementById('loadQuizBtn');
+        if (loadBtn) {
+            loadBtn.disabled = true;
+            loadBtn.textContent = 'Select a Quiz';
+        }
+        
+        // Check if there's an active session
+        checkActiveSession();
+        
+        // Check if required functions exist
+        console.log('Checking required functions...');
+        console.log('checkUserRole exists:', typeof checkUserRole);
+        console.log('populateQuizDropdown exists:', typeof populateQuizDropdown);
+        console.log('getQuizSession exists:', typeof getQuizSession);
+        console.log('testFolders exists:', typeof testFolders);
+        
+        console.log('Owner interface initialized successfully');
+        
+    } catch (error) {
+        console.error('Error initializing owner interface:', error);
+        alert('Error loading owner dashboard. Please refresh the page.');
     }
-    
-    // Verify user is actually an owner
-    if (checkUserRole(username) !== 'owner') {
-        alert('Access denied. Owner credentials required.');
-        window.location.href = '/test/';
-        return;
-    }
-    
-    currentUsername = username;
-    document.getElementById('ownerEmail').textContent = username;
-    
-    // Populate quiz dropdown
-    populateQuizDropdown('tests');
-    
-    // Initialize load button state
-    const loadBtn = document.getElementById('loadQuizBtn');
-    loadBtn.disabled = true;
-    loadBtn.textContent = 'Select a Quiz';
-    
-    // Check if there's an active session
-    checkActiveSession();
 });
 
 // Check for existing active session
@@ -49,15 +82,24 @@ function checkActiveSession() {
 
 // Load quiz preview when dropdown changes
 function loadQuizPreview() {
-    const select = document.getElementById('tests');
-    const loadBtn = document.getElementById('loadQuizBtn');
-    
-    if (select.value) {
-        loadBtn.disabled = false;
-        loadBtn.textContent = 'Load Quiz';
-    } else {
-        loadBtn.disabled = true;
-        loadBtn.textContent = 'Select a Quiz';
+    try {
+        const select = document.getElementById('tests');
+        const loadBtn = document.getElementById('loadQuizBtn');
+        
+        if (!select || !loadBtn) {
+            console.error('Required elements not found for quiz preview');
+            return;
+        }
+        
+        if (select.value) {
+            loadBtn.disabled = false;
+            loadBtn.textContent = 'Load Quiz';
+        } else {
+            loadBtn.disabled = true;
+            loadBtn.textContent = 'Select a Quiz';
+        }
+    } catch (error) {
+        console.error('Error in loadQuizPreview:', error);
     }
 }
 
