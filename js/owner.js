@@ -46,12 +46,12 @@ window.addEventListener('load', function() {
             }
         }, 100);
         
-        // Keep the button always enabled and let loadQuiz() handle validation
+        // Keep the button enabled - don't change the text from HTML
         setTimeout(() => {
             const loadBtn = document.getElementById('loadQuizBtn');
             if (loadBtn) {
                 loadBtn.disabled = false;
-                loadBtn.textContent = 'Load Quiz';
+                // Don't change textContent - keep what's in HTML
                 console.log('Load button enabled and ready');
             }
         }, 100);
@@ -96,15 +96,10 @@ function loadQuizPreview() {
         
         console.log('loadQuizPreview called, dropdown value:', select.value);
         
-        if (select.value && select.value.trim() !== '') {
-            loadBtn.disabled = false;
-            loadBtn.textContent = 'Load Quiz';
-            console.log('Button enabled for quiz:', select.value);
-        } else {
-            loadBtn.disabled = true;
-            loadBtn.textContent = 'Select a Quiz';
-            console.log('Button disabled, no quiz selected');
-        }
+        // Always keep button enabled, don't change text
+        loadBtn.disabled = false;
+        // Don't change textContent - keep what's in HTML
+        console.log('Button state updated for quiz:', select.value);
     } catch (error) {
         console.error('Error in loadQuizPreview:', error);
     }
