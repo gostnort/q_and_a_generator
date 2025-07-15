@@ -117,7 +117,7 @@ window.loadQuiz = function loadQuiz() {
     console.log('Loading quiz:', selectedQuiz);
     // Use fetch with .then() instead of async/await to avoid potential issues
     // 完整地址是：http://localhost:8080/test/tests/${selectedQuiz}/quiz.csv
-    fetch(`/test/tests/${selectedQuiz}/quiz.csv`)
+    fetch(`../tests/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
             console.log('Raw CSV data:', csvData);
@@ -157,7 +157,7 @@ function showQuizPreview(questions, quizName) {
             html += `
                 <div class="question">
                     <div class="question-header">${index + 1}. ${question.question}</div>
-                    ${question.image ? `<div class="question-image"><img src="/test/tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                    ${question.image ? `<div class="question-image"><img src="../tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
                     <div class="options">
             `;
             
