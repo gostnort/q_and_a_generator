@@ -9,6 +9,9 @@ let settings = {
 function parseCSV(csvText) {
     const lines = csvText.split('\n');
     const result = [];
+    if (csvText.length <= 1) {
+        return result;
+    }
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (line) {

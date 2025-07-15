@@ -108,50 +108,33 @@ function loadQuizPreview() {
 // Load quiz and show preview - make sure it's globally accessible
 window.loadQuiz = function loadQuiz() {
     console.log('loadQuiz function called');
-    
     const select = document.getElementById('tests');
-    if (!select) {
-        console.error('Tests select element not found');
-        alert('Quiz selector not found. Please refresh the page.');
-        return;
-    }
-    
     const selectedQuiz = select.value;
     if (!selectedQuiz) {
         alert('Please select a quiz.');
         return;
     }
-    
     console.log('Loading quiz:', selectedQuiz);
-    
     // Use fetch with .then() instead of async/await to avoid potential issues
-    fetch(`../tests/${selectedQuiz}/quiz.csv`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.text();
-        })
+    // 完整地址是：http://localhost:8080/test/tests/${selectedQuiz}/quiz.csv
+    fetch(`./tests/${selectedQuiz}/quiz.csv`)
+        .then(response => response.text())
         .then(csvData => {
             console.log('CSV data loaded, parsing...');
             const questions = parseCSV(csvData);
-            
-            if (questions.length === 0) {
-                alert('No questions found in the quiz.');
+            if (!questions || questions.length === 0) {
+                alert('No questions found in the quiz or failed to parse CSV data.');
                 return;
             }
-            
             console.log('Questions parsed:', questions.length);
-            
             // Show preview
             showQuizPreview(questions, selectedQuiz);
-            
             // Auto-start the session immediately
             startQuizSession(selectedQuiz);
         })
         .catch(error => {
-            console.error('Error loading quiz:', error);
-            alert('Failed to load quiz. Please check the quiz file: ' + error.message);
+            console.error('Error loading quiz:', error.message);
+            return;
         });
 }
 
@@ -174,7 +157,7 @@ function showQuizPreview(questions, quizName) {
             html += `
                 <div class="question">
                     <div class="question-header">${index + 1}. ${question.question}</div>
-                    ${question.image ? `<div class="question-image"><img src="../tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                    ${question.image ? `<div class="question-image"><img src="./tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
                     <div class="options">
             `;
             
