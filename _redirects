@@ -1,11 +1,11 @@
-# Allow static assets in /test to resolve to root
+# Allow access to tests folder first
+/test/tests/*      /tests/:splat  200
+
+# Then other static assets
 /test/styles.css   /styles.css   200
 /test/config.js    /config.js    200
 /test/js/*         /js/:splat    200
 /test/pages/*      /pages/:splat 200
-
-# Allow access to tests folder
-/test/tests/*      /tests/:splat  200
 
 # SPA fallback for /test (must be last!)
 /test/*            /index.html   200 
