@@ -117,7 +117,8 @@ window.loadQuiz = function loadQuiz() {
     console.log('Loading quiz:', selectedQuiz);
     // Use fetch with .then() instead of async/await to avoid potential issues
     // 完整地址是：http://localhost:8080/tests/${selectedQuiz}/quiz.csv
-    fetch(`/tests/${selectedQuiz}/quiz.csv`)
+    const baseUrl = window.location.origin;
+    fetch(`${baseUrl}/tests/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
             console.log('Raw CSV data:', csvData);
