@@ -125,7 +125,7 @@ window.loadQuiz = function loadQuiz() {
     console.log('Loading quiz:', selectedQuiz);
     
     // Use fetch with .then() instead of async/await to avoid potential issues
-    fetch(`../${selectedQuiz}/quiz.csv`)
+    fetch(`../tests/${selectedQuiz}/quiz.csv`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -174,7 +174,7 @@ function showQuizPreview(questions, quizName) {
             html += `
                 <div class="question">
                     <div class="question-header">${index + 1}. ${question.question}</div>
-                    ${question.image ? `<div class="question-image"><img src="../${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                    ${question.image ? `<div class="question-image"><img src="../tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
                     <div class="options">
             `;
             
@@ -399,7 +399,7 @@ window.logout = function logout() {
     // Ask if they want to end the session
     const session = getQuizSession();
     if (session) {
-        if (confirm('You have an active quiz session. Do you want to end it before logging out?')) {
+        if (confirm('The client will be kicked out of the quiz. Do you want to end it before logging out?')) {
             clearQuizSession();
         }
     }
