@@ -120,7 +120,7 @@ window.loadQuiz = function loadQuiz() {
     fetch(`./tests/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
-            console.log('CSV data loaded, parsing...');
+            console.log('Raw CSV data:', csvData);
             const questions = parseCSV(csvData);
             if (!questions || questions.length === 0) {
                 alert('No questions found in the quiz or failed to parse CSV data.');
