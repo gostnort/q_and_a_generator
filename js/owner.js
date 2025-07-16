@@ -115,10 +115,9 @@ window.loadQuiz = function loadQuiz() {
         return;
     }
     console.log('Loading quiz:', selectedQuiz);
-    // Use fetch with .then() instead of async/await to avoid potential issues
-    // 完整地址是：http://localhost:8080/tests/${selectedQuiz}/quiz.csv
-    const baseUrl = window.location.origin;
-    fetch(`${baseUrl}/tests/${selectedQuiz}/quiz.csv`)
+    // 使用GitHub Raw URL
+    const githubRawUrl = 'https://raw.githubusercontent.com/YOUR_USERNAME/q_and_a_generator/main';
+    fetch(`${githubRawUrl}/tests/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
             console.log('Raw CSV data:', csvData);
@@ -151,7 +150,6 @@ function showQuizPreview(questions, quizName) {
         alert('Preview area not found. Please refresh the page.');
         return;
     }
-    
     try {
         let html = '';
         questions.forEach((question, index) => {
