@@ -176,8 +176,8 @@ window.loadQuiz = function loadQuiz() {
             // Initialize analytics with randomized questions
             initializeAnalytics(randomizedQuestions);
             
-            // Auto-start the session immediately
-            startQuizSession(selectedQuiz);
+            // Show start session option instead of auto-starting
+            showStartSessionOption();
         })
         .catch(error => {
             console.error('Error loading quiz:', error.message);
@@ -262,6 +262,37 @@ function startQuizSession(selectedQuiz = null) {
     console.log(`Quiz session started! Clients can now access the "${selectedQuiz}" quiz.`);
 }
 
+// Start new session manually (separate from quiz loading)
+window.startNewSession = function startNewSession() {
+    const select = document.getElementById('tests');
+    const selectedQuiz = select.value;
+    
+    if (!selectedQuiz) {
+        alert('Please select a quiz first.');
+        return;
+    }
+    
+    // Check if quiz is loaded
+    if (!window.randomizedQuestions || window.randomizedQuestions.length === 0) {
+        alert('Please load a quiz first before starting a session.');
+        return;
+    }
+    
+    console.log('=== startNewSession called for:', selectedQuiz, '===');
+    
+    // Set active quiz in shared state
+    setActiveQuiz(selectedQuiz);
+    
+    // Show session info
+    const session = getQuizSession();
+    showActiveSession(session);
+    
+    // Start monitoring clients
+    startClientMonitoring();
+    
+    console.log(`New session started! Clients can now access the "${selectedQuiz}" quiz.`);
+};
+
 // End current quiz session
 function endQuizSession() {
     if (confirm('Are you sure you want to end the current quiz session?')) {
@@ -277,6 +308,7 @@ function showActiveSession(session) {
     const sessionInfo = document.getElementById('sessionInfo');
     const sessionDetails = document.getElementById('sessionDetails');
     const clientMonitoring = document.getElementById('clientMonitoring');
+    const startSessionInfo = document.getElementById('startSessionInfo');
     
     sessionDetails.innerHTML = `
         <div class="session-detail">
@@ -291,6 +323,7 @@ function showActiveSession(session) {
     `;
     
     sessionInfo.classList.remove('hide');
+    startSessionInfo.classList.add('hide');
     clientMonitoring.classList.remove('hide');
     
     // Hide quiz selector
@@ -299,10 +332,31 @@ function showActiveSession(session) {
     document.querySelector('.test-selector select').disabled = true;
 }
 
+// Show start session option
+function showStartSessionOption() {
+    const sessionInfo = document.getElementById('sessionInfo');
+    const startSessionInfo = document.getElementById('startSessionInfo');
+    const clientMonitoring = document.getElementById('clientMonitoring');
+    
+    sessionInfo.classList.add('hide');
+    startSessionInfo.classList.remove('hide');
+    clientMonitoring.classList.add('hide');
+    
+    // Enable quiz selector
+    document.querySelector('.test-selector').style.opacity = '1';
+    document.querySelector('.test-selector button').disabled = false;
+    document.querySelector('.test-selector select').disabled = false;
+}
+
 // Hide active session info
 function hideActiveSession() {
-    document.getElementById('sessionInfo').classList.add('hide');
-    document.getElementById('clientMonitoring').classList.add('hide');
+    const sessionInfo = document.getElementById('sessionInfo');
+    const startSessionInfo = document.getElementById('startSessionInfo');
+    const clientMonitoring = document.getElementById('clientMonitoring');
+    
+    sessionInfo.classList.add('hide');
+    startSessionInfo.classList.remove('hide');
+    clientMonitoring.classList.add('hide');
     
     // Show quiz selector
     document.querySelector('.test-selector').style.opacity = '1';
