@@ -14,11 +14,10 @@
   status = 200
 
 # Environment variables (set these in Netlify dashboard)
-[context.production.environment]
-  JSONBIN_API_KEY = "your_jsonbin_api_key_here"
-
-[context.deploy-preview.environment]
-  JSONBIN_API_KEY = "your_jsonbin_api_key_here"
+# JSONBIN_API_KEY should be set in Netlify dashboard, not in this file
+# Go to Site settings > Environment variables and add:
+# Key: JSONBIN_API_KEY
+# Value: $2a$10$dfbMBkQ8onTuhMRt/yU4q.wqFZQm/GKEpBBBDb9lKofngGMe9mUGC
 
 # Security headers for HTML pages only
 [[headers]]

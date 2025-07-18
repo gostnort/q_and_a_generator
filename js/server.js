@@ -25,19 +25,15 @@ function initializeApiKey() {
     return false;
 }
 
-// Function to set API key securely
+// Function to set API key securely (removed for security)
 function setApiKey(key) {
-    API_KEY = key;
-    console.log('API key set successfully');
+    console.warn('Manual API key setting disabled for security. Use environment variables only.');
+    return false;
 }
 
-// Function to prompt user for API key
+// Function to prompt user for API key (removed for security)
 function promptForApiKey() {
-    const key = prompt('Please enter your JSONBin.io X-Master-Key for server functionality:');
-    if (key && key.trim()) {
-        setApiKey(key.trim());
-        return true;
-    }
+    console.warn('API key not found. Please set JSONBIN_API_KEY environment variable in Netlify dashboard.');
     return false;
 }
 

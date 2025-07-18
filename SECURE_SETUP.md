@@ -18,8 +18,8 @@
 - Netlify will automatically redeploy with the new environment variable
 - The API key will be securely available to your application
 
-## Option 2: User Prompt (Fallback)
-If the environment variable is not set, the app will prompt users to enter their API key when needed.
+## Option 2: Environment Variables Only (Secure)
+The app now only accepts API keys through environment variables. No user prompts or manual input allowed for security.
 
 ## Option 3: Local Development
 For local development, you can:
@@ -48,6 +48,7 @@ For local development, you can:
 4. Verify server communication works
 
 ## Troubleshooting
-- If you see "API key required" prompts, the environment variable isn't set correctly
+- If you see "API key not found" warnings, the environment variable isn't set correctly
 - Check Netlify logs for environment variable issues
-- Ensure the API key is valid and has proper permissions 
+- Ensure the API key is valid and has proper permissions
+- The app will fall back to localStorage if no API key is available 
