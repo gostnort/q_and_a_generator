@@ -36,7 +36,7 @@
     <div id="ownerDashboard" class="owner-container hide">
         <div class="header">
             <div class="header-left">
-                <h2>Owner Dashboard#2</h2>
+                <h2>Owner Dashboard#3</h2>
                 <span id="ownerName" class="owner-email"></span>
             </div>
             <div class="header-right">
@@ -133,9 +133,8 @@
             currentUser = userName;
             sessionStorage.setItem('userName', userName);
             
-            // Check if user is owner (using email from config)
-            const ownerEmails = window.ownerIdentities || [];
-            const isOwner = ownerEmails.some(email => userName.toLowerCase().includes(email.split('@')[0]));
+            // Check if user is owner using the isValidOwner function from config.js
+            const isOwner = typeof isValidOwner === 'function' && isValidOwner(userName);
             
             if (isOwner) {
                 currentUserRole = 'owner';
