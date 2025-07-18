@@ -126,6 +126,7 @@
     </div>
 
     <script src="collections/config.js"></script>
+    <script src="js/server.js"></script>
     <script src="js/common.js"></script>
     <script src="js/owner.js"></script>
     <script src="js/client.js"></script>
@@ -135,7 +136,7 @@
         let currentUserRole = '';
         
         // Simple login function
-        function login() {
+        async function login() {
             const userName = document.getElementById('userName').value.trim();
             if (!userName) {
                 alert('Please enter your name.');
@@ -158,7 +159,7 @@
                 currentUserRole = 'client';
                 console.log('User is client, checking for active session');
                 // Check if there's an active quiz session
-                const activeSession = getQuizSession();
+                const activeSession = await getQuizSession();
                 console.log('Active session check result:', activeSession);
                 if (activeSession) {
                     console.log('Active session found, showing client interface');
