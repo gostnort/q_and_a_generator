@@ -95,14 +95,17 @@ window.loadQuiz = function loadQuiz() {
     // Use updated path for collections structure
     fetch(`/collections/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
-        .then(csvData => {
-            console.log('Raw CSV data:', csvData);
-            const questions = parseCSV(csvData);
-            if (!questions || questions.length === 0) {
+        .then(csvText => {
+            console.log('Raw CSV data:', csvText);
+            const parsedCsvData = parseCSV(csvText);
+            if (!parsedCsvData || parsedCsvData.length === 0) {
                 alert('No questions found in the quiz or failed to parse CSV data.');
                 return;
             }
-            console.log('Questions parsed:', questions.length);
+            console.log('Questions parsed:', parsedCsvData.length);
+            
+            // Set global csvData for processQuestions function
+            window.csvData = parsedCsvData;
             
             // Process questions for display (original order first)
             const processedQuestions = processQuestions(selectedQuiz);
@@ -129,8 +132,8 @@ window.loadQuiz = function loadQuiz() {
 };
 
 // Show quiz preview with analytics
-function showQuizPreview(questions, quizName) {
-    console.log('showQuizPreview called with', questions.length, 'questions');
+function showQuizPreview(displayQuestions, quizName) {
+    console.log('showQuizPreview called with', displayQuestions.length, 'questions');
     
     const previewDiv = document.getElementById('quizPreview');
     const contentDiv = document.getElementById('previewContent');
@@ -143,7 +146,7 @@ function showQuizPreview(questions, quizName) {
     
     try {
         let html = '';
-        questions.forEach((question, index) => {
+        displayQuestions.forEach((question, index) => {
             html += `
                 <div class="question" data-question-id="${question.id}">
                     <div class="question-header">${index + 1}. ${question.text}</div>

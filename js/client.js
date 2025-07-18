@@ -1,7 +1,6 @@
 // Client-specific functionality - Auto-load assigned quiz and submit to owner monitoring
 let currentQuizName = '';
 let sessionCheckInterval = null;
-let questions = []; // Store client questions (randomized)
 
 // Initialize client interface
 window.initializeClientInterface = function(username) {
@@ -72,7 +71,7 @@ async function loadAssignedQuiz(quizName) {
     // Check if randomized questions are available from owner
     if (window.randomizedQuestions && window.randomizedQuestions.length > 0) {
         // Use the same randomized questions as owner (no additional shuffling)
-        questions = window.randomizedQuestions;
+        window.questions = window.randomizedQuestions;
         
         // Clear any previous score
         const scoreLabel = document.getElementById('scoreLabel');
@@ -92,7 +91,7 @@ async function loadAssignedQuiz(quizName) {
         
         // Process and randomize questions for client
         const allQuestions = processQuestions(quizName);
-        questions = shuffleArray(allQuestions); // Randomize question order
+        window.questions = shuffleArray(allQuestions); // Randomize question order
         
         // Clear any previous score
         const scoreLabel = document.getElementById('scoreLabel');
@@ -122,7 +121,7 @@ function renderClientQuestions() {
     
     container.innerHTML = '';
     
-    questions.forEach((question, qIndex) => {
+    window.questions.forEach((question, qIndex) => {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
         questionDiv.setAttribute('data-question-id', question.id);
@@ -170,13 +169,13 @@ function renderClientQuestions() {
 
 // Submit answers and calculate score
 function submitAnswers() {
-    let totalQuestions = questions.length;
+    let totalQuestions = window.questions.length;
     let totalCorrect = 0;
     let totalPossiblePoints = 0;
     let userPoints = 0;
     let clientAnswers = []; // Track answers for owner monitoring
 
-    questions.forEach((question, qIndex) => {
+    window.questions.forEach((question, qIndex) => {
         const questionDiv = document.querySelector(`[data-question-id="${question.id}"]`);
         const options = questionDiv.querySelectorAll('.option');
         const inputs = questionDiv.querySelectorAll('input');
