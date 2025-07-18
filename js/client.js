@@ -46,6 +46,15 @@ function showWaitingStatus() {
     const quizName = document.getElementById('quizName');
     
     statusDiv.style.display = 'block';
+    statusDiv.innerHTML = `
+        <div class="status-message">Waiting for owner to start a quiz session...</div>
+        <div class="mobile-session-info">
+            <div class="session-indicator">
+                <span class="indicator-dot"></span>
+                <span class="indicator-text">No Active Session</span>
+            </div>
+        </div>
+    `;
     questionsContainer.innerHTML = '';
     quizName.textContent = 'Waiting for Quiz...';
     
@@ -57,9 +66,29 @@ function showWaitingStatus() {
     if (scoreLabel) scoreLabel.textContent = '';
 }
 
+// Update session indicator
+function updateSessionIndicator(isActive, sessionInfo = null) {
+    const indicatorDot = document.querySelector('.indicator-dot');
+    const indicatorText = document.querySelector('.indicator-text');
+    
+    if (indicatorDot && indicatorText) {
+        if (isActive && sessionInfo) {
+            indicatorDot.classList.add('active');
+            indicatorText.textContent = `Active: ${sessionInfo.quizName}`;
+        } else {
+            indicatorDot.classList.remove('active');
+            indicatorText.textContent = 'No Active Session';
+        }
+    }
+}
+
 // Load assigned quiz from owner
 async function loadAssignedQuiz(quizName) {
     currentQuizName = quizName;
+    
+    // Update session indicator
+    const session = getQuizSession();
+    updateSessionIndicator(true, session);
     
     // Hide status, show quiz
     document.getElementById('quizStatus').style.display = 'none';
