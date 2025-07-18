@@ -13,6 +13,13 @@
   to = "/test/index.html"
   status = 200
 
+# Environment variables (set these in Netlify dashboard)
+[context.production.environment]
+  JSONBIN_API_KEY = "your_jsonbin_api_key_here"
+
+[context.deploy-preview.environment]
+  JSONBIN_API_KEY = "your_jsonbin_api_key_here"
+
 # Security headers for HTML pages only
 [[headers]]
   for = "/test"
