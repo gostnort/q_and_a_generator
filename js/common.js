@@ -275,6 +275,7 @@ function setActiveQuiz(quizName) {
         startTime: new Date().toISOString(),
         sessionId: generateSessionId()
     };
+    console.log('setActiveQuiz - creating session data:', sessionData);
     localStorage.setItem(STATE_KEYS.QUIZ_SESSION, JSON.stringify(sessionData));
     localStorage.setItem(STATE_KEYS.ACTIVE_QUIZ, quizName);
     
@@ -283,6 +284,7 @@ function setActiveQuiz(quizName) {
     localStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
     
     console.log('Active quiz set:', quizName);
+    console.log('setActiveQuiz - localStorage keys:', Object.keys(localStorage));
 }
 
 function getActiveQuiz() {
@@ -291,14 +293,19 @@ function getActiveQuiz() {
 
 function getQuizSession() {
     const sessionData = localStorage.getItem(STATE_KEYS.QUIZ_SESSION);
-    return sessionData ? JSON.parse(sessionData) : null;
+    console.log('getQuizSession - raw sessionData:', sessionData);
+    const parsed = sessionData ? JSON.parse(sessionData) : null;
+    console.log('getQuizSession - parsed result:', parsed);
+    return parsed;
 }
 
 function clearQuizSession() {
+    console.log('clearQuizSession - clearing all session data');
     localStorage.removeItem(STATE_KEYS.ACTIVE_QUIZ);
     localStorage.removeItem(STATE_KEYS.QUIZ_SESSION);
     localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
     localStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
+    console.log('clearQuizSession - localStorage keys after clearing:', Object.keys(localStorage));
 }
 
 // Client Submission Management

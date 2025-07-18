@@ -208,12 +208,15 @@
         
         // Logout function
         function logout() {
+            const wasOwner = currentUserRole === 'owner';
+            
             sessionStorage.removeItem('userName');
             currentUser = '';
             currentUserRole = '';
             
             // Clear any active sessions if owner
-            if (currentUserRole === 'owner' && typeof clearQuizSession === 'function') {
+            if (wasOwner && typeof clearQuizSession === 'function') {
+                console.log('Owner logging out, clearing session');
                 clearQuizSession();
             }
             
