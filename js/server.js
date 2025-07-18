@@ -2,7 +2,7 @@
 // This handles quiz session sharing across different devices
 
 const SERVER_BASE_URL = 'https://api.jsonbin.io/v3/b'; // Using JSONBin.io as a simple server
-const API_KEY = '$2a$10$YourAPIKeyHere'; // You'll need to get a free API key from jsonbin.io
+const API_KEY = '$2a$10$dfbMBkQ8onTuhMRt/yU4q.wqFZQm/GKEpBBBDb9lKofngGMe9mUGC'; // JSONBin.io API key
 
 // Session Management with Server
 class ServerSessionManager {
