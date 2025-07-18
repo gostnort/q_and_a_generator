@@ -305,9 +305,9 @@ function endQuizSession() {
 
 // Show active session info
 function showActiveSession(session) {
-    const sessionInfo = document.getElementById('sessionInfo');
+    const activeSessionInfo = document.getElementById('activeSessionInfo');
     const sessionDetails = document.getElementById('sessionDetails');
-    const clientMonitoring = document.getElementById('clientMonitoring');
+    const clientMonitoring = document.querySelector('.client-monitoring');
     const startSessionInfo = document.getElementById('startSessionInfo');
     
     sessionDetails.innerHTML = `
@@ -322,9 +322,8 @@ function showActiveSession(session) {
         </div>
     `;
     
-    sessionInfo.classList.remove('hide');
-    startSessionInfo.classList.add('hide');
-    clientMonitoring.classList.remove('hide');
+    activeSessionInfo.style.display = 'block';
+    startSessionInfo.style.display = 'none';
     
     // Hide quiz selector
     document.querySelector('.test-selector').style.opacity = '0.5';
@@ -334,13 +333,11 @@ function showActiveSession(session) {
 
 // Show start session option
 function showStartSessionOption() {
-    const sessionInfo = document.getElementById('sessionInfo');
+    const activeSessionInfo = document.getElementById('activeSessionInfo');
     const startSessionInfo = document.getElementById('startSessionInfo');
-    const clientMonitoring = document.getElementById('clientMonitoring');
     
-    sessionInfo.classList.add('hide');
-    startSessionInfo.classList.remove('hide');
-    clientMonitoring.classList.add('hide');
+    activeSessionInfo.style.display = 'none';
+    startSessionInfo.style.display = 'block';
     
     // Enable quiz selector
     document.querySelector('.test-selector').style.opacity = '1';
@@ -350,13 +347,11 @@ function showStartSessionOption() {
 
 // Hide active session info
 function hideActiveSession() {
-    const sessionInfo = document.getElementById('sessionInfo');
+    const activeSessionInfo = document.getElementById('activeSessionInfo');
     const startSessionInfo = document.getElementById('startSessionInfo');
-    const clientMonitoring = document.getElementById('clientMonitoring');
     
-    sessionInfo.classList.add('hide');
-    startSessionInfo.classList.remove('hide');
-    clientMonitoring.classList.add('hide');
+    activeSessionInfo.style.display = 'none';
+    startSessionInfo.style.display = 'block';
     
     // Show quiz selector
     document.querySelector('.test-selector').style.opacity = '1';
