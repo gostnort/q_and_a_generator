@@ -8,17 +8,17 @@ let API_KEY = null;
 
 // Function to initialize API key
 function initializeApiKey() {
+    // Try to get from window object (if set by Netlify during build)
+    if (window.JSONBIN_API_KEY) {
+        API_KEY = window.JSONBIN_API_KEY;
+        console.log('API key loaded from window object');
+        return true;
+    }
+    
     // Try to get from environment variable (works on Netlify)
     if (typeof process !== 'undefined' && process.env && process.env.JSONBIN_API_KEY) {
         API_KEY = process.env.JSONBIN_API_KEY;
         console.log('API key loaded from environment variable');
-        return true;
-    }
-    
-    // Try to get from window object (if set by Netlify)
-    if (window.JSONBIN_API_KEY) {
-        API_KEY = window.JSONBIN_API_KEY;
-        console.log('API key loaded from window object');
         return true;
     }
     
