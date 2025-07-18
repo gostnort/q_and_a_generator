@@ -55,8 +55,15 @@ window.initializeOwnerDashboard = function(username) {
 function checkActiveSession() {
     const session = getQuizSession();
     if (session) {
+        console.log('Found existing session:', session.quizName);
         showActiveSession(session);
         startClientMonitoring();
+        
+        // Restore quiz preview if session exists but no questions are loaded
+        if (!window.randomizedQuestions || window.randomizedQuestions.length === 0) {
+            console.log('Session exists but no questions loaded, restoring quiz preview...');
+            restoreQuizPreview(session.quizName);
+        }
     }
 }
 
@@ -78,6 +85,53 @@ function loadQuizPreview() {
         console.log('Button state updated for quiz:', select.value);
     } catch (error) {
         console.error('Error in loadQuizPreview:', error);
+    }
+}
+
+// Restore quiz preview from existing session
+async function restoreQuizPreview(quizName) {
+    console.log('=== restoreQuizPreview called for:', quizName, '===');
+    
+    try {
+        // Use updated path for collections structure
+        const response = await fetch(`/collections/${quizName}/quiz.csv`);
+        if (!response.ok) {
+            throw new Error('Quiz CSV not found');
+        }
+        
+        const csvText = await response.text();
+        console.log('Raw CSV data restored:', csvText);
+        
+        const parsedCsvData = parseCSV(csvText);
+        if (!parsedCsvData || parsedCsvData.length === 0) {
+            throw new Error('No questions found in the quiz or failed to parse CSV data.');
+        }
+        
+        console.log('Questions parsed (restored):', parsedCsvData.length);
+        
+        // Set global csvData for processQuestions function
+        window.csvData = parsedCsvData;
+        
+        // Process questions for display (original order first)
+        const processedQuestions = processQuestions(quizName);
+        
+        // Randomize questions for both owner and client (same sequence)
+        const randomizedQuestions = shuffleArray(processedQuestions);
+        
+        // Store randomized questions globally for client use
+        window.randomizedQuestions = randomizedQuestions;
+        
+        // Show preview with analytics (randomized order)
+        showQuizPreview(randomizedQuestions, quizName);
+        
+        // Initialize analytics with randomized questions
+        initializeAnalytics(randomizedQuestions);
+        
+        console.log('Quiz preview restored successfully');
+        
+    } catch (error) {
+        console.error('Error restoring quiz preview:', error.message);
+        alert('Error restoring quiz preview: ' + error.message);
     }
 }
 
