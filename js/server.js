@@ -2,7 +2,47 @@
 // This handles quiz session sharing across different devices
 
 const SERVER_BASE_URL = 'https://api.jsonbin.io/v3/b'; // Using JSONBin.io as a simple server
-const API_KEY = '$2a$10$dfbMBkQ8onTuhMRt/yU4q.wqFZQm/GKEpBBBDb9lKofngGMe9mUGC'; // JSONBin.io API key
+
+// Try to get API key from environment variable (Netlify)
+let API_KEY = null;
+
+// Function to initialize API key
+function initializeApiKey() {
+    // Try to get from environment variable (works on Netlify)
+    if (typeof process !== 'undefined' && process.env && process.env.JSONBIN_API_KEY) {
+        API_KEY = process.env.JSONBIN_API_KEY;
+        console.log('API key loaded from environment variable');
+        return true;
+    }
+    
+    // Try to get from window object (if set by Netlify)
+    if (window.JSONBIN_API_KEY) {
+        API_KEY = window.JSONBIN_API_KEY;
+        console.log('API key loaded from window object');
+        return true;
+    }
+    
+    return false;
+}
+
+// Function to set API key securely
+function setApiKey(key) {
+    API_KEY = key;
+    console.log('API key set successfully');
+}
+
+// Function to prompt user for API key
+function promptForApiKey() {
+    const key = prompt('Please enter your JSONBin.io X-Master-Key for server functionality:');
+    if (key && key.trim()) {
+        setApiKey(key.trim());
+        return true;
+    }
+    return false;
+}
+
+// Initialize API key on load
+initializeApiKey();
 
 // Session Management with Server
 class ServerSessionManager {
@@ -14,6 +54,13 @@ class ServerSessionManager {
     // Create a new quiz session on server
     async createSession(quizName, randomizedQuestions) {
         try {
+            // Check if API key is available
+            if (!API_KEY) {
+                if (!promptForApiKey()) {
+                    throw new Error('API key required for server functionality');
+                }
+            }
+
             const sessionData = {
                 quizName: quizName,
                 startTime: new Date().toISOString(),
@@ -52,6 +99,13 @@ class ServerSessionManager {
     // Get active session from server
     async getActiveSession() {
         try {
+            // Check if API key is available
+            if (!API_KEY) {
+                if (!promptForApiKey()) {
+                    return null; // Fall back to localStorage
+                }
+            }
+
             // First, try to find any active session
             const response = await fetch(`${SERVER_BASE_URL}/latest`, {
                 headers: {
