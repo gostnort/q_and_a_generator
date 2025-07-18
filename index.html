@@ -130,22 +130,28 @@
                 return;
             }
             
+            console.log('Login attempt for:', userName);
             currentUser = userName;
             sessionStorage.setItem('userName', userName);
             
             // Check if user is owner using the isValidOwner function from config.js
             const isOwner = typeof isValidOwner === 'function' && isValidOwner(userName);
+            console.log('Is owner check result:', isOwner);
             
             if (isOwner) {
                 currentUserRole = 'owner';
+                console.log('User is owner, showing dashboard');
                 showOwnerDashboard();
             } else {
                 currentUserRole = 'client';
+                console.log('User is client, checking for active session');
                 // Check if there's an active quiz session
                 const activeSession = getQuizSession();
                 if (activeSession) {
+                    console.log('Active session found, showing client interface');
                     showClientInterface();
                 } else {
+                    console.log('No active session, showing 404');
                     show404Page();
                 }
             }

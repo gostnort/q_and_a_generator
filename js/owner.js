@@ -83,7 +83,7 @@ function loadQuizPreview() {
 
 // Load quiz and show preview
 window.loadQuiz = function loadQuiz() {
-    console.log('loadQuiz function called');
+    console.log('=== loadQuiz function called ===');
     const select = document.getElementById('tests');
     const selectedQuiz = select.value;
     if (!selectedQuiz) {
