@@ -41,16 +41,18 @@ function parseCSV(csvText) {
 
 // Convert CSV data to questions format
 function processQuestions(quizName) {
-    if (csvData.length < 3) return [];
+    // Use window.csvData if available, otherwise fall back to local csvData
+    const dataToUse = window.csvData || csvData;
+    if (dataToUse.length < 3) return [];
     const questionsData = [];
-    const numColumns = Math.max(...csvData.map(row => row.length));
+    const numColumns = Math.max(...dataToUse.map(row => row.length));
     for (let col = 0; col < numColumns; col++) {
-        const questionText = csvData[0][col];
-        const imageName = csvData[1][col];
+        const questionText = dataToUse[0][col];
+        const imageName = dataToUse[1][col];
         if (!questionText || questionText.trim() === '') continue;
         const options = [];
-        for (let row = 2; row < csvData.length; row++) {
-            const option = csvData[row][col];
+        for (let row = 2; row < dataToUse.length; row++) {
+            const option = dataToUse[row][col];
             if (option && option.trim() !== '') {
                 options.push(option.trim());
             }
@@ -92,7 +94,10 @@ async function loadCSVDataFromQuizFolder(quizName) {
         const response = await fetch(`/collections/${quizName}/quiz.csv`);
         if (!response.ok) throw new Error('Quiz CSV not found');
         const csvText = await response.text();
-        csvData = parseCSV(csvText);
+        const parsedData = parseCSV(csvText);
+        // Set both local and global csvData
+        csvData = parsedData;
+        window.csvData = parsedData;
         return true;
     } catch (error) {
         console.error('Error loading quiz CSV:', error);

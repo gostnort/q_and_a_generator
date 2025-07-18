@@ -80,7 +80,7 @@ async function loadAssignedQuiz(quizName) {
         // Render questions (same sequence as owner)
         renderClientQuestions();
         
-        console.log(`Quiz "${quizName}" loaded successfully with ${questions.length} questions (same sequence as owner)`);
+        console.log(`Quiz "${quizName}" loaded successfully with ${window.questions.length} questions (same sequence as owner)`);
     } else {
         // Fallback: load CSV data directly (for testing)
         const success = await loadCSVDataFromQuizFolder(quizName);
