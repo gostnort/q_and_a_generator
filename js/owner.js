@@ -1,5 +1,4 @@
 // Owner-specific functionality - Client Monitoring & Session Management
-let currentUsername = '';
 let refreshInterval = null;
 
 // Global error handler
@@ -13,7 +12,7 @@ window.initializeOwnerDashboard = function(username) {
     console.log('Initializing owner dashboard for:', username);
     
     try {
-        currentUsername = username;
+        // currentUser is managed by main index.html
         const ownerNameElement = document.getElementById('ownerName');
         if (ownerNameElement) {
             ownerNameElement.textContent = username;

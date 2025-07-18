@@ -1,5 +1,4 @@
 // Client-specific functionality - Auto-load assigned quiz and submit to owner monitoring
-let currentUsername = '';
 let currentQuizName = '';
 let sessionCheckInterval = null;
 
@@ -7,7 +6,7 @@ let sessionCheckInterval = null;
 window.initializeClientInterface = function(username) {
     console.log('Initializing client interface for:', username);
     
-    currentUsername = username;
+    // currentUser is managed by main index.html
     
     // Start checking for active quiz session
     checkForActiveQuiz();
@@ -234,7 +233,7 @@ function submitAnswers() {
         
         // Track analytics for owner
         if (typeof trackOptionSelection === 'function') {
-            trackOptionSelection(currentUsername, question.id, selectedAnswers);
+            trackOptionSelection(currentUser, question.id, selectedAnswers);
         }
     });
 
@@ -264,7 +263,7 @@ function submitAnswers() {
         passed: passed
     };
     
-    saveClientSubmission(currentUsername, submissionData);
+    saveClientSubmission(currentUser, submissionData);
     
     // Show completion message
     alert(`Quiz completed! Your score: ${percentage}% (${userPoints}/${totalPossiblePoints}) - ${status}`);
