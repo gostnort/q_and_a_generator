@@ -104,14 +104,20 @@ window.loadQuiz = function loadQuiz() {
             }
             console.log('Questions parsed:', questions.length);
             
-            // Process questions for display
+            // Process questions for display (original order first)
             const processedQuestions = processQuestions(selectedQuiz);
             
-            // Show preview with analytics
-            showQuizPreview(processedQuestions, selectedQuiz);
+            // Randomize questions for both owner and client (same sequence)
+            const randomizedQuestions = shuffleArray(processedQuestions);
             
-            // Initialize analytics
-            initializeAnalytics(processedQuestions);
+            // Store randomized questions globally for client use
+            window.randomizedQuestions = randomizedQuestions;
+            
+            // Show preview with analytics (randomized order)
+            showQuizPreview(randomizedQuestions, selectedQuiz);
+            
+            // Initialize analytics with randomized questions
+            initializeAnalytics(randomizedQuestions);
             
             // Auto-start the session immediately
             startQuizSession(selectedQuiz);

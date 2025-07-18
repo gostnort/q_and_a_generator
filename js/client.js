@@ -1,6 +1,7 @@
 // Client-specific functionality - Auto-load assigned quiz and submit to owner monitoring
 let currentQuizName = '';
 let sessionCheckInterval = null;
+let questions = []; // Store client questions (randomized)
 
 // Initialize client interface
 window.initializeClientInterface = function(username) {
@@ -68,25 +69,40 @@ async function loadAssignedQuiz(quizName) {
     // Enable submit button
     document.getElementById('submitBtn').disabled = false;
     
-    // Load CSV data
-    const success = await loadCSVDataFromQuizFolder(quizName);
-    if (!success) {
-        showError('Failed to load quiz. Please contact the owner.');
-        return;
+    // Check if randomized questions are available from owner
+    if (window.randomizedQuestions && window.randomizedQuestions.length > 0) {
+        // Use the same randomized questions as owner (no additional shuffling)
+        questions = window.randomizedQuestions;
+        
+        // Clear any previous score
+        const scoreLabel = document.getElementById('scoreLabel');
+        if (scoreLabel) scoreLabel.textContent = '';
+        
+        // Render questions (same sequence as owner)
+        renderClientQuestions();
+        
+        console.log(`Quiz "${quizName}" loaded successfully with ${questions.length} questions (same sequence as owner)`);
+    } else {
+        // Fallback: load CSV data directly (for testing)
+        const success = await loadCSVDataFromQuizFolder(quizName);
+        if (!success) {
+            showError('Failed to load quiz. Please contact the owner.');
+            return;
+        }
+        
+        // Process and randomize questions for client
+        const allQuestions = processQuestions(quizName);
+        questions = shuffleArray(allQuestions); // Randomize question order
+        
+        // Clear any previous score
+        const scoreLabel = document.getElementById('scoreLabel');
+        if (scoreLabel) scoreLabel.textContent = '';
+        
+        // Render randomized questions
+        renderClientQuestions();
+        
+        console.log(`Quiz "${quizName}" loaded successfully with fallback method`);
     }
-    
-    // Process and randomize questions for client
-    const allQuestions = processQuestions(quizName);
-    questions = shuffleArray(allQuestions); // Randomize question order
-    
-    // Clear any previous score
-    const scoreLabel = document.getElementById('scoreLabel');
-    if (scoreLabel) scoreLabel.textContent = '';
-    
-    // Render randomized questions
-    renderClientQuestions();
-    
-    console.log(`Quiz "${quizName}" loaded successfully`);
 }
 
 // Show error message
@@ -231,7 +247,7 @@ function submitAnswers() {
             isCorrect: !questionIsWrong
         });
         
-        // Track analytics for owner
+        // Track analytics for owner (use original question ID)
         if (typeof trackOptionSelection === 'function') {
             trackOptionSelection(currentUser, question.id, selectedAnswers);
         }

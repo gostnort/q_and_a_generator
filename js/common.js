@@ -154,8 +154,8 @@ function shareQuiz() {
 // Enhanced Analytics System
 function initializeAnalytics(questions) {
     questionAnalytics = {};
-    questions.forEach((question, index) => {
-        questionAnalytics[index] = {
+    questions.forEach((question) => {
+        questionAnalytics[question.id] = {
             totalResponses: 0,
             optionCounts: {},
             correctAnswer: getCorrectAnswer(question),
@@ -165,7 +165,7 @@ function initializeAnalytics(questions) {
         // Initialize option counts
         question.options.forEach(option => {
             const cleanOption = option.startsWith('`') ? option.substring(1) : option;
-            questionAnalytics[index].optionCounts[cleanOption] = 0;
+            questionAnalytics[question.id].optionCounts[cleanOption] = 0;
         });
     });
 }
@@ -192,7 +192,8 @@ function trackOptionSelection(clientName, questionId, selectedOptions) {
     });
     
     // Check if answer is correct
-    const question = questions.find(q => q.id === questionId);
+    const randomizedQuestions = window.randomizedQuestions || [];
+    const question = randomizedQuestions.find(q => q.id === questionId);
     if (question && isAnswerCorrect(question, selectedOptions)) {
         questionAnalytics[questionId].correctCount++;
     }
@@ -218,8 +219,10 @@ function updateAnalyticsDisplay() {
     const previewContent = document.getElementById('previewContent');
     if (!previewContent) return;
     
-    questions.forEach((question, index) => {
-        const analytics = questionAnalytics[index];
+    // Use randomized questions for analytics display (same sequence as client)
+    const randomizedQuestions = window.randomizedQuestions || [];
+    randomizedQuestions.forEach((question) => {
+        const analytics = questionAnalytics[question.id];
         if (!analytics) return;
         
         const questionElement = previewContent.querySelector(`[data-question-id="${question.id}"]`);
