@@ -27,7 +27,7 @@
     <!-- Owner Dashboard -->
     <div id="ownerDashboard" class="interface" style="display: none;">
         <div class="header">
-            <h1>Owner Dashboard</h1>
+            <h1>Owner Dashboard#6</h1>
             <div class="user-info">
                 <span id="ownerName"></span>
                 <button onclick="logout()" class="logout-btn">Logout</button>
@@ -120,5 +120,123 @@
     <script src="js/common.js"></script>
     <script src="js/owner.js"></script>
     <script src="js/client.js"></script>
+    
+    <script>
+        // Main application logic
+        let currentUser = '';
+        let currentUserRole = '';
+        
+        // Simple login function
+        async function login() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('Please enter your name.');
+                return;
+            }
+            
+            console.log('Login attempt for:', userName);
+            currentUser = userName;
+            sessionStorage.setItem('userName', userName);
+            
+            // Check if user is owner using the isValidOwner function from config.js
+            const isOwner = typeof isValidOwner === 'function' && isValidOwner(userName);
+            console.log('Is owner check result:', isOwner);
+            
+            if (isOwner) {
+                currentUserRole = 'owner';
+                console.log('User is owner, showing dashboard');
+                showOwnerDashboard();
+            } else {
+                currentUserRole = 'client';
+                console.log('User is client, checking for active session');
+                // Check if there's an active quiz session
+                const activeSession = await getQuizSession();
+                console.log('Active session check result:', activeSession);
+                if (activeSession) {
+                    console.log('Active session found, showing client interface');
+                    showClientInterface();
+                } else {
+                    console.log('No active session, showing 404');
+                    show404Page();
+                }
+            }
+        }
+        
+        // Show owner dashboard
+        function showOwnerDashboard() {
+            hideAllInterfaces();
+            document.getElementById('ownerDashboard').style.display = 'block';
+            
+            // Initialize owner dashboard
+            if (typeof initializeOwnerDashboard === 'function') {
+                initializeOwnerDashboard(currentUser);
+            }
+        }
+        
+        // Show client interface
+        function showClientInterface() {
+            hideAllInterfaces();
+            document.getElementById('clientInterface').style.display = 'block';
+            
+            // Initialize client interface
+            if (typeof initializeClientInterface === 'function') {
+                initializeClientInterface(currentUser);
+            }
+        }
+        
+        // Show 404 page
+        function show404Page() {
+            hideAllInterfaces();
+            document.getElementById('notFoundInterface').style.display = 'block';
+        }
+        
+        // Show login page
+        function showLogin() {
+            hideAllInterfaces();
+            document.getElementById('loginInterface').style.display = 'block';
+        }
+        
+        // Hide all interfaces
+        function hideAllInterfaces() {
+            document.getElementById('loginInterface').style.display = 'none';
+            document.getElementById('ownerDashboard').style.display = 'none';
+            document.getElementById('clientInterface').style.display = 'none';
+            document.getElementById('notFoundInterface').style.display = 'none';
+        }
+        
+        // Logout function
+        function logout() {
+            const wasOwner = currentUserRole === 'owner';
+            
+            sessionStorage.removeItem('userName');
+            currentUser = '';
+            currentUserRole = '';
+            
+            // Clear any active sessions if owner
+            if (wasOwner && typeof clearQuizSession === 'function') {
+                console.log('Owner logging out, clearing session');
+                clearQuizSession();
+            }
+            
+            showLogin();
+        }
+        
+        // Allow Enter key to trigger login
+        document.getElementById('userName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Check for existing session on page load
+        window.addEventListener('load', function() {
+            const savedUser = sessionStorage.getItem('userName');
+            if (savedUser) {
+                currentUser = savedUser;
+                // Re-login with saved user
+                login();
+            }
+        });
+    </script>
 </body>
 </html> 
