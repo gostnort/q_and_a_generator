@@ -276,8 +276,24 @@ function setActiveQuiz(quizName) {
         sessionId: generateSessionId()
     };
     console.log('setActiveQuiz - creating session data:', sessionData);
+    
+    // Store in localStorage for owner
     localStorage.setItem(STATE_KEYS.QUIZ_SESSION, JSON.stringify(sessionData));
     localStorage.setItem(STATE_KEYS.ACTIVE_QUIZ, quizName);
+    
+    // Also store in sessionStorage for cross-browser sharing
+    sessionStorage.setItem(STATE_KEYS.QUIZ_SESSION, JSON.stringify(sessionData));
+    sessionStorage.setItem(STATE_KEYS.ACTIVE_QUIZ, quizName);
+    
+    // Store in a shared location that persists across browser instances
+    // Use a combination of localStorage and a timestamp-based approach
+    const sharedSessionKey = `shared_quiz_session_${quizName}`;
+    const sharedData = {
+        ...sessionData,
+        lastUpdated: Date.now(),
+        isActive: true
+    };
+    localStorage.setItem(sharedSessionKey, JSON.stringify(sharedData));
     
     // Clear previous submissions and analytics when starting new quiz
     localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
@@ -285,6 +301,7 @@ function setActiveQuiz(quizName) {
     
     console.log('Active quiz set:', quizName);
     console.log('setActiveQuiz - localStorage keys:', Object.keys(localStorage));
+    console.log('setActiveQuiz - sessionStorage keys:', Object.keys(sessionStorage));
 }
 
 function getActiveQuiz() {
@@ -292,8 +309,49 @@ function getActiveQuiz() {
 }
 
 function getQuizSession() {
-    const sessionData = localStorage.getItem(STATE_KEYS.QUIZ_SESSION);
-    console.log('getQuizSession - raw sessionData:', sessionData);
+    // Try localStorage first (for owner), then sessionStorage (for cross-browser sharing)
+    let sessionData = localStorage.getItem(STATE_KEYS.QUIZ_SESSION);
+    let source = 'localStorage';
+    
+    if (!sessionData) {
+        sessionData = sessionStorage.getItem(STATE_KEYS.QUIZ_SESSION);
+        source = 'sessionStorage';
+    }
+    
+    // If still no session, try to find any active shared session
+    if (!sessionData) {
+        const allKeys = Object.keys(localStorage);
+        const sharedSessionKeys = allKeys.filter(key => key.startsWith('shared_quiz_session_'));
+        
+        if (sharedSessionKeys.length > 0) {
+            // Get the most recent shared session
+            let mostRecentSession = null;
+            let mostRecentTime = 0;
+            
+            sharedSessionKeys.forEach(key => {
+                try {
+                    const sharedData = JSON.parse(localStorage.getItem(key));
+                    if (sharedData && sharedData.isActive && sharedData.lastUpdated > mostRecentTime) {
+                        mostRecentSession = sharedData;
+                        mostRecentTime = sharedData.lastUpdated;
+                    }
+                } catch (e) {
+                    console.error('Error parsing shared session:', e);
+                }
+            });
+            
+            if (mostRecentSession) {
+                // Check if session is still active (within last 30 minutes)
+                const sessionAge = Date.now() - mostRecentSession.lastUpdated;
+                if (sessionAge < 30 * 60 * 1000) { // 30 minutes
+                    sessionData = JSON.stringify(mostRecentSession);
+                    source = 'shared_session';
+                }
+            }
+        }
+    }
+    
+    console.log('getQuizSession - raw sessionData from', source + ':', sessionData);
     const parsed = sessionData ? JSON.parse(sessionData) : null;
     console.log('getQuizSession - parsed result:', parsed);
     return parsed;
@@ -301,11 +359,28 @@ function getQuizSession() {
 
 function clearQuizSession() {
     console.log('clearQuizSession - clearing all session data');
+    
+    // Clear from localStorage
     localStorage.removeItem(STATE_KEYS.ACTIVE_QUIZ);
     localStorage.removeItem(STATE_KEYS.QUIZ_SESSION);
     localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
     localStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
+    
+    // Clear from sessionStorage
+    sessionStorage.removeItem(STATE_KEYS.ACTIVE_QUIZ);
+    sessionStorage.removeItem(STATE_KEYS.QUIZ_SESSION);
+    sessionStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+    sessionStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
+    
+    // Clear all shared sessions
+    const allKeys = Object.keys(localStorage);
+    const sharedSessionKeys = allKeys.filter(key => key.startsWith('shared_quiz_session_'));
+    sharedSessionKeys.forEach(key => {
+        localStorage.removeItem(key);
+    });
+    
     console.log('clearQuizSession - localStorage keys after clearing:', Object.keys(localStorage));
+    console.log('clearQuizSession - sessionStorage keys after clearing:', Object.keys(sessionStorage));
 }
 
 // Client Submission Management
