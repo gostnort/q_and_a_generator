@@ -340,9 +340,6 @@ button {
     border-bottom: 2px solid #ddd;
     padding-bottom: 10px;
 }
-    min-width: unset;
-    font-size: 16px;
-}
 
 .test-selector select {
     width: 100%;
@@ -620,20 +617,113 @@ button {
     font-weight: bold;
 }
 
-/* Owner Questions Display */
-#ownerQuestions .question {
-    border: 2px solid #28a745;
+
+
+ 
+
+/* Analytics Display Styles */
+.analytics-display {
+    margin-top: 10px;
+    padding: 8px 12px;
     background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #495057;
 }
 
-#ownerQuestions .correct-answer {
-    background-color: #d4edda;
-    border-left: 4px solid #28a745;
+.analytics-display strong {
+    color: #212529;
 }
 
-.client-count {
+/* 404 Interface Styles */
+.not-found-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+.error-container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.error-container h1 {
+    color: #e74c3c;
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.error-container p {
+    color: #666;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.error-container a {
+    color: #3498db;
+    text-decoration: none;
     font-weight: bold;
-    color: #007bff;
-    margin-left: 0;
-    font-size: 16px;
+}
+
+.error-container a:hover {
+    text-decoration: underline;
+}
+
+
+
+/* Enhanced Score Label Styles */
+.score-label.passed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.score-label.failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Owner Name Display */
+.owner-name {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Hide/Show Utility */
+.hide {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-box {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+    
+    .error-container {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .header-bottom button {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    .question-header {
+        font-size: 16px;
+    }
+    
+    .option-text {
+        font-size: 14px;
+    }
 } 

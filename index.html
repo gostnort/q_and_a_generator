@@ -23,41 +23,204 @@
         }
     </script>
     
-    <!-- Login Interface -->
+    <!-- Login Interface (Initial State) -->
     <div id="loginInterface" class="login-container">
         <div class="login-box">
             <h1>Q&A Generator</h1>
-            <input type="email" id="ownerIdentity" placeholder="Enter Username">
+            <input type="text" id="userName" placeholder="Enter your name (shown on host page)">
             <button onclick="login()">Login</button>
         </div>
     </div>
 
-    <script src="config.js"></script>
+    <!-- Owner Dashboard (After Owner Login) -->
+    <div id="ownerDashboard" class="owner-container hide">
+        <div class="header">
+            <div class="header-left">
+                <h2>Owner Dashboard#1</h2>
+                <span id="ownerName" class="owner-email"></span>
+            </div>
+            <div class="header-right">
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        
+        <div class="owner-controls">
+            <div class="test-selector">
+                <label for="tests">Select Quiz:</label>
+                <select id="tests" onchange="loadQuizPreview()"></select>
+                <button id="loadQuizBtn" onclick="loadQuiz()" class="generate-btn">Load Quiz</button>
+            </div>
+            
+            <!-- Quiz Preview Section -->
+            <div id="quizPreview" class="quiz-preview hide">
+                <h3>Quiz Preview (Original Order)</h3>
+                <div id="previewContent"></div>
+            </div>
+            
+            <div id="sessionInfo" class="session-info hide">
+                <h3>Active Session</h3>
+                <div id="sessionDetails"></div>
+                <button onclick="endQuizSession()" class="end-session-btn">End Session</button>
+            </div>
+        </div>
+        
+        <!-- Client Monitoring Section -->
+        <div id="clientMonitoring" class="client-monitoring hide">
+            <h3>Client Submissions</h3>
+            <div class="monitoring-controls">
+                <button onclick="refreshSubmissions()" class="refresh-btn">Refresh</button>
+                <span id="submissionCount" class="submission-count">No submissions yet</span>
+            </div>
+            <div id="submissionsList" class="submissions-list"></div>
+        </div>
+    </div>
+
+    <!-- Client Quiz Interface (Dynamic, When Session Active) -->
+    <div id="clientInterface" class="client-container hide">
+        <div class="header">
+            <div class="header-top">
+                <div class="header-left">
+                    <h2 class="quiz-name" id="quizName">Waiting for Quiz...</h2>
+                </div>
+                <div class="header-right">
+                    <div class="score-label" id="scoreLabel"></div>
+                </div>
+            </div>
+            <div class="header-bottom">
+                <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
+                <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
+                <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
+            </div>
+        </div>
+        
+        <hr class="header-separator">
+        
+        <!-- Quiz Status -->
+        <div id="quizStatus" class="quiz-status">
+            <div class="status-message">Waiting for owner to start a quiz session...</div>
+        </div>
+        
+        <!-- Questions Container -->
+        <div id="questionsContainer"></div>
+    </div>
+
+    <!-- 404 Interface (For Non-owners When No Session) -->
+    <div id="notFoundInterface" class="not-found-container hide">
+        <div class="error-container">
+            <h1>404</h1>
+            <p>The page you're looking for doesn't exist.</p>
+            <a href="#" onclick="showLogin()">← Back to Login</a>
+        </div>
+    </div>
+
+    <script src="collections/config.js"></script>
     <script src="js/common.js"></script>
+    <script src="js/owner.js"></script>
+    <script src="js/client.js"></script>
     <script>
-        // Simple login function that redirects to appropriate page
+        // Main application logic
+        let currentUser = '';
+        let currentUserRole = '';
+        
+        // Simple login function
         function login() {
-            const username = document.getElementById('ownerIdentity').value.trim();
-            if (!username) {
-                alert('Please enter a username.');
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('Please enter your name.');
                 return;
             }
             
-            // Store username in session storage
-            sessionStorage.setItem('username', username);
+            currentUser = userName;
+            sessionStorage.setItem('userName', userName);
             
-            // Determine role and redirect
-            const role = checkUserRole(username);
-            if (role === 'owner') {
-                window.location.href = `/test/pages/owner.html?user=${encodeURIComponent(username)}`;
+            // Check if user is owner (using email from config)
+            const ownerEmails = window.ownerIdentities || [];
+            const isOwner = ownerEmails.some(email => userName.toLowerCase().includes(email.split('@')[0]));
+            
+            if (isOwner) {
+                currentUserRole = 'owner';
+                showOwnerDashboard();
             } else {
-                window.location.href = `/test/pages/client.html?user=${encodeURIComponent(username)}`;
+                currentUserRole = 'client';
+                // Check if there's an active quiz session
+                const activeSession = getQuizSession();
+                if (activeSession) {
+                    showClientInterface();
+                } else {
+                    show404Page();
+                }
             }
         }
         
+        // Show owner dashboard
+        function showOwnerDashboard() {
+            hideAllInterfaces();
+            document.getElementById('ownerDashboard').classList.remove('hide');
+            
+            // Initialize owner dashboard
+            if (typeof initializeOwnerDashboard === 'function') {
+                initializeOwnerDashboard(currentUser);
+            }
+        }
+        
+        // Show client interface
+        function showClientInterface() {
+            hideAllInterfaces();
+            document.getElementById('clientInterface').classList.remove('hide');
+            
+            // Initialize client interface
+            if (typeof initializeClientInterface === 'function') {
+                initializeClientInterface(currentUser);
+            }
+        }
+        
+        // Show 404 page
+        function show404Page() {
+            hideAllInterfaces();
+            document.getElementById('notFoundInterface').classList.remove('hide');
+        }
+        
+        // Show login page
+        function showLogin() {
+            hideAllInterfaces();
+            document.getElementById('loginInterface').classList.remove('hide');
+        }
+        
+        // Hide all interfaces
+        function hideAllInterfaces() {
+            document.getElementById('loginInterface').classList.add('hide');
+            document.getElementById('ownerDashboard').classList.add('hide');
+            document.getElementById('clientInterface').classList.add('hide');
+            document.getElementById('notFoundInterface').classList.add('hide');
+        }
+        
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('userName');
+            currentUser = '';
+            currentUserRole = '';
+            
+            // Clear any active sessions if owner
+            if (currentUserRole === 'owner' && typeof clearQuizSession === 'function') {
+                clearQuizSession();
+            }
+            
+            showLogin();
+        }
+        
         // Allow Enter key to trigger login
-        document.getElementById('ownerIdentity').addEventListener('keypress', function(e) {
+        document.getElementById('userName').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Check for existing session on page load
+        window.addEventListener('load', function() {
+            const savedUser = sessionStorage.getItem('userName');
+            if (savedUser) {
+                currentUser = savedUser;
+                // Re-login with saved user
                 login();
             }
         });

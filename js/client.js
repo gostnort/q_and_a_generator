@@ -4,25 +4,15 @@ let currentQuizName = '';
 let sessionCheckInterval = null;
 
 // Initialize client interface
-window.addEventListener('load', function() {
-    console.log('Client page loaded');
-    
-    // Get username from URL parameters or session storage
-    const urlParams = new URLSearchParams(window.location.search);
-    const username = urlParams.get('user') || sessionStorage.getItem('username');
-    
-    if (!username) {
-        // Redirect to login if no username
-        window.location.href = '/test/';
-        return;
-    }
+window.initializeClientInterface = function(username) {
+    console.log('Initializing client interface for:', username);
     
     currentUsername = username;
     
     // Start checking for active quiz session
     checkForActiveQuiz();
     startSessionMonitoring();
-});
+};
 
 // Check for active quiz session
 function checkForActiveQuiz() {
@@ -74,7 +64,7 @@ async function loadAssignedQuiz(quizName) {
     
     // Hide status, show quiz
     document.getElementById('quizStatus').style.display = 'none';
-            document.getElementById('quizName').textContent = quizName;
+    document.getElementById('quizName').textContent = quizName;
     
     // Enable submit button
     document.getElementById('submitBtn').disabled = false;
@@ -241,6 +231,11 @@ function submitAnswers() {
             correctAnswer: correctAnswers.join(', '),
             isCorrect: !questionIsWrong
         });
+        
+        // Track analytics for owner
+        if (typeof trackOptionSelection === 'function') {
+            trackOptionSelection(currentUsername, question.id, selectedAnswers);
+        }
     });
 
     // Calculate percentage based on total possible points
@@ -248,12 +243,17 @@ function submitAnswers() {
     const passed = percentage >= settings.passPercentage;
     const status = passed ? 'Pass' : 'Fail';
     
+    // Display results
     const scoreLabel = document.getElementById('scoreLabel');
-    scoreLabel.textContent = `Score: ${percentage}% (${userPoints}/${totalPossiblePoints}) - ${status}`;
-    scoreLabel.style.backgroundColor = passed ? '#d4edda' : '#f8d7da';
-    scoreLabel.style.color = passed ? '#155724' : '#721c24';
+    if (scoreLabel) {
+        scoreLabel.textContent = `${percentage}% (${userPoints}/${totalPossiblePoints}) - ${status}`;
+        scoreLabel.className = `score-label ${passed ? 'passed' : 'failed'}`;
+    }
     
-    // Save submission for owner monitoring
+    // Disable submit button after submission
+    document.getElementById('submitBtn').disabled = true;
+    
+    // Save submission to owner monitoring
     const submissionData = {
         answers: clientAnswers,
         score: {
@@ -266,12 +266,12 @@ function submitAnswers() {
     
     saveClientSubmission(currentUsername, submissionData);
     
-    console.log('Submission saved for owner monitoring');
+    // Show completion message
+    alert(`Quiz completed! Your score: ${percentage}% (${userPoints}/${totalPossiblePoints}) - ${status}`);
     
-    // Disable submit button after submission
-    document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').textContent = 'Submitted';
-    
-    // Stop monitoring for new quizzes after submission
+    // Stop monitoring since quiz is complete
     stopSessionMonitoring();
-} 
+}
+
+// Make submitAnswers globally accessible
+window.submitAnswers = submitAnswers; 

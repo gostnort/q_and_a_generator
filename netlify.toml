@@ -2,6 +2,17 @@
   publish = "."
   base = "."
 
+# Redirects for single-page application
+[[redirects]]
+  from = "/test/*"
+  to = "/test/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/test"
+  to = "/test/index.html"
+  status = 200
+
 # Security headers for HTML pages only
 [[headers]]
   for = "/test"

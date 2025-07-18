@@ -8,32 +8,15 @@ window.addEventListener('error', function(e) {
     console.error('File:', e.filename, 'Line:', e.lineno);
 });
 
-// Initialize owner interface
-window.addEventListener('load', function() {
-    console.log('Owner page loaded');
+// Initialize owner dashboard
+window.initializeOwnerDashboard = function(username) {
+    console.log('Initializing owner dashboard for:', username);
     
     try {
-        // Get username from URL parameters or session storage
-        const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('user') || sessionStorage.getItem('username');
-        
-        if (!username) {
-            // Redirect to login if no username
-            window.location.href = '/test/';
-            return;
-        }
-        
-        // Verify user is actually an owner
-        if (checkUserRole(username) !== 'owner') {
-            alert('Access denied. Owner credentials required.');
-            window.location.href = '/test/';
-            return;
-        }
-        
         currentUsername = username;
-        const ownerEmailElement = document.getElementById('ownerEmail');
-        if (ownerEmailElement) {
-            ownerEmailElement.textContent = username;
+        const ownerNameElement = document.getElementById('ownerName');
+        if (ownerNameElement) {
+            ownerNameElement.textContent = username;
         }
         
         // Populate quiz dropdown
@@ -46,12 +29,11 @@ window.addEventListener('load', function() {
             }
         }, 100);
         
-        // Keep the button enabled - don't change the text from HTML
+        // Keep the button enabled
         setTimeout(() => {
             const loadBtn = document.getElementById('loadQuizBtn');
             if (loadBtn) {
                 loadBtn.disabled = false;
-                // Don't change textContent - keep what's in HTML
                 console.log('Load button enabled and ready');
             }
         }, 100);
@@ -59,20 +41,16 @@ window.addEventListener('load', function() {
         // Check if there's an active session
         checkActiveSession();
         
-        // Check if required functions exist
-        console.log('Checking required functions...');
-        console.log('checkUserRole exists:', typeof checkUserRole);
-        console.log('populateQuizDropdown exists:', typeof populateQuizDropdown);
-        console.log('getQuizSession exists:', typeof getQuizSession);
-        console.log('testFolders exists:', typeof testFolders);
+        // Load saved analytics if any
+        loadAnalytics();
         
-        console.log('Owner interface initialized successfully');
+        console.log('Owner dashboard initialized successfully');
         
     } catch (error) {
-        console.error('Error initializing owner interface:', error);
+        console.error('Error initializing owner dashboard:', error);
         alert('Error loading owner dashboard. Please refresh the page.');
     }
-});
+};
 
 // Check for existing active session
 function checkActiveSession() {
@@ -96,16 +74,15 @@ function loadQuizPreview() {
         
         console.log('loadQuizPreview called, dropdown value:', select.value);
         
-        // Always keep button enabled, don't change text
+        // Always keep button enabled
         loadBtn.disabled = false;
-        // Don't change textContent - keep what's in HTML
         console.log('Button state updated for quiz:', select.value);
     } catch (error) {
         console.error('Error in loadQuizPreview:', error);
     }
 }
 
-// Load quiz and show preview - make sure it's globally accessible
+// Load quiz and show preview
 window.loadQuiz = function loadQuiz() {
     console.log('loadQuiz function called');
     const select = document.getElementById('tests');
@@ -115,9 +92,9 @@ window.loadQuiz = function loadQuiz() {
         return;
     }
     console.log('Loading quiz:', selectedQuiz);
-    // 使用GitHub Raw URL
-    const githubRawUrl = 'https://raw.githubusercontent.com/gostnort/q_and_a_generator/main';
-    fetch(`${githubRawUrl}/tests/${selectedQuiz}/quiz.csv`)
+    
+    // Use updated path for collections structure
+    fetch(`/collections/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
             console.log('Raw CSV data:', csvData);
@@ -127,18 +104,26 @@ window.loadQuiz = function loadQuiz() {
                 return;
             }
             console.log('Questions parsed:', questions.length);
-            // Show preview
-            showQuizPreview(questions, selectedQuiz);
+            
+            // Process questions for display
+            const processedQuestions = processQuestions(selectedQuiz);
+            
+            // Show preview with analytics
+            showQuizPreview(processedQuestions, selectedQuiz);
+            
+            // Initialize analytics
+            initializeAnalytics(processedQuestions);
+            
             // Auto-start the session immediately
             startQuizSession(selectedQuiz);
         })
         .catch(error => {
             console.error('Error loading quiz:', error.message);
-            return;
+            alert('Error loading quiz. Please check the file path and try again.');
         });
-}
+};
 
-// Show quiz preview
+// Show quiz preview with analytics
 function showQuizPreview(questions, quizName) {
     console.log('showQuizPreview called with', questions.length, 'questions');
     
@@ -150,30 +135,36 @@ function showQuizPreview(questions, quizName) {
         alert('Preview area not found. Please refresh the page.');
         return;
     }
+    
     try {
         let html = '';
         questions.forEach((question, index) => {
             html += `
-                <div class="question">
-                    <div class="question-header">${index + 1}. ${question.question}</div>
-                    ${question.image ? `<div class="question-image"><img src="/tests/${quizName}/${question.image}" alt="Question image"></div>` : ''}
+                <div class="question" data-question-id="${question.id}">
+                    <div class="question-header">${index + 1}. ${question.text}</div>
+                    ${question.image ? `<div class="question-image"><img src="${question.image}" alt="Question image"></div>` : ''}
                     <div class="options">
             `;
             
             if (question.options && Array.isArray(question.options)) {
                 question.options.forEach(option => {
-                    const isCorrect = option === question.correctAnswer;
+                    const isCorrect = option.startsWith('`');
+                    const cleanOption = isCorrect ? option.substring(1) : option;
                     html += `
                         <div class="option ${isCorrect ? 'correct-answer owner-correct-answer' : ''}">
                             <input type="radio" disabled>
-                            <span class="option-text">${option}</span>
+                            <span class="option-text">${cleanOption}</span>
                             ${isCorrect ? '<span class="result-icon correct-mark">✓ Correct</span>' : ''}
                         </div>
                     `;
                 });
             }
             
-            html += '</div></div>';
+            html += `
+                    </div>
+                    <div class="analytics-display">No responses yet</div>
+                </div>
+            `;
         });
         
         contentDiv.innerHTML = html;
@@ -185,7 +176,7 @@ function showQuizPreview(questions, quizName) {
     }
 }
 
-// Start a new quiz session (modified to accept quiz name parameter)
+// Start a new quiz session
 function startQuizSession(selectedQuiz = null) {
     if (!selectedQuiz) {
         const select = document.getElementById('tests');
@@ -373,7 +364,7 @@ function updateSubmissionCount(count) {
     }
 }
 
-// Logout function - make sure it's globally accessible
+// Logout function
 window.logout = function logout() {
     // Stop monitoring first
     stopClientMonitoring();
@@ -387,7 +378,7 @@ window.logout = function logout() {
     }
     
     // Clear session data
-    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('userName');
     // Redirect to login
-    window.location.href = '/test/';
-} 
+    window.location.reload();
+}; 

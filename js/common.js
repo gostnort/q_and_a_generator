@@ -5,6 +5,9 @@ let settings = {
     passPercentage: 90
 };
 
+// Enhanced analytics tracking
+let questionAnalytics = {};
+
 // CSV parsing function
 function parseCSV(csvText) {
     const lines = csvText.split('\n');
@@ -54,7 +57,8 @@ function processQuestions(quizName) {
         }
         let imageUrl = null;
         if (imageName && imageName.trim() !== '') {
-            imageUrl = `/tests/${quizName}/${encodeURIComponent(imageName.trim())}`;
+            // Direct path - no subfolder
+            imageUrl = `/collections/${quizName}/${encodeURIComponent(imageName.trim())}`;
         }
         questionsData.push({
             text: questionText.trim(),
@@ -84,8 +88,8 @@ function isMultiSelect(options) {
 // Load CSV data from quiz folder
 async function loadCSVDataFromQuizFolder(quizName) {
     try {
-        const folder = `/tests/${quizName}/`;
-        const response = await fetch(folder + 'quiz.csv');
+        // Updated path for collections structure
+        const response = await fetch(`/collections/${quizName}/quiz.csv`);
         if (!response.ok) throw new Error('Quiz CSV not found');
         const csvText = await response.text();
         csvData = parseCSV(csvText);
@@ -147,11 +151,113 @@ function shareQuiz() {
     }
 }
 
+// Enhanced Analytics System
+function initializeAnalytics(questions) {
+    questionAnalytics = {};
+    questions.forEach((question, index) => {
+        questionAnalytics[index] = {
+            totalResponses: 0,
+            optionCounts: {},
+            correctAnswer: getCorrectAnswer(question),
+            correctCount: 0
+        };
+        
+        // Initialize option counts
+        question.options.forEach(option => {
+            const cleanOption = option.startsWith('`') ? option.substring(1) : option;
+            questionAnalytics[index].optionCounts[cleanOption] = 0;
+        });
+    });
+}
+
+function getCorrectAnswer(question) {
+    return question.options
+        .filter(opt => opt.startsWith('`'))
+        .map(opt => opt.substring(1))
+        .join(', ');
+}
+
+function trackOptionSelection(clientName, questionId, selectedOptions) {
+    if (!questionAnalytics[questionId]) {
+        console.error('Analytics not initialized for question:', questionId);
+        return;
+    }
+    
+    questionAnalytics[questionId].totalResponses++;
+    
+    selectedOptions.forEach(option => {
+        if (questionAnalytics[questionId].optionCounts[option] !== undefined) {
+            questionAnalytics[questionId].optionCounts[option]++;
+        }
+    });
+    
+    // Check if answer is correct
+    const question = questions.find(q => q.id === questionId);
+    if (question && isAnswerCorrect(question, selectedOptions)) {
+        questionAnalytics[questionId].correctCount++;
+    }
+    
+    // Update display
+    updateAnalyticsDisplay();
+}
+
+function isAnswerCorrect(question, selectedOptions) {
+    const correctOptions = question.options
+        .filter(opt => opt.startsWith('`'))
+        .map(opt => opt.substring(1));
+    
+    if (correctOptions.length !== selectedOptions.length) {
+        return false;
+    }
+    
+    return correctOptions.every(option => selectedOptions.includes(option));
+}
+
+function updateAnalyticsDisplay() {
+    // Update analytics in owner preview
+    const previewContent = document.getElementById('previewContent');
+    if (!previewContent) return;
+    
+    questions.forEach((question, index) => {
+        const analytics = questionAnalytics[index];
+        if (!analytics) return;
+        
+        const questionElement = previewContent.querySelector(`[data-question-id="${question.id}"]`);
+        if (!questionElement) return;
+        
+        // Update analytics display
+        const analyticsElement = questionElement.querySelector('.analytics-display');
+        if (analyticsElement) {
+            analyticsElement.innerHTML = generateAnalyticsHTML(analytics);
+        }
+    });
+}
+
+function generateAnalyticsHTML(analytics) {
+    if (analytics.totalResponses === 0) {
+        return '<div class="analytics-display">No responses yet</div>';
+    }
+    
+    let html = '<div class="analytics-display">';
+    const optionCounts = Object.entries(analytics.optionCounts);
+    const countStrings = optionCounts
+        .filter(([option, count]) => count > 0)
+        .map(([option, count]) => `${count} of ${option}`)
+        .join('; ');
+    
+    html += `<strong>Responses: ${countStrings}</strong>`;
+    html += ` (${analytics.correctCount}/${analytics.totalResponses} correct)`;
+    html += '</div>';
+    
+    return html;
+}
+
 // State Management System
 const STATE_KEYS = {
     ACTIVE_QUIZ: 'activeQuiz',
     QUIZ_SESSION: 'quizSession',
-    CLIENT_SUBMISSIONS: 'clientSubmissions'
+    CLIENT_SUBMISSIONS: 'clientSubmissions',
+    QUESTION_ANALYTICS: 'questionAnalytics'
 };
 
 // Quiz Session Management
@@ -164,8 +270,9 @@ function setActiveQuiz(quizName) {
     localStorage.setItem(STATE_KEYS.QUIZ_SESSION, JSON.stringify(sessionData));
     localStorage.setItem(STATE_KEYS.ACTIVE_QUIZ, quizName);
     
-    // Clear previous submissions when starting new quiz
+    // Clear previous submissions and analytics when starting new quiz
     localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+    localStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
     
     console.log('Active quiz set:', quizName);
 }
@@ -183,6 +290,7 @@ function clearQuizSession() {
     localStorage.removeItem(STATE_KEYS.ACTIVE_QUIZ);
     localStorage.removeItem(STATE_KEYS.QUIZ_SESSION);
     localStorage.removeItem(STATE_KEYS.CLIENT_SUBMISSIONS);
+    localStorage.removeItem(STATE_KEYS.QUESTION_ANALYTICS);
 }
 
 // Client Submission Management
@@ -213,6 +321,18 @@ function getClientSubmissions() {
 function getClientSubmission(clientName) {
     const submissions = getClientSubmissions();
     return submissions.find(s => s.clientName === clientName) || null;
+}
+
+// Save and load analytics
+function saveAnalytics() {
+    localStorage.setItem(STATE_KEYS.QUESTION_ANALYTICS, JSON.stringify(questionAnalytics));
+}
+
+function loadAnalytics() {
+    const saved = localStorage.getItem(STATE_KEYS.QUESTION_ANALYTICS);
+    if (saved) {
+        questionAnalytics = JSON.parse(saved);
+    }
 }
 
 // Utility functions

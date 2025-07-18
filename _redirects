@@ -1,11 +1,11 @@
-# Allow access to tests folder first
-/test/tests/*      /tests/:splat  200
+# Allow access to collections folder
+/test/collections/*      /collections/:splat  200
 
-# Then other static assets
+# Static assets
 /test/styles.css   /styles.css   200
-/test/config.js    /config.js    200
 /test/js/*         /js/:splat    200
-/test/pages/*      /pages/:splat 200
+/test/review.ico   /review.ico   200
+/test/review.png   /review.png   200
 
 # SPA fallback for /test (must be last!)
 /test/*            /index.html   200 
