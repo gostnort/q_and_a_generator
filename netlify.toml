@@ -17,7 +17,6 @@
 # JSONBIN_API_KEY should be set in Netlify dashboard, not in this file
 # Go to Site settings > Environment variables and add:
 # Key: JSONBIN_API_KEY
-# Value: $2a$10$dfbMBkQ8onTuhMRt/yU4q.wqFZQm/GKEpBBBDb9lKofngGMe9mUGC
 
 # Security headers for HTML pages only
 [[headers]]
