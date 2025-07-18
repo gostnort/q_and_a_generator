@@ -116,7 +116,7 @@ window.loadQuiz = function loadQuiz() {
     }
     console.log('Loading quiz:', selectedQuiz);
     // 使用GitHub Raw URL
-    const githubRawUrl = 'https://https://github.com/gostnort/q_and_a_generator/main';
+    const githubRawUrl = 'https://github.com/gostnort/q_and_a_generator/main';
     fetch(`${githubRawUrl}/tests/${selectedQuiz}/quiz.csv`)
         .then(response => response.text())
         .then(csvData => {
