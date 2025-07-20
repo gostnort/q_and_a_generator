@@ -7,6 +7,7 @@ let refreshInterval = null;
 window.initializeOwnerDashboard = function() {
     loadQuizList();
     checkActiveSession();
+    loadOwnerManagement();
 };
 
 // 显示上传模态框
@@ -238,4 +239,106 @@ async function checkActiveSession() {
         showSessionManagement(session);
         startRealTimeMonitoring();
     }
-} 
+}
+
+// 加载Owner管理
+function loadOwnerManagement() {
+    if (!window.ownerService) return;
+    
+    const currentOwner = window.ownerService.getCurrentOwner();
+    if (!currentOwner || currentOwner.role !== 'admin') {
+        return; // Only admins can see owner management
+    }
+    
+    document.getElementById('ownerManagement').style.display = 'block';
+    displayOwnerStats();
+    displayOwnerList();
+}
+
+// 显示Owner统计
+function displayOwnerStats() {
+    if (!window.ownerService) return;
+    
+    const stats = window.ownerService.getOwnerStats();
+    const statsDiv = document.getElementById('ownerStats');
+    
+    statsDiv.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">${stats.total}</div>
+                <div class="stat-label">总Owner数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">${stats.active}</div>
+                <div class="stat-label">活跃Owner</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">${stats.admins}</div>
+                <div class="stat-label">管理员</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">${stats.teachers}</div>
+                <div class="stat-label">教师</div>
+            </div>
+        </div>
+    `;
+}
+
+// 显示Owner列表
+function displayOwnerList() {
+    if (!window.ownerService) return;
+    
+    try {
+        const owners = window.ownerService.getAllOwners();
+        const listDiv = document.getElementById('ownerList');
+        
+        let html = '';
+        owners.forEach(owner => {
+            const isCurrentUser = window.ownerService.getCurrentOwner()?.username === owner.username;
+            html += `
+                <div class="owner-item ${isCurrentUser ? 'current-user' : ''}">
+                    <div class="owner-info">
+                        <div class="owner-name">${owner.displayName}</div>
+                        <div class="owner-details">
+                            <span class="owner-username">@${owner.username}</span>
+                            <span class="owner-role">${owner.role}</span>
+                            <span class="owner-status ${owner.isActive ? 'active' : 'inactive'}">
+                                ${owner.isActive ? '活跃' : '非活跃'}
+                            </span>
+                        </div>
+                        <div class="owner-email">${owner.email}</div>
+                    </div>
+                    <div class="owner-actions">
+                        ${!isCurrentUser && owner.isActive ? 
+                            `<button onclick="deactivateOwner('${owner.username}')" class="deactivate-btn">停用</button>` : 
+                            ''
+                        }
+                    </div>
+                </div>
+            `;
+        });
+        
+        listDiv.innerHTML = html;
+    } catch (error) {
+        console.error('Error displaying owner list:', error);
+    }
+}
+
+// 停用Owner
+window.deactivateOwner = async function(username) {
+    if (!window.ownerService) return;
+    
+    if (!confirm(`确定要停用Owner "${username}"吗？`)) {
+        return;
+    }
+    
+    try {
+        await window.ownerService.deactivateOwner(username);
+        alert(`Owner "${username}" 已停用`);
+        displayOwnerStats();
+        displayOwnerList();
+    } catch (error) {
+        console.error('Error deactivating owner:', error);
+        alert(`停用失败: ${error.message}`);
+    }
+}; 

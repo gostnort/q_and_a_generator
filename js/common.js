@@ -29,5 +29,12 @@ function hideAllInterfaces() {
 
 // 检查是否为Owner
 function isValidOwner(username) {
-    return username.toLowerCase() === 'owner' || username.toLowerCase() === 'admin';
+    // Use the owner service if available, otherwise fallback to simple check
+    if (window.ownerService) {
+        return window.ownerService.isOwner(username);
+    }
+    // Fallback for when owner service is not loaded
+    return username.toLowerCase() === 'owner' || 
+           username.toLowerCase() === 'admin' || 
+           username.toLowerCase() === 'gostnort';
 } 

@@ -1403,4 +1403,147 @@ button {
     border-radius: 3px;
     cursor: pointer;
     margin-top: 10px;
+}
+
+/* Owner管理样式 */
+.owner-management {
+    margin-bottom: 30px;
+}
+
+.owner-management h3 {
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.owner-stats {
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #007bff;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.owner-list h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.owner-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.owner-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.owner-item.current-user {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.owner-info {
+    flex: 1;
+}
+
+.owner-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.owner-details {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.owner-username {
+    color: #007bff;
+    font-weight: 500;
+}
+
+.owner-role {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.owner-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.owner-status.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.owner-status.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.owner-email {
+    font-size: 12px;
+    color: #666;
+}
+
+.owner-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.deactivate-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.deactivate-btn:hover {
+    background-color: #c82333;
 } 
