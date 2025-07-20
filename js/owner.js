@@ -1,495 +1,241 @@
-// Owner-specific functionality - Client Monitoring & Session Management
+// Owner功能
+let currentSession = null;
+let answersUnsubscribe = null;
 let refreshInterval = null;
 
-// Global error handler
-window.addEventListener('error', function(e) {
-    console.error('JavaScript Error:', e.error);
-    console.error('File:', e.filename, 'Line:', e.lineno);
-});
+// 初始化Owner Dashboard
+window.initializeOwnerDashboard = function() {
+    loadQuizList();
+    checkActiveSession();
+};
 
-// Initialize owner dashboard
-window.initializeOwnerDashboard = function(username) {
-    console.log('Initializing owner dashboard for:', username);
+// 显示上传模态框
+window.showUploadModal = function() {
+    document.getElementById('uploadModal').style.display = 'block';
+};
+
+// 关闭上传模态框
+window.closeUploadModal = function() {
+    document.getElementById('uploadModal').style.display = 'none';
+    document.getElementById('uploadProgress').innerHTML = '';
+};
+
+// 上传Quiz包
+window.uploadQuizPackage = async function() {
+    const zipFile = document.getElementById('zipFile').files[0];
+    const quizName = document.getElementById('quizName').value;
+    const progressDiv = document.getElementById('uploadProgress');
+    
+    if (!zipFile || !quizName) {
+        alert('请选择ZIP文件并输入Quiz名称');
+        return;
+    }
+    
+    progressDiv.innerHTML = '正在上传...';
     
     try {
-        // currentUser is managed by main index.html
-        const ownerNameElement = document.getElementById('ownerName');
-        if (ownerNameElement) {
-            ownerNameElement.textContent = username;
-        }
-        
-        // Populate quiz dropdown
-        setTimeout(() => {
-            try {
-                populateQuizDropdown('tests');
-            } catch (error) {
-                console.error('Error populating quiz dropdown:', error);
-                alert('Error loading quiz list. Please refresh the page.');
-            }
-        }, 100);
-        
-        // Keep the button enabled
-        setTimeout(() => {
-            const loadBtn = document.getElementById('loadQuizBtn');
-            if (loadBtn) {
-                loadBtn.disabled = false;
-                console.log('Load button enabled and ready');
-            }
-        }, 100);
-        
-        // Check if there's an active session
-        checkActiveSession();
-        
-        // Load saved analytics if any
-        loadAnalytics();
-        
-        console.log('Owner dashboard initialized successfully');
-        
+        await window.firebaseService.uploadQuizPackage(zipFile, quizName);
+        progressDiv.innerHTML = '✅ 上传成功！';
+        closeUploadModal();
+        loadQuizList();
     } catch (error) {
-        console.error('Error initializing owner dashboard:', error);
-        alert('Error loading owner dashboard. Please refresh the page.');
+        progressDiv.innerHTML = `❌ 上传失败: ${error.message}`;
     }
 };
 
-// Check for existing active session
-function checkActiveSession() {
-    const session = getQuizSession();
-    if (session) {
-        console.log('Found existing session:', session.quizName);
-        showActiveSession(session);
-        startClientMonitoring();
-        
-        // Restore quiz preview if session exists but no questions are loaded
-        if (!window.randomizedQuestions || window.randomizedQuestions.length === 0) {
-            console.log('Session exists but no questions loaded, restoring quiz preview...');
-            restoreQuizPreview(session.quizName);
-        }
-    }
+// 加载Quiz列表
+async function loadQuizList() {
+    const quizListDiv = document.getElementById('quizList');
+    const quizzes = await window.firebaseService.getAllQuizzes();
+    
+    quizListDiv.innerHTML = '';
+    
+    quizzes.forEach(quiz => {
+        const quizItem = document.createElement('div');
+        quizItem.className = 'quiz-item';
+        quizItem.innerHTML = `
+            <div class="quiz-info">
+                <h4>${quiz.name}</h4>
+                <p>创建时间: ${new Date(quiz.createdAt).toLocaleString()}</p>
+                <p>题目数量: ${quiz.questions.length}</p>
+            </div>
+            <div class="quiz-actions">
+                <button onclick="selectQuiz('${quiz.id}')" class="select-btn">选择</button>
+                <button onclick="deleteQuiz('${quiz.id}')" class="delete-btn">删除</button>
+            </div>
+        `;
+        quizListDiv.appendChild(quizItem);
+    });
 }
 
-// Load quiz preview when dropdown changes
-function loadQuizPreview() {
+// 选择Quiz
+window.selectQuiz = async function(quizId) {
     try {
-        const select = document.getElementById('tests');
-        const loadBtn = document.getElementById('loadQuizBtn');
+        const quizzes = await window.firebaseService.getAllQuizzes();
+        const quiz = quizzes.find(q => q.id === quizId);
         
-        if (!select || !loadBtn) {
-            console.error('Required elements not found for quiz preview');
+        if (!quiz) {
+            alert('Quiz not found.');
             return;
         }
         
-        console.log('loadQuizPreview called, dropdown value:', select.value);
+        // 创建session
+        currentSession = await window.firebaseService.createSession(quizId, quiz.name, quiz.questions);
         
-        // Always keep button enabled
-        loadBtn.disabled = false;
-        console.log('Button state updated for quiz:', select.value);
-    } catch (error) {
-        console.error('Error in loadQuizPreview:', error);
-    }
-}
-
-// Restore quiz preview from existing session
-async function restoreQuizPreview(quizName) {
-    console.log('=== restoreQuizPreview called for:', quizName, '===');
-    
-    try {
-        // Use updated path for collections structure
-        const response = await fetch(`/collections/${quizName}/quiz.csv`);
-        if (!response.ok) {
-            throw new Error('Quiz CSV not found');
-        }
+        // 显示session管理
+        showSessionManagement(currentSession);
         
-        const csvText = await response.text();
-        console.log('Raw CSV data restored:', csvText);
+        // 开始实时监控
+        startRealTimeMonitoring();
         
-        const parsedCsvData = parseCSV(csvText);
-        if (!parsedCsvData || parsedCsvData.length === 0) {
-            throw new Error('No questions found in the quiz or failed to parse CSV data.');
-        }
-        
-        console.log('Questions parsed (restored):', parsedCsvData.length);
-        
-        // Set global csvData for processQuestions function
-        window.csvData = parsedCsvData;
-        
-        // Process questions for display (original order first)
-        const processedQuestions = processQuestions(quizName);
-        
-        // Randomize questions for both owner and client (same sequence)
-        const randomizedQuestions = shuffleArray(processedQuestions);
-        
-        // Store randomized questions globally for client use
-        window.randomizedQuestions = randomizedQuestions;
-        
-        // Show preview with analytics (randomized order)
-        showQuizPreview(randomizedQuestions, quizName);
-        
-        // Initialize analytics with randomized questions
-        initializeAnalytics(randomizedQuestions);
-        
-        console.log('Quiz preview restored successfully');
+        alert(`Quiz "${quiz.name}" 已启动！Clients现在可以参与测试。`);
         
     } catch (error) {
-        console.error('Error restoring quiz preview:', error.message);
-        alert('Error restoring quiz preview: ' + error.message);
+        console.error('Error selecting quiz:', error);
+        alert('Error selecting quiz. Please try again.');
     }
-}
-
-// Load quiz and show preview
-window.loadQuiz = function loadQuiz() {
-    console.log('=== loadQuiz function called ===');
-    const select = document.getElementById('tests');
-    const selectedQuiz = select.value;
-    if (!selectedQuiz) {
-        alert('Please select a quiz.');
-        return;
-    }
-    console.log('Loading quiz:', selectedQuiz);
-    
-    // Use updated path for collections structure
-    fetch(`/collections/${selectedQuiz}/quiz.csv`)
-        .then(response => response.text())
-        .then(csvText => {
-            console.log('Raw CSV data:', csvText);
-            const parsedCsvData = parseCSV(csvText);
-            if (!parsedCsvData || parsedCsvData.length === 0) {
-                alert('No questions found in the quiz or failed to parse CSV data.');
-                return;
-            }
-            console.log('Questions parsed:', parsedCsvData.length);
-            
-            // Set global csvData for processQuestions function
-            window.csvData = parsedCsvData;
-            
-            // Process questions for display (original order first)
-            const processedQuestions = processQuestions(selectedQuiz);
-            
-            // Randomize questions for both owner and client (same sequence)
-            const randomizedQuestions = shuffleArray(processedQuestions);
-            
-            // Store randomized questions globally for client use
-            window.randomizedQuestions = randomizedQuestions;
-            
-            // Show preview with analytics (randomized order)
-            showQuizPreview(randomizedQuestions, selectedQuiz);
-            
-            // Initialize analytics with randomized questions
-            initializeAnalytics(randomizedQuestions);
-            
-            // Show start session option instead of auto-starting
-            showStartSessionOption();
-        })
-        .catch(error => {
-            console.error('Error loading quiz:', error.message);
-            alert('Error loading quiz. Please check the file path and try again.');
-        });
 };
 
-// Show quiz preview with analytics
-function showQuizPreview(displayQuestions, quizName) {
-    console.log('showQuizPreview called with', displayQuestions.length, 'questions');
-    
-    const previewDiv = document.getElementById('quizPreview');
-    const contentDiv = document.getElementById('previewContent');
-    
-    if (!previewDiv || !contentDiv) {
-        console.error('Preview elements not found');
-        alert('Preview area not found. Please refresh the page.');
+// 删除Quiz
+window.deleteQuiz = async function(quizId) {
+    if (!confirm('确定要删除这个Quiz吗？此操作不可撤销。')) {
         return;
     }
     
     try {
-        let html = '';
-        displayQuestions.forEach((question, index) => {
-            html += `
-                <div class="question" data-question-id="${question.id}">
-                    <div class="question-header">${index + 1}. ${question.text}</div>
-                    ${question.image ? `<div class="question-image"><img src="${question.image}" alt="Question image"></div>` : ''}
-                    <div class="options">
-            `;
-            
-            if (question.options && Array.isArray(question.options)) {
-                question.options.forEach(option => {
-                    const isCorrect = option.startsWith('`');
-                    const cleanOption = isCorrect ? option.substring(1) : option;
-                    html += `
-                        <div class="option ${isCorrect ? 'correct-answer owner-correct-answer' : ''}">
-                            <input type="radio" disabled>
-                            <span class="option-text">${cleanOption}</span>
-                            ${isCorrect ? '<span class="result-icon correct-mark">✓ Correct</span>' : ''}
-                        </div>
-                    `;
-                });
-            }
-            
-            html += `
-                    </div>
-                    <div class="analytics-display">No responses yet</div>
-                </div>
-            `;
-        });
-        
-        contentDiv.innerHTML = html;
-        previewDiv.classList.remove('hide');
-        console.log('Quiz preview shown successfully');
+        await window.firebaseService.deleteQuiz(quizId);
+        alert('Quiz删除成功！');
+        loadQuizList();
     } catch (error) {
-        console.error('Error showing quiz preview:', error);
-        alert('Error displaying quiz preview: ' + error.message);
+        console.error('Error deleting quiz:', error);
+        alert('删除失败，请重试。');
     }
-}
-
-// Start a new quiz session
-function startQuizSession(selectedQuiz = null) {
-    if (!selectedQuiz) {
-        const select = document.getElementById('tests');
-        selectedQuiz = select.value;
-        if (!selectedQuiz) {
-            alert('Please select a quiz.');
-            return;
-        }
-    }
-    
-    // Set active quiz in shared state
-    setActiveQuiz(selectedQuiz);
-    
-    // Show session info
-    const session = getQuizSession();
-    showActiveSession(session);
-    
-    // Start monitoring clients
-    startClientMonitoring();
-    
-    console.log(`Quiz session started! Clients can now access the "${selectedQuiz}" quiz.`);
-}
-
-// Start new session manually (separate from quiz loading)
-window.startNewSession = function startNewSession() {
-    const select = document.getElementById('tests');
-    const selectedQuiz = select.value;
-    
-    if (!selectedQuiz) {
-        alert('Please select a quiz first.');
-        return;
-    }
-    
-    // Check if quiz is loaded
-    if (!window.randomizedQuestions || window.randomizedQuestions.length === 0) {
-        alert('Please load a quiz first before starting a session.');
-        return;
-    }
-    
-    console.log('=== startNewSession called for:', selectedQuiz, '===');
-    
-    // Set active quiz in shared state
-    setActiveQuiz(selectedQuiz);
-    
-    // Show session info
-    const session = getQuizSession();
-    showActiveSession(session);
-    
-    // Start monitoring clients
-    startClientMonitoring();
-    
-    console.log(`New session started! Clients can now access the "${selectedQuiz}" quiz.`);
 };
 
-// End current quiz session
-function endQuizSession() {
-    if (confirm('Are you sure you want to end the current quiz session?')) {
-        clearQuizSession();
-        hideActiveSession();
-        stopClientMonitoring();
-        alert('Quiz session ended.');
-    }
-}
-
-// Show active session info
-function showActiveSession(session) {
-    const activeSessionInfo = document.getElementById('activeSessionInfo');
+// 显示Session管理
+function showSessionManagement(sessionData) {
+    document.getElementById('sessionManagement').style.display = 'block';
+    
     const sessionDetails = document.getElementById('sessionDetails');
-    const clientMonitoring = document.querySelector('.client-monitoring');
-    const startSessionInfo = document.getElementById('startSessionInfo');
-    
     sessionDetails.innerHTML = `
-        <div class="session-detail">
-            <strong>Quiz:</strong> ${session.quizName}
-        </div>
-        <div class="session-detail">
-            <strong>Started:</strong> ${formatTime(session.startTime)}
-        </div>
-        <div class="session-detail">
-            <strong>Session ID:</strong> ${session.sessionId}
-        </div>
+        <p><strong>Quiz:</strong> ${sessionData.quizName}</p>
+        <p><strong>Session ID:</strong> ${sessionData.id}</p>
+        <p><strong>开始时间:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
     `;
-    
-    activeSessionInfo.style.display = 'block';
-    startSessionInfo.style.display = 'none';
-    
-    // Hide quiz selector
-    document.querySelector('.test-selector').style.opacity = '0.5';
-    document.querySelector('.test-selector button').disabled = true;
-    document.querySelector('.test-selector select').disabled = true;
 }
 
-// Show start session option
-function showStartSessionOption() {
-    const activeSessionInfo = document.getElementById('activeSessionInfo');
-    const startSessionInfo = document.getElementById('startSessionInfo');
+// 结束Session
+window.endSession = async function() {
+    if (!currentSession) return;
     
-    activeSessionInfo.style.display = 'none';
-    startSessionInfo.style.display = 'block';
+    if (!confirm('确定要结束当前Session吗？')) {
+        return;
+    }
     
-    // Enable quiz selector
-    document.querySelector('.test-selector').style.opacity = '1';
-    document.querySelector('.test-selector button').disabled = false;
-    document.querySelector('.test-selector select').disabled = false;
+    try {
+        await window.firebaseService.endSession(currentSession.id);
+        stopRealTimeMonitoring();
+        document.getElementById('sessionManagement').style.display = 'none';
+        currentSession = null;
+        alert('Session已结束');
+    } catch (error) {
+        console.error('Error ending session:', error);
+        alert('结束Session失败');
+    }
+};
+
+// 开始实时监控
+function startRealTimeMonitoring() {
+    if (!currentSession) return;
+    
+    // 立即获取一次数据
+    refreshMonitoring();
+    
+    // 每15秒刷新一次
+    refreshInterval = setInterval(refreshMonitoring, 15000);
+    
+    // 实时监听答案变化
+    answersUnsubscribe = window.firebaseService.onAnswersUpdate(currentSession.id, (data) => {
+        displayRealTimeResults(data);
+    });
 }
 
-// Hide active session info
-function hideActiveSession() {
-    const activeSessionInfo = document.getElementById('activeSessionInfo');
-    const startSessionInfo = document.getElementById('startSessionInfo');
-    
-    activeSessionInfo.style.display = 'none';
-    startSessionInfo.style.display = 'block';
-    
-    // Show quiz selector
-    document.querySelector('.test-selector').style.opacity = '1';
-    document.querySelector('.test-selector button').disabled = false;
-    document.querySelector('.test-selector select').disabled = false;
-}
-
-// Start monitoring client submissions
-function startClientMonitoring() {
-    refreshSubmissions();
-    // Auto-refresh every 5 seconds
-    refreshInterval = setInterval(refreshSubmissions, 5000);
-}
-
-// Stop monitoring
-function stopClientMonitoring() {
+// 停止实时监控
+function stopRealTimeMonitoring() {
     if (refreshInterval) {
         clearInterval(refreshInterval);
         refreshInterval = null;
     }
-}
-
-// Refresh client submissions display
-function refreshSubmissions() {
-    const submissions = getClientSubmissions();
-    displaySubmissions(submissions);
-    updateSubmissionCount(submissions.length);
-}
-
-// Display client submissions
-function displaySubmissions(submissions) {
-    const container = document.getElementById('submissionsList');
     
-    if (submissions.length === 0) {
-        container.innerHTML = '<div class="no-submissions">No client submissions yet. Waiting for clients to complete the quiz...</div>';
+    if (answersUnsubscribe) {
+        answersUnsubscribe();
+        answersUnsubscribe = null;
+    }
+}
+
+// 刷新监控数据
+window.refreshMonitoring = async function() {
+    if (!currentSession) return;
+    
+    try {
+        const answers = await window.firebaseService.getRealTimeAnswers(currentSession.id);
+        displayRealTimeResults(answers);
+        
+        // 更新最后刷新时间
+        document.getElementById('lastUpdateTime').textContent = 
+            `最后更新: ${new Date().toLocaleTimeString()}`;
+    } catch (error) {
+        console.error('Error refreshing monitoring:', error);
+    }
+};
+
+// 显示实时结果
+function displayRealTimeResults(answers) {
+    const resultsDiv = document.getElementById('realTimeResults');
+    
+    if (!currentSession || !currentSession.questions) {
+        resultsDiv.innerHTML = '<p>没有活跃的Session</p>';
         return;
     }
     
-    container.innerHTML = '';
+    let html = '<div class="real-time-results">';
     
-    submissions.forEach(submission => {
-        const submissionDiv = document.createElement('div');
-        submissionDiv.className = 'submission-item';
-        
-        const statusClass = submission.passed ? 'passed' : 'failed';
-        const statusText = submission.passed ? 'PASSED' : 'FAILED';
-        
-        submissionDiv.innerHTML = `
-            <div class="submission-header">
-                <div class="client-info">
-                    <strong>${submission.clientName}</strong>
-                    <span class="submission-time">${formatTime(submission.submissionTime)}</span>
-                </div>
-                <div class="submission-score ${statusClass}">
-                    ${submission.percentage}% (${submission.score.correct}/${submission.score.total}) - ${statusText}
-                </div>
-            </div>
-            <div class="submission-details">
-                <button onclick="toggleAnswerDetails('${submission.clientName}')" class="toggle-details-btn">
-                    View Answers
-                </button>
-                <div id="answers-${submission.clientName}" class="answer-details hide">
-                    ${renderClientAnswers(submission.answers)}
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(submissionDiv);
-    });
-}
-
-// Render client answers
-function renderClientAnswers(answers) {
-    if (!answers || answers.length === 0) {
-        return '<div class="no-answers">No answer details available</div>';
-    }
-    
-    let html = '<div class="answers-list">';
-    answers.forEach((answer, index) => {
-        const correctClass = answer.isCorrect ? 'correct' : 'incorrect';
-        const icon = answer.isCorrect ? '✓' : '✗';
+    currentSession.questions.forEach((question, index) => {
+        const questionStats = answers[question.id] || { totalResponses: 0, optionCounts: {} };
         
         html += `
-            <div class="answer-item ${correctClass}">
-                <div class="answer-header">
-                    <span class="question-number">Q${index + 1}</span>
-                    <span class="answer-icon">${icon}</span>
-                </div>
-                <div class="answer-text">${answer.questionText}</div>
-                <div class="selected-answer">Selected: ${answer.selectedAnswer || 'No answer'}</div>
-                ${answer.correctAnswer ? `<div class="correct-answer">Correct: ${answer.correctAnswer}</div>` : ''}
-            </div>
+            <div class="question-stats">
+                <h4>问题 ${index + 1}: ${question.text}</h4>
+                <p>总回答数: ${questionStats.totalResponses}</p>
+                <div class="option-stats">
         `;
+        
+        question.options.forEach(option => {
+            const count = questionStats.optionCounts[option] || 0;
+            const percentage = questionStats.totalResponses > 0 ? 
+                Math.round((count / questionStats.totalResponses) * 100) : 0;
+            
+            html += `
+                <div class="option-stat">
+                    <span class="option-text">${option}</span>
+                    <span class="option-count">${count} (${percentage}%)</span>
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
     });
+    
     html += '</div>';
-    
-    return html;
+    resultsDiv.innerHTML = html;
 }
 
-// Toggle answer details
-function toggleAnswerDetails(clientName) {
-    const detailsDiv = document.getElementById(`answers-${clientName}`);
-    const button = detailsDiv.previousElementSibling;
-    
-    if (detailsDiv.classList.contains('hide')) {
-        detailsDiv.classList.remove('hide');
-        button.textContent = 'Hide Answers';
-    } else {
-        detailsDiv.classList.add('hide');
-        button.textContent = 'View Answers';
-    }
-}
-
-// Update submission count
-function updateSubmissionCount(count) {
-    const countElement = document.getElementById('submissionCount');
-    if (count === 0) {
-        countElement.textContent = 'No submissions yet';
-    } else {
-        countElement.textContent = `${count} submission${count > 1 ? 's' : ''} received`;
-    }
-}
-
-// Logout function
-window.logout = function logout() {
-    // Stop monitoring first
-    stopClientMonitoring();
-    
-    // Ask if they want to end the session
-    const session = getQuizSession();
+// 检查活跃Session
+async function checkActiveSession() {
+    const session = await window.firebaseService.getActiveSession();
     if (session) {
-        if (confirm('The client will be kicked out of the quiz. Do you want to end it before logging out?')) {
-            clearQuizSession();
-        }
+        currentSession = session;
+        showSessionManagement(session);
+        startRealTimeMonitoring();
     }
-    
-    // Clear session data
-    sessionStorage.removeItem('userName');
-    // Redirect to login
-    window.location.reload();
-}; 
+} 

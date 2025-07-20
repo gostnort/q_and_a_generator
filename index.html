@@ -6,14 +6,10 @@
     <title>Q&A Generator</title>
     <link rel="icon" type="image/x-icon" href="review.ico">
     <link rel="stylesheet" href="styles.css">
+    <!-- JSZip库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
-    <!-- Environment variable injection for Netlify -->
-    <script>
-        // Set API key directly (will be replaced by Netlify during build)
-        window.JSONBIN_API_KEY = '$2a$10$dfbMBkQ8onTuhMRt/yU4q.wqFZQm/GKEpBBBDb9lKofngGMe9mUGC';
-    </script>
-
     <!-- Login Interface -->
     <div id="loginInterface" class="interface">
         <div class="login-box">
@@ -27,7 +23,7 @@
     <!-- Owner Dashboard -->
     <div id="ownerDashboard" class="interface" style="display: none;">
         <div class="header">
-            <h1>Owner Dashboard#7</h1>
+            <h1>Owner Dashboard</h1>
             <div class="user-info">
                 <span id="ownerName"></span>
                 <button onclick="logout()" class="logout-btn">Logout</button>
@@ -35,38 +31,38 @@
         </div>
         
         <div class="owner-controls">
-            <div class="test-selector">
-                <label for="tests">Select Quiz:</label>
-                <select id="tests">
-                    <option value="">Choose a quiz...</option>
-                </select>
-                <button onclick="loadQuiz()" class="load-btn">Load Quiz</button>
+            <!-- 新建按钮 -->
+            <div class="new-quiz-section">
+                <button onclick="showUploadModal()" class="new-btn">新建Quiz</button>
             </div>
             
-            <div id="quizPreview" class="quiz-preview" style="display: none;">
-                <h3>Quiz Preview</h3>
-                <div id="previewContent"></div>
+            <!-- Quiz管理区域 -->
+            <div class="quiz-management">
+                <h3>Quiz管理</h3>
+                <div id="quizList" class="quiz-list">
+                    <!-- 动态生成的quiz列表 -->
+                </div>
             </div>
             
-            <div id="startSessionInfo" class="session-info">
-                <h3>No Active Session</h3>
-                <p>Load a quiz and click "Start Session" to allow clients to join.</p>
-                <button onclick="startNewSession()" class="start-session-btn">Start Session</button>
+            <!-- Session管理 -->
+            <div id="sessionManagement" class="session-management" style="display: none;">
+                <h3>Session管理</h3>
+                <div id="activeSessionInfo" class="session-info">
+                    <h4>当前活跃Session</h4>
+                    <div id="sessionDetails"></div>
+                    <button onclick="endSession()" class="end-session-btn">结束Session</button>
+                </div>
             </div>
             
-            <div id="activeSessionInfo" class="session-info" style="display: none;">
-                <h3>Active Session</h3>
-                <div id="sessionDetails"></div>
-                <button onclick="endSession()" class="end-session-btn">End Session</button>
+            <!-- 实时监控 -->
+            <div class="real-time-monitoring">
+                <h3>实时监控</h3>
+                <div class="monitoring-controls">
+                    <button onclick="refreshMonitoring()" class="refresh-btn">刷新</button>
+                    <span id="lastUpdateTime"></span>
+                </div>
+                <div id="realTimeResults"></div>
             </div>
-        </div>
-        
-        <div class="client-monitoring">
-            <h3>Client Submissions</h3>
-            <div class="monitoring-controls">
-                <button onclick="refreshSubmissions()" class="refresh-btn">Refresh</button>
-            </div>
-            <div id="submissionsList"></div>
         </div>
     </div>
 
@@ -80,26 +76,15 @@
             </div>
         </div>
         
-        <div id="quizStatus" class="quiz-status">
-            <div class="status-message">Waiting for owner to start a quiz session...</div>
-            <div class="mobile-session-info">
-                <div class="session-indicator">
-                    <span class="indicator-dot"></span>
-                    <span class="indicator-text">Session Status</span>
-                </div>
-            </div>
-        </div>
-        
-        <div id="quizContainer" class="quiz-container" style="display: none;">
+        <div id="quizContainer" class="quiz-container">
             <div class="quiz-header">
                 <h2 id="quizTitle"></h2>
-                <div class="score-label">Score: <span id="score">0</span></div>
             </div>
             
             <div id="questionsContainer"></div>
             
             <div class="submit-section">
-                <button onclick="submitQuiz()" class="submit-btn">Submit Quiz</button>
+                <button onclick="submitQuiz()" class="submit-btn">提交Quiz</button>
             </div>
         </div>
     </div>
@@ -107,26 +92,59 @@
     <!-- 404 Interface -->
     <div id="notFoundInterface" class="interface" style="display: none;">
         <div class="not-found">
-            <h1>404 - Page Not Found</h1>
-            <p>No active quiz session found.</p>
-            <p>Please ask the owner to start a quiz session.</p>
-            <button onclick="logout()" class="back-btn">Back to Login</button>
+            <h1>测试未准备好</h1>
+            <p>您已成功登录，但Owner还没有准备好测试。</p>
+            <p>请等待Owner启动测试，或联系Owner确认测试状态。</p>
+            <div class="status-info">
+                <p><strong>当前状态:</strong> 等待Owner准备测试</p>
+                <p><strong>建议:</strong> 请稍后再试，或联系测试管理员</p>
+            </div>
+            <button onclick="logout()" class="back-btn">返回登录</button>
+            <button onclick="checkForActiveSession()" class="refresh-btn">刷新检查</button>
+        </div>
+    </div>
+
+    <!-- 上传模态框 -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadModal()">&times;</span>
+            <h2>上传新Quiz</h2>
+            
+            <div class="upload-form">
+                <div class="form-group">
+                    <label for="zipFile">选择Quiz包 (ZIP文件):</label>
+                    <input type="file" id="zipFile" accept=".zip" required>
+                    <small>ZIP包应包含: quiz.csv 和 images/ 文件夹</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quizName">Quiz名称:</label>
+                    <input type="text" id="quizName" placeholder="输入Quiz名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <button onclick="uploadQuizPackage()" class="upload-btn">上传</button>
+                    <button onclick="closeUploadModal()" class="cancel-btn">取消</button>
+                </div>
+                
+                <div id="uploadProgress"></div>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="collections/config.js"></script>
-    <script src="js/server.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/common.js"></script>
     <script src="js/owner.js"></script>
     <script src="js/client.js"></script>
     
     <script>
-        // Main application logic
+        // 主应用逻辑
         let currentUser = '';
         let currentUserRole = '';
         
-        // Simple login function
+        // 登录函数
         async function login() {
             const userName = document.getElementById('userName').value.trim();
             if (!userName) {
@@ -134,69 +152,58 @@
                 return;
             }
             
-            console.log('Login attempt for:', userName);
             currentUser = userName;
             sessionStorage.setItem('userName', userName);
             
-            // Check if user is owner using the isValidOwner function from config.js
-            const isOwner = typeof isValidOwner === 'function' && isValidOwner(userName);
-            console.log('Is owner check result:', isOwner);
+            // 检查是否为Owner
+            const isOwner = isValidOwner(userName);
             
             if (isOwner) {
                 currentUserRole = 'owner';
-                console.log('User is owner, showing dashboard');
                 showOwnerDashboard();
             } else {
                 currentUserRole = 'client';
-                console.log('User is client, checking for active session');
-                // Check if there's an active quiz session
-                const activeSession = await getQuizSession();
-                console.log('Active session check result:', activeSession);
+                // 检查是否有活跃session
+                const activeSession = await window.firebaseService.getActiveSession();
                 if (activeSession) {
-                    console.log('Active session found, showing client interface');
                     showClientInterface();
                 } else {
-                    console.log('No active session, showing 404');
                     show404Page();
                 }
             }
         }
         
-        // Show owner dashboard
+        // 显示Owner Dashboard
         function showOwnerDashboard() {
             hideAllInterfaces();
             document.getElementById('ownerDashboard').style.display = 'block';
+            document.getElementById('ownerName').textContent = currentUser;
             
-            // Initialize owner dashboard
+            // 初始化Owner Dashboard
             if (typeof initializeOwnerDashboard === 'function') {
-                initializeOwnerDashboard(currentUser);
+                initializeOwnerDashboard();
             }
         }
         
-        // Show client interface
+        // 显示Client Interface
         function showClientInterface() {
             hideAllInterfaces();
             document.getElementById('clientInterface').style.display = 'block';
+            document.getElementById('clientName').textContent = currentUser;
             
-            // Initialize client interface
+            // 初始化Client Interface
             if (typeof initializeClientInterface === 'function') {
-                initializeClientInterface(currentUser);
+                initializeClientInterface();
             }
         }
         
-        // Show 404 page
+        // 显示404页面
         function show404Page() {
             hideAllInterfaces();
             document.getElementById('notFoundInterface').style.display = 'block';
         }
         
-        // Show login page
-        function showLogin() {
-            hideAllInterfaces();
-            document.getElementById('loginInterface').style.display = 'block';
-        }
-        
-        // Hide all interfaces
+        // 隐藏所有界面
         function hideAllInterfaces() {
             document.getElementById('loginInterface').style.display = 'none';
             document.getElementById('ownerDashboard').style.display = 'none';
@@ -204,36 +211,40 @@
             document.getElementById('notFoundInterface').style.display = 'none';
         }
         
-        // Logout function
+        // 登出函数
         function logout() {
-            const wasOwner = currentUserRole === 'owner';
-            
             sessionStorage.removeItem('userName');
             currentUser = '';
             currentUserRole = '';
-            
-            // Clear any active sessions if owner
-            if (wasOwner && typeof clearQuizSession === 'function') {
-                console.log('Owner logging out, clearing session');
-                clearQuizSession();
-            }
-            
             showLogin();
         }
         
-        // Allow Enter key to trigger login
+        // 显示登录页面
+        function showLogin() {
+            hideAllInterfaces();
+            document.getElementById('loginInterface').style.display = 'block';
+        }
+        
+        // 检查活跃session
+        async function checkForActiveSession() {
+            const activeSession = await window.firebaseService.getActiveSession();
+            if (activeSession) {
+                showClientInterface();
+            }
+        }
+        
+        // 允许Enter键登录
         document.getElementById('userName').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 login();
             }
         });
         
-        // Check for existing session on page load
+        // 页面加载时检查现有session
         window.addEventListener('load', function() {
             const savedUser = sessionStorage.getItem('userName');
             if (savedUser) {
                 currentUser = savedUser;
-                // Re-login with saved user
                 login();
             }
         });
