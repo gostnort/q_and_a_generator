@@ -1,6 +1,6 @@
 // Client功能
-let currentSession = null;
-let currentAnswers = {};
+let clientCurrentSession = null;
+let clientCurrentAnswers = {};
 
 // 初始化Client Interface
 window.initializeClientInterface = async function() {
@@ -16,7 +16,7 @@ async function loadActiveQuiz() {
             return;
         }
         
-        currentSession = session;
+        clientCurrentSession = session;
         displayQuiz(session);
     } catch (error) {
         console.error('Error loading active quiz:', error);
@@ -70,12 +70,12 @@ function displayQuiz(session) {
 
 // 更新答案
 window.updateAnswer = function(questionId, selectedOption) {
-    currentAnswers[questionId] = [selectedOption];
+    clientCurrentAnswers[questionId] = [selectedOption];
     
     // 实时提交答案到Firebase
-    if (currentSession) {
+    if (clientCurrentSession) {
         window.firebaseService.submitAnswer(
-            currentSession.id, 
+            clientCurrentSession.id, 
             currentUser, 
             questionId, 
             [selectedOption]
@@ -85,8 +85,8 @@ window.updateAnswer = function(questionId, selectedOption) {
 
 // 提交Quiz
 window.submitQuiz = function() {
-    const totalQuestions = currentSession.questions.length;
-    const answeredQuestions = Object.keys(currentAnswers).length;
+    const totalQuestions = clientCurrentSession.questions.length;
+    const answeredQuestions = Object.keys(clientCurrentAnswers).length;
     
     if (answeredQuestions < totalQuestions) {
         alert(`请回答所有问题。已回答 ${answeredQuestions}/${totalQuestions} 题。`);
@@ -95,8 +95,8 @@ window.submitQuiz = function() {
     
     // 计算个人结果
     let correctCount = 0;
-    currentSession.questions.forEach(question => {
-        const userAnswer = currentAnswers[question.id];
+    clientCurrentSession.questions.forEach(question => {
+        const userAnswer = clientCurrentAnswers[question.id];
         const correctOptions = question.options.filter(opt => opt.startsWith('`'));
         
         if (userAnswer && userAnswer.length === correctOptions.length) {

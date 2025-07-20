@@ -1,5 +1,5 @@
 // Owner功能
-let currentSession = null;
+let ownerCurrentSession = null;
 let answersUnsubscribe = null;
 let refreshInterval = null;
 
@@ -80,10 +80,10 @@ window.selectQuiz = async function(quizId) {
         }
         
         // 创建session
-        currentSession = await window.firebaseService.createSession(quizId, quiz.name, quiz.questions);
+        ownerCurrentSession = await window.firebaseService.createSession(quizId, quiz.name, quiz.questions);
         
         // 显示session管理
-        showSessionManagement(currentSession);
+        showSessionManagement(ownerCurrentSession);
         
         // 开始实时监控
         startRealTimeMonitoring();
@@ -126,17 +126,17 @@ function showSessionManagement(sessionData) {
 
 // 结束Session
 window.endSession = async function() {
-    if (!currentSession) return;
+    if (!ownerCurrentSession) return;
     
     if (!confirm('确定要结束当前Session吗？')) {
         return;
     }
     
     try {
-        await window.firebaseService.endSession(currentSession.id);
+        await window.firebaseService.endSession(ownerCurrentSession.id);
         stopRealTimeMonitoring();
         document.getElementById('sessionManagement').style.display = 'none';
-        currentSession = null;
+        ownerCurrentSession = null;
         alert('Session已结束');
     } catch (error) {
         console.error('Error ending session:', error);
@@ -146,7 +146,7 @@ window.endSession = async function() {
 
 // 开始实时监控
 function startRealTimeMonitoring() {
-    if (!currentSession) return;
+    if (!ownerCurrentSession) return;
     
     // 立即获取一次数据
     refreshMonitoring();
@@ -155,7 +155,7 @@ function startRealTimeMonitoring() {
     refreshInterval = setInterval(refreshMonitoring, 15000);
     
     // 实时监听答案变化
-    answersUnsubscribe = window.firebaseService.onAnswersUpdate(currentSession.id, (data) => {
+    answersUnsubscribe = window.firebaseService.onAnswersUpdate(ownerCurrentSession.id, (data) => {
         displayRealTimeResults(data);
     });
 }
@@ -175,10 +175,10 @@ function stopRealTimeMonitoring() {
 
 // 刷新监控数据
 window.refreshMonitoring = async function() {
-    if (!currentSession) return;
+    if (!ownerCurrentSession) return;
     
     try {
-        const answers = await window.firebaseService.getRealTimeAnswers(currentSession.id);
+        const answers = await window.firebaseService.getRealTimeAnswers(ownerCurrentSession.id);
         displayRealTimeResults(answers);
         
         // 更新最后刷新时间
@@ -193,14 +193,14 @@ window.refreshMonitoring = async function() {
 function displayRealTimeResults(answers) {
     const resultsDiv = document.getElementById('realTimeResults');
     
-    if (!currentSession || !currentSession.questions) {
+    if (!ownerCurrentSession || !ownerCurrentSession.questions) {
         resultsDiv.innerHTML = '<p>没有活跃的Session</p>';
         return;
     }
     
     let html = '<div class="real-time-results">';
     
-    currentSession.questions.forEach((question, index) => {
+    ownerCurrentSession.questions.forEach((question, index) => {
         const questionStats = answers[question.id] || { totalResponses: 0, optionCounts: {} };
         
         html += `
@@ -234,7 +234,7 @@ function displayRealTimeResults(answers) {
 async function checkActiveSession() {
     const session = await window.firebaseService.getActiveSession();
     if (session) {
-        currentSession = session;
+        ownerCurrentSession = session;
         showSessionManagement(session);
         startRealTimeMonitoring();
     }
