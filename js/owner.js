@@ -32,23 +32,34 @@ window.uploadQuizPackage = async function() {
         return;
     }
     
+    // Check if JS7z is loaded
+    if (typeof JS7z === 'undefined') {
+        progressDiv.innerHTML = '❌ JS7z库未加载，请刷新页面重试';
+        return;
+    }
+    
     progressDiv.innerHTML = '正在解压...';
     try {
-        // 读取文件为ArrayBuffer
+        // Read file as ArrayBuffer
         const arrayBuffer = await archiveFile.arrayBuffer();
-        // 启动JS7z
+        
+        // Initialize JS7z
         const js7z = await JS7z();
-        // 写入虚拟文件系统
+        
+        // Write to virtual file system
         js7z.FS.writeFile('/archive', new Uint8Array(arrayBuffer));
-        // 解压到 /out 目录
+        
+        // Extract to /out directory
         await new Promise((resolve, reject) => {
             js7z.onExit = (code) => code === 0 ? resolve() : reject(new Error('解压失败'));
             js7z.callMain(['x', '/archive', '-o/out']);
         });
-        // 查找quiz.csv和images文件夹下的所有文件
+        
+        // Find quiz.csv and images
         const files = js7z.FS.readdir('/out');
         let quizCsv = null;
         let images = [];
+        
         for (const file of files) {
             if (file === '.' || file === '..') continue;
             if (file.toLowerCase() === 'quiz.csv') {
@@ -62,19 +73,26 @@ window.uploadQuizPackage = async function() {
                 }
             }
         }
-        if (!quizCsv) throw new Error('quiz.csv未找到');
+        
+        if (!quizCsv) {
+            throw new Error('quiz.csv未找到');
+        }
+        
         progressDiv.innerHTML = '正在上传到Firebase...';
-        // 调用Firebase上传
+        
+        // Call Firebase upload
         await window.firebaseService.uploadQuizPackage({
             quizName,
             quizCsv,
             images
         });
+        
         progressDiv.innerHTML = '✅ 上传成功！';
         closeUploadModal();
         loadQuizList();
     } catch (error) {
         progressDiv.innerHTML = `❌ 上传失败: ${error.message}`;
+        console.error('Upload error:', error);
     }
 };
 
