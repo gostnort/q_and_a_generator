@@ -176,13 +176,11 @@ class OwnerService {
         const totalOwners = this.owners.length;
         const activeOwners = this.owners.filter(o => o.isActive).length;
         const adminOwners = this.owners.filter(o => o.role === 'admin' && o.isActive).length;
-        const teacherOwners = this.owners.filter(o => o.role === 'teacher' && o.isActive).length;
 
         return {
             total: totalOwners,
             active: activeOwners,
             admins: adminOwners,
-            teachers: teacherOwners,
             inactive: totalOwners - activeOwners
         };
     }
@@ -203,8 +201,8 @@ class OwnerService {
             errors.push('Valid email is required');
         }
 
-        if (!ownerData.role || !['admin', 'teacher'].includes(ownerData.role)) {
-            errors.push('Role must be either "admin" or "teacher"');
+        if (!ownerData.role || ownerData.role !== 'admin') {
+            errors.push('Role must be "admin"');
         }
 
         return errors;

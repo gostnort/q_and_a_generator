@@ -310,10 +310,6 @@ function displayOwnerStats() {
                 <div class="stat-number">${stats.admins}</div>
                 <div class="stat-label">管理员</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number">${stats.teachers}</div>
-                <div class="stat-label">教师</div>
-            </div>
         </div>
     `;
 }

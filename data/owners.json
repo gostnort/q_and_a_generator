@@ -2,8 +2,9 @@
   "owners": [
     {
       "username": "gostnort@hotmail.com",
+      "displayName": "Gostnort",
       "role": "admin",
-      "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz"],
+      "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz", "manage_owners"],
       "createdAt": "2024-01-01T00:00:00.000Z",
       "isActive": true
     }
