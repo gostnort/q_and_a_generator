@@ -9,49 +9,17 @@ class OwnerService {
 
     // Load owners from JSON file
     async loadOwners() {
-        try {
-            const response = await fetch('/data/owners.json');
-            if (!response.ok) {
-                throw new Error('Failed to load owners.json');
-            }
-            
-            const data = await response.json();
-            this.owners = data.owners || [];
-            this.settings = data.settings || {};
-            
-            console.log(`Loaded ${this.owners.length} owners from JSON`);
-            return true;
-        } catch (error) {
-            console.error('Error loading owners:', error);
-            // Fallback to default owners
-            this.owners = [
-                {
-                    username: "owner",
-                    displayName: "Main Owner",
-                    email: "owner@example.com",
-                    role: "admin",
-                    permissions: ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz"],
-                    isActive: true
-                },
-                {
-                    username: "admin",
-                    displayName: "Administrator",
-                    email: "admin@example.com",
-                    role: "admin",
-                    permissions: ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz"],
-                    isActive: true
-                },
-                {
-                    username: "gostnort",
-                    displayName: "Gostnort",
-                    email: "gostnort@hotmail.com",
-                    role: "admin",
-                    permissions: ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz"],
-                    isActive: true
-                }
-            ];
+        const response = await fetch('/data/owners.json');
+        if (!response.ok) {
+            this.owners = [];
+            this.settings = {};
             return false;
         }
+        const data = await response.json();
+        this.owners = data.owners || [];
+        this.settings = data.settings || {};
+        console.log(`Loaded ${this.owners.length} owners from JSON`);
+        return true;
     }
 
     // Check if user is an owner

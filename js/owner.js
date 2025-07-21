@@ -23,19 +23,53 @@ window.closeUploadModal = function() {
 
 // 上传Quiz包
 window.uploadQuizPackage = async function() {
-    const zipFile = document.getElementById('zipFile').files[0];
+    const archiveFile = document.getElementById('zipFile').files[0];
     const quizName = document.getElementById('quizName').value;
     const progressDiv = document.getElementById('uploadProgress');
     
-    if (!zipFile || !quizName) {
-        alert('请选择ZIP文件并输入Quiz名称');
+    if (!archiveFile || !quizName) {
+        alert('请选择压缩文件并输入Quiz名称');
         return;
     }
     
-    progressDiv.innerHTML = '正在上传...';
-    
+    progressDiv.innerHTML = '正在解压...';
     try {
-        await window.firebaseService.uploadQuizPackage(zipFile, quizName);
+        // 读取文件为ArrayBuffer
+        const arrayBuffer = await archiveFile.arrayBuffer();
+        // 启动JS7z
+        const js7z = await JS7z();
+        // 写入虚拟文件系统
+        js7z.FS.writeFile('/archive', new Uint8Array(arrayBuffer));
+        // 解压到 /out 目录
+        await new Promise((resolve, reject) => {
+            js7z.onExit = (code) => code === 0 ? resolve() : reject(new Error('解压失败'));
+            js7z.callMain(['x', '/archive', '-o/out']);
+        });
+        // 查找quiz.csv和images文件夹下的所有文件
+        const files = js7z.FS.readdir('/out');
+        let quizCsv = null;
+        let images = [];
+        for (const file of files) {
+            if (file === '.' || file === '..') continue;
+            if (file.toLowerCase() === 'quiz.csv') {
+                quizCsv = js7z.FS.readFile('/out/quiz.csv');
+            } else if (file.toLowerCase() === 'images') {
+                const imageFiles = js7z.FS.readdir('/out/images');
+                for (const img of imageFiles) {
+                    if (img === '.' || img === '..') continue;
+                    const imgData = js7z.FS.readFile(`/out/images/${img}`);
+                    images.push({ name: img, data: imgData });
+                }
+            }
+        }
+        if (!quizCsv) throw new Error('quiz.csv未找到');
+        progressDiv.innerHTML = '正在上传到Firebase...';
+        // 调用Firebase上传
+        await window.firebaseService.uploadQuizPackage({
+            quizName,
+            quizCsv,
+            images
+        });
         progressDiv.innerHTML = '✅ 上传成功！';
         closeUploadModal();
         loadQuizList();

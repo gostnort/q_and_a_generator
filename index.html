@@ -7,7 +7,9 @@
     <link rel="icon" type="image/x-icon" href="review.ico">
     <link rel="stylesheet" href="styles.css">
     <!-- JSZip库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script> -->
+    <!-- JS7z库 -->
+    <script src="https://cdn.jsdelivr.net/gh/GMH-Code/JS7z@main/js7z.js"></script>
 </head>
 <body>
     <!-- Login Interface -->
@@ -15,7 +17,8 @@
         <div class="login-box">
             <h1>Q&A Generator</h1>
             <p>Enter your name to continue:</p>
-                            <input type="text" id="userName" placeholder="Enter your username" value="gostnort" required>
+                <input type="text" id="userName" placeholder="Enter your username" required>
+                <!-- NOT checked the duplicate username yet -->
             <button onclick="login()">Login</button>
         </div>
     </div>
@@ -124,9 +127,9 @@
             
             <div class="upload-form">
                 <div class="form-group">
-                    <label for="zipFile">选择Quiz包 (ZIP文件):</label>
-                    <input type="file" id="zipFile" accept=".zip" required>
-                    <small>ZIP包应包含: quiz.csv 和 images/ 文件夹</small>
+                    <label for="zipFile">选择Quiz包 (压缩文件):</label>
+                    <input type="file" id="zipFile" accept=".zip,.7z,.gz,.tar.gz,.tgz" required>
+                    <small>压缩包应包含: quiz.csv 和 images/ 文件夹</small>
                 </div>
                 
                 <div class="form-group">
@@ -163,16 +166,12 @@
                 alert('Please enter your name.');
                 return;
             }
-            
             currentUser = userName;
             sessionStorage.setItem('userName', userName);
-            
             // 检查是否为Owner
             const isOwner = isValidOwner(userName);
-            
             if (isOwner) {
                 currentUserRole = 'owner';
-                
                 // Authenticate with owner service
                 if (window.ownerService) {
                     const owner = window.ownerService.authenticateOwner(userName);
@@ -180,7 +179,6 @@
                         console.log(`Welcome, ${owner.displayName}! Role: ${owner.role}`);
                     }
                 }
-                
                 showOwnerDashboard();
             } else {
                 currentUserRole = 'client';
