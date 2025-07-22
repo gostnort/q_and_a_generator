@@ -26,70 +26,62 @@ window.uploadQuizPackage = async function() {
     const archiveFile = document.getElementById('zipFile').files[0];
     const quizName = document.getElementById('quizName').value;
     const progressDiv = document.getElementById('uploadProgress');
-    
+    //也是数据库内的名称
     if (!archiveFile || !quizName) {
         alert('请选择压缩文件并输入Quiz名称');
         return;
     }
-    
-    // Check if JS7z is loaded
+    // 检查JS7z是否加载
     if (typeof JS7z === 'undefined') {
         progressDiv.innerHTML = '❌ JS7z库未加载，请刷新页面重试';
         return;
     }
-    
     progressDiv.innerHTML = '正在解压...';
     try {
-        // Read file as ArrayBuffer
+        // 读取文件为ArrayBuffer
         const arrayBuffer = await archiveFile.arrayBuffer();
-        
-        // Initialize JS7z
+        // 初始化JS7z
         const js7z = await JS7z();
-        
-        // Write to virtual file system
+        // 写入虚拟文件系统
         js7z.FS.writeFile('/archive', new Uint8Array(arrayBuffer));
-        
-        // Extract to /out directory
+        // 解压到/out目录
         await new Promise((resolve, reject) => {
             js7z.onExit = (code) => code === 0 ? resolve() : reject(new Error('解压失败'));
             js7z.callMain(['x', '/archive', '-o/out']);
         });
-        
-        // Find quiz.csv and images
+        // 读取/out目录下的文件
         const files = js7z.FS.readdir('/out');
         let quizCsv = null;
         let images = [];
-        
         for (const file of files) {
-            if (file === '.' || file === '..') continue;
-            if (file.toLowerCase() === 'quiz.csv') {
+            if (file === '.' || file === '..') continue;//忽略.和..
+            if (file.toLowerCase() === 'quiz.csv') {//读取quiz.csv
                 quizCsv = js7z.FS.readFile('/out/quiz.csv');
-            } else if (file.toLowerCase() === 'images') {
-                const imageFiles = js7z.FS.readdir('/out/images');
-                for (const img of imageFiles) {
-                    if (img === '.' || img === '..') continue;
-                    const imgData = js7z.FS.readFile(`/out/images/${img}`);
-                    images.push({ name: img, data: imgData });
-                }
+            } else if (//读取图片
+                file.toLowerCase().endsWith('.png') ||
+                file.toLowerCase().endsWith('.jpg') ||
+                file.toLowerCase().endsWith('.jpeg')
+            ) {
+                const imgData = js7z.FS.readFile(`/out/${file}`);
+                images.push({ name: file, data: imgData });
             }
+            // 其他类型文件暂时忽略
         }
-        
         if (!quizCsv) {
             throw new Error('quiz.csv未找到');
         }
-        
         progressDiv.innerHTML = '正在上传到Firebase...';
-        
-        // Call Firebase upload
-        await window.firebaseService.uploadQuizPackage({
+        // 使用 quizUpload 工具解析并上传，传递进度回调
+        await window.quizUpload.uploadQuizPackage({
             quizName,
             quizCsv,
-            images
+            images,
+            onProgress: (message) => {
+                progressDiv.innerHTML = message;
+            }
         });
-        
-        progressDiv.innerHTML = '✅ 上传成功！';
-        closeUploadModal();
-        loadQuizList();
+        closeUploadModal();//关闭上传模态框
+        loadQuizList();//加载Quiz列表
     } catch (error) {
         progressDiv.innerHTML = `❌ 上传失败: ${error.message}`;
         console.error('Upload error:', error);
@@ -264,13 +256,19 @@ function displayRealTimeResults(answers) {
         `;
         
         question.options.forEach(option => {
-            const count = questionStats.optionCounts[option] || 0;
+            // 适配新的选项结构 - option现在是{text, correct}对象
+            const optionText = typeof option === 'string' ? option : option.text;
+            const count = questionStats.optionCounts[optionText] || 0;
             const percentage = questionStats.totalResponses > 0 ? 
                 Math.round((count / questionStats.totalResponses) * 100) : 0;
             
+            // 如果是正确答案，显示标记
+            const isCorrect = typeof option === 'object' && option.correct;
+            const correctMark = isCorrect ? ' ✓' : '';
+            
             html += `
-                <div class="option-stat">
-                    <span class="option-text">${option}</span>
+                <div class="option-stat ${isCorrect ? 'correct-option' : ''}">
+                    <span class="option-text">${optionText}${correctMark}</span>
                     <span class="option-count">${count} (${percentage}%)</span>
                 </div>
             `;

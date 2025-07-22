@@ -16,6 +16,12 @@ async function loadActiveQuiz() {
             return;
         }
         
+        // 获取包含图片的完整Quiz数据
+        const quizWithImages = await window.firebaseService.getQuizWithImages(session.quizId);
+        if (quizWithImages) {
+            session.questions = quizWithImages.questions;
+        }
+        
         clientCurrentSession = session;
         displayQuiz(session);
     } catch (error) {
@@ -42,23 +48,31 @@ function displayQuiz(session) {
             </div>
         `;
         
-        if (question.image) {
+        // 显示图片（base64格式）
+        if (question.imageData && question.imageData.base64) {
             html += `
                 <div class="question-image">
-                    <img src="${question.image}" alt="Question image" 
-                         onerror="this.style.display='none'">
+                    <img src="data:image/png;base64,${question.imageData.base64}" 
+                         alt="Question image" onerror="this.style.display='none'">
                 </div>
             `;
         }
         
+        // 检查是否为多选题（多个正确答案）
+        const correctCount = question.options.filter(opt => opt.correct).length;
+        const isMultipleChoice = correctCount > 1;
+        const inputType = isMultipleChoice ? 'checkbox' : 'radio';
+        
         // 显示选项
         question.options.forEach((option, optIndex) => {
             const optionId = `question_${question.id}_option_${optIndex}`;
+            const inputName = isMultipleChoice ? `question_${question.id}_${optIndex}` : `question_${question.id}`;
+            
             html += `
                 <div class="option">
-                    <input type="radio" id="${optionId}" name="question_${question.id}" 
-                           value="${option}" onchange="updateAnswer(${question.id}, '${option}')">
-                    <label for="${optionId}" class="option-text">${option}</label>
+                    <input type="${inputType}" id="${optionId}" name="${inputName}" 
+                           value="${option.text}" onchange="updateAnswer('${question.id}', '${option.text}', ${isMultipleChoice})">
+                    <label for="${optionId}" class="option-text">${option.text}</label>
                 </div>
             `;
         });
@@ -69,8 +83,25 @@ function displayQuiz(session) {
 }
 
 // 更新答案
-window.updateAnswer = function(questionId, selectedOption) {
-    clientCurrentAnswers[questionId] = [selectedOption];
+window.updateAnswer = function(questionId, selectedOption, isMultiple) {
+    if (isMultiple) {
+        // 多选题处理
+        if (!clientCurrentAnswers[questionId]) {
+            clientCurrentAnswers[questionId] = [];
+        }
+        
+        const checkbox = document.querySelector(`input[value="${selectedOption}"]`);
+        if (checkbox.checked) {
+            if (!clientCurrentAnswers[questionId].includes(selectedOption)) {
+                clientCurrentAnswers[questionId].push(selectedOption);
+            }
+        } else {
+            clientCurrentAnswers[questionId] = clientCurrentAnswers[questionId].filter(opt => opt !== selectedOption);
+        }
+    } else {
+        // 单选题处理
+        clientCurrentAnswers[questionId] = [selectedOption];
+    }
     
     // 实时提交答案到Firebase
     if (clientCurrentSession) {
@@ -78,7 +109,7 @@ window.updateAnswer = function(questionId, selectedOption) {
             clientCurrentSession.id, 
             currentUser, 
             questionId, 
-            [selectedOption]
+            clientCurrentAnswers[questionId]
         );
     }
 };
@@ -96,14 +127,13 @@ window.submitQuiz = function() {
     // 计算个人结果
     let correctCount = 0;
     clientCurrentSession.questions.forEach(question => {
-        const userAnswer = clientCurrentAnswers[question.id];
-        const correctOptions = question.options.filter(opt => opt.startsWith('`'));
+        const userAnswers = clientCurrentAnswers[question.id] || [];
+        const correctOptions = question.options.filter(opt => opt.correct).map(opt => opt.text);
         
-        if (userAnswer && userAnswer.length === correctOptions.length) {
-            const isCorrect = correctOptions.every(opt => 
-                userAnswer.includes(opt.substring(1))
-            );
-            if (isCorrect) correctCount++;
+        // 检查答案是否正确（必须完全匹配）
+        if (userAnswers.length === correctOptions.length && 
+            correctOptions.every(correct => userAnswers.includes(correct))) {
+            correctCount++;
         }
     });
     
@@ -113,6 +143,9 @@ window.submitQuiz = function() {
     alert(`Quiz完成！\n正确率: ${correctCount}/${totalQuestions} (${percentage}%)`);
     
     // 禁用提交按钮
-    document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').textContent = '已提交';
+    const submitBtn = document.querySelector('.submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '已提交';
+    }
 }; 
