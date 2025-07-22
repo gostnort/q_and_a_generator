@@ -66,7 +66,8 @@ function displayQuiz(session) {
         // 显示选项
         question.options.forEach((option, optIndex) => {
             const optionId = `question_${question.id}_option_${optIndex}`;
-            const inputName = isMultipleChoice ? `question_${question.id}_${optIndex}` : `question_${question.id}`;
+            const inputName = isMultipleChoice ? `question_${question.id}_option_${optIndex}` : `question_${question.id}`;
+            const inputType = isMultipleChoice ? 'checkbox' : 'radio';
             
             html += `
                 <div class="option">
@@ -106,10 +107,10 @@ window.updateAnswer = function(questionId, selectedOption, isMultiple) {
     // 实时提交答案到Firebase
     if (clientCurrentSession) {
         window.firebaseService.submitAnswer(
-            clientCurrentSession.id, 
-            currentUser, 
-            questionId, 
-            clientCurrentAnswers[questionId]
+            clientCurrentSession.id,     // sessionId
+            questionId,                  // questionId
+            clientCurrentAnswers[questionId], // answers数组
+            currentUser                  // userName
         );
     }
 };

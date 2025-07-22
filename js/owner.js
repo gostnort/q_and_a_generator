@@ -143,17 +143,34 @@ window.selectQuiz = async function(quizId) {
 
 // 删除Quiz
 window.deleteQuiz = async function(quizId) {
-    if (!confirm('确定要删除这个Quiz吗？此操作不可撤销。')) {
+    if (!confirm('确认删除此Quiz吗？\n\n⚠️ 警告：这将同时删除：\n• Quiz及其所有题目\n• 相关的所有Sessions\n• 所有用户的答题记录\n\n此操作不可撤销！')) {
         return;
     }
     
     try {
+        console.log('开始删除Quiz:', quizId);
+        
+        // 显示删除进度
+        const deleteButton = event.target;
+        const originalText = deleteButton.textContent;
+        deleteButton.textContent = '删除中...';
+        deleteButton.disabled = true;
+        
+        // 调用级联删除
         await window.firebaseService.deleteQuiz(quizId);
+        
         alert('Quiz删除成功！');
-        loadQuizList();
+        loadQuizList(); // 刷新列表
+        
     } catch (error) {
-        console.error('Error deleting quiz:', error);
-        alert('删除失败，请重试。');
+        console.error('删除Quiz失败:', error);
+        alert(`删除失败: ${error.message}`);
+        
+        // 恢复按钮状态
+        if (event.target) {
+            event.target.textContent = originalText;
+            event.target.disabled = false;
+        }
     }
 };
 
@@ -169,23 +186,81 @@ function showSessionManagement(sessionData) {
     `;
 }
 
-// 结束Session
+// 结束Session（带选项）
 window.endSession = async function() {
-    if (!ownerCurrentSession) return;
+    if (!ownerCurrentSession) {
+        alert('没有活跃的Session');
+        return;
+    }
     
-    if (!confirm('确定要结束当前Session吗？')) {
+    // 询问是否删除答题记录
+    const deleteAnswers = confirm(
+        '确认结束当前Session吗？\n\n' +
+        '选择"确定"：结束Session并保留答题记录（用于后续分析）\n' +
+        '选择"取消"：取消操作\n\n' +
+        '如需完全清除答题记录，请在结束后使用"清理数据"功能。'
+    );
+    
+    if (!deleteAnswers && !confirm('是否只结束Session但保留答题记录？')) {
+        return; // 用户取消操作
+    }
+    
+    try {
+        const endButton = document.querySelector('button[onclick="endSession()"]');
+        if (endButton) {
+            endButton.textContent = '结束中...';
+            endButton.disabled = true;
+        }
+        
+        // 结束session，暂时保留答题记录
+        await window.firebaseService.endSession(ownerCurrentSession.id, false);
+        
+        ownerCurrentSession = null;
+        
+        // 刷新界面
+        displayOwnerStats();
+        document.getElementById('sessionInfo').innerHTML = '<p>当前没有活跃的Session</p>';
+        document.getElementById('realTimeResults').innerHTML = '';
+        
+        alert('Session已结束！答题记录已保留。');
+        
+    } catch (error) {
+        console.error('结束Session失败:', error);
+        alert(`结束Session失败: ${error.message}`);
+        
+        // 恢复按钮状态
+        const endButton = document.querySelector('button[onclick="endSession()"]');
+        if (endButton) {
+            endButton.textContent = '结束Session';
+            endButton.disabled = false;
+        }
+    }
+};
+
+// 清理Session数据（新增功能）
+window.cleanupSessionData = async function(sessionId) {
+    if (!sessionId) {
+        alert('请提供Session ID');
+        return;
+    }
+    
+    if (!confirm('确认清理此Session的所有答题记录吗？\n\n⚠️ 此操作将永久删除用户答题数据，不可撤销！')) {
         return;
     }
     
     try {
-        await window.firebaseService.endSession(ownerCurrentSession.id);
-        stopRealTimeMonitoring();
-        document.getElementById('sessionManagement').style.display = 'none';
-        ownerCurrentSession = null;
-        alert('Session已结束');
+        // 只删除answers，不影响session记录
+        await window.firebaseService.endSession(sessionId, true);
+        alert('Session答题记录清理完成！');
+        
+        // 如果是当前活跃session，刷新监控
+        if (ownerCurrentSession && ownerCurrentSession.id === sessionId) {
+            refreshMonitoring();
+        }
+        
     } catch (error) {
-        console.error('Error ending session:', error);
-        alert('结束Session失败');
+        console.error('清理Session数据失败:', error);
+        alert(`清理失败: ${error.message}`);
     }
 };
 
@@ -243,15 +318,30 @@ function displayRealTimeResults(answers) {
         return;
     }
     
+    // 获取客户端统计信息
+    const clientInfo = answers._meta || { totalClients: 0, clientList: [] };
+    
     let html = '<div class="real-time-results">';
     
+    // 显示客户端统计
+    html += `
+        <div class="client-stats">
+            <h4>客户端参与统计</h4>
+            <p>参与人数: ${clientInfo.totalClients} 人</p>
+            <div class="client-list">
+                <strong>参与客户端:</strong> ${clientInfo.clientList.join(', ') || '暂无'}
+            </div>
+        </div>
+    `;
+    
     ownerCurrentSession.questions.forEach((question, index) => {
-        const questionStats = answers[question.id] || { totalResponses: 0, optionCounts: {} };
+        const questionStats = answers[question.id] || { totalResponses: 0, optionCounts: {}, clients: [] };
         
         html += `
             <div class="question-stats">
                 <h4>问题 ${index + 1}: ${question.text}</h4>
                 <p>总回答数: ${questionStats.totalResponses}</p>
+                <p>回答人数: ${questionStats.clients ? questionStats.clients.length : 0} 人</p>
                 <div class="option-stats">
         `;
         
@@ -279,6 +369,32 @@ function displayRealTimeResults(answers) {
     
     html += '</div>';
     resultsDiv.innerHTML = html;
+    
+    // 更新owner统计区域的客户端数字
+    updateOwnerStatsWithClients(clientInfo);
+}
+
+// 更新owner统计区域显示实时客户端数据
+function updateOwnerStatsWithClients(clientInfo) {
+    if (!ownerCurrentSession) return;
+    
+    const statsDiv = document.getElementById('ownerStats');
+    statsDiv.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">${clientInfo.totalClients}</div>
+                <div class="stat-label">参与客户端</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">${clientInfo.clientList.length}</div>
+                <div class="stat-label">已答题人数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">1</div>
+                <div class="stat-label">活跃Session</div>
+            </div>
+        </div>
+    `;
 }
 
 // 检查活跃Session
@@ -309,6 +425,29 @@ function loadOwnerManagement() {
 function displayOwnerStats() {
     if (!window.ownerService) return;
     
+    // 如果有活跃session，显示客户端统计而不是owner统计
+    if (ownerCurrentSession) {
+        const statsDiv = document.getElementById('ownerStats');
+        statsDiv.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">参与客户端</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">已答题人数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">1</div>
+                    <div class="stat-label">活跃Session</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // 原有的owner统计逻辑（仅在没有活跃session时显示）
     const stats = window.ownerService.getOwnerStats();
     const statsDiv = document.getElementById('ownerStats');
     
