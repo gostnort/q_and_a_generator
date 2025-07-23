@@ -483,15 +483,13 @@ function displayOwnerList() {
             html += `
                 <div class="owner-item ${isCurrentUser ? 'current-user' : ''}">
                     <div class="owner-info">
-                        <div class="owner-name">${owner.displayName}</div>
-                        <div class="owner-details">
-                            <span class="owner-username">@${owner.username}</span>
-                            <span class="owner-role">${owner.role}</span>
+                        <div class="owner-name">
+                            ${owner.displayName}
+                            <span class="owner-role">${owner.role.toUpperCase()}</span>
                             <span class="owner-status ${owner.isActive ? 'active' : 'inactive'}">
                                 ${owner.isActive ? '活跃' : '非活跃'}
                             </span>
                         </div>
-                        <div class="owner-email">${owner.email}</div>
                     </div>
                     <div class="owner-actions">
                         ${!isCurrentUser && owner.isActive ? 

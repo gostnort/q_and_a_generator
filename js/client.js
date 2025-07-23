@@ -101,7 +101,7 @@ window.updateAnswer = function(questionId, selectedOption, isMultiple) {
         }
     } else {
         // 单选题处理
-        clientCurrentAnswers[questionId] = [selectedOption];
+    clientCurrentAnswers[questionId] = [selectedOption];
     }
     
     // 实时提交答案到Firebase

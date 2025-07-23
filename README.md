@@ -1,74 +1,80 @@
-# Q&A Generator - Multi-Client Edition
+# Q&A Generator - Real-Time Quiz Platform
 
-A web-based Q&A quiz generator with owner/client architecture and role-based question randomization. Features clean mobile-first UI and simple CSV-based quiz management.
+A modern web-based quiz platform with real-time monitoring, multi-format archive support, and Firebase backend. Features owner dashboard for quiz management and client interface for interactive quiz participation.
 
 ## ✨ Features
 
-### 🎯 **Role-Based Experience**
-- **Owner Interface**: See questions and options in original order for monitoring
-- **Client Interface**: Get randomized questions and shuffled options for unique experience
-- **Role Detection**: Automatic role assignment based on configured owner emails
-- **Enhanced Analytics**: Real-time tracking of client answer selections
+### 🎯 **Real-Time Quiz Platform**
+- **Owner Dashboard**: Upload, manage, and monitor quizzes in real-time
+- **Client Interface**: Interactive quiz participation with immediate feedback
+- **Live Monitoring**: Real-time tracking of participant answers and statistics
+- **Session Management**: Start/stop quiz sessions with participant tracking
 
 ### 📱 **Mobile-First Design**
-- **100% Mobile Optimized**: Designed specifically for cellphone use
-- **Touch-Friendly Interface**: Large buttons and touch targets
-- **Responsive Layout**: Single-column design that works perfectly on small screens
-- **Single Page Application**: All functionality in one page for better performance
+- **100% Mobile Optimized**: Designed specifically for mobile devices
+- **Touch-Friendly Interface**: Large buttons and intuitive navigation
+- **Responsive Layout**: Works perfectly on all screen sizes
+- **Progressive Web App**: Fast loading and offline-capable
 
-### 🎲 **Smart Randomization**
-- **Client Randomization**: Questions and answer options shuffled for each client
-- **Owner Monitoring**: Original sequence preserved for quiz administrators
-- **Fair Assessment**: Each client gets a unique but equivalent quiz experience
-- **Real-time Analytics**: Live tracking of option selection counts
+### 🚀 **Advanced Features**
+- **Multi-Format Support**: Upload ZIP, 7Z, TAR.GZ, and GZ archives
+- **Image Sharing**: Efficient shared image storage system
+- **Real-Time Sync**: Firebase-powered real-time data synchronization
+- **Smart Randomization**: Questions and options shuffled for fair assessment
+- **Cascade Deletion**: Comprehensive data cleanup and consistency
 
 ## How It Works
 
 ### For Owners
-1. **Login**: Enter your name (must match owner email pattern)
-2. **Dashboard**: Access owner dashboard with quiz selection
-3. **Select Quiz**: Choose from available quizzes in the dropdown
-4. **Monitor**: View questions in original order with correct answers highlighted
-5. **Analytics**: See real-time client answer counts for each question
-6. **Logout**: Return to login page when finished
+1. **Login**: Enter your credentials (configured in `data/owners.json`)
+2. **Upload Quiz**: Create new quizzes using archive upload
+3. **Manage Quizzes**: View, select, and delete existing quizzes
+4. **Start Session**: Launch quiz sessions for client participation
+5. **Monitor Live**: Watch real-time participant statistics and answers
+6. **End Session**: Stop sessions and optionally preserve data
 
 ### For Clients
-1. **Login**: Enter your name (shown on host page)
-2. **Quiz Interface**: Access quiz when owner starts session
-3. **Take Quiz**: Complete randomized questions with shuffled options
-4. **Submit**: Get immediate feedback with correct answers highlighted
-5. **Results**: View score and performance summary
+1. **Login**: Enter your name to join active sessions
+2. **Take Quiz**: Answer questions with images and multiple choice options
+3. **Real-Time Submission**: Answers submitted immediately upon selection
+4. **Instant Feedback**: See results with correct answers highlighted
+5. **Session Awareness**: Automatic detection of active quiz sessions
 
-## File Structure
+## Project Structure
 
 ```
 /
-├── index.html          # Single page application (login + owner + client)
-├── collections/        # Quiz collections and configuration
-│   ├── config.js       # Owner email and quiz configuration
-│   └── sample/         # Individual quiz folders
-│       ├── quiz.csv    # Quiz questions and answers
-│       └── *.png       # Optional images
-├── js/                 # JavaScript modules
-│   ├── common.js       # Shared utilities and analytics
-│   ├── owner.js        # Owner-specific logic
-│   └── client.js       # Client-specific logic
-├── styles.css          # Mobile-first responsive styling
-├── _redirects          # Netlify routing configuration
-├── netlify.toml        # Netlify build configuration
-└── README.md           # This file
+├── index.html              # Main application entry point
+├── styles.css              # Mobile-first responsive styling
+├── js/                     # JavaScript modules
+│   ├── firebase_service.js # Firebase backend integration
+│   ├── quiz_upload.js      # Quiz upload and processing
+│   ├── owner_service.js    # Owner authentication and management
+│   ├── owner.js            # Owner dashboard functionality
+│   ├── client.js           # Client quiz interface
+│   └── common.js           # Shared utilities
+├── data/
+│   └── owners.json         # Owner configuration and permissions
+├── js7z/                   # Archive extraction library
+│   ├── js7z.js            # JS7z main library
+│   └── js7z.wasm          # WebAssembly binary
+├── netlify.toml            # Netlify deployment configuration
+├── 404.html                # Custom 404 error page
+└── README.md               # This file
 ```
 
-## Quiz File Format
+## Quiz Package Format
 
-Each quiz is a folder in `/collections/` containing:
+Upload quiz packages as compressed archives containing:
+
+### Required Files:
 - **quiz.csv**: Questions and answers in CSV format
-- **Images**: Optional image files referenced in the CSV
+- **images/**: Folder containing image files (optional)
 
 ### CSV Structure:
 ```csv
 "What is 2+2?","What color is the sky?","Which is larger?"
-"","sky.jpg","elephant.jpg"
+"calc.jpg","sky.jpg","elephant.jpg"
 "`4","Blue","Elephant"
 "3","`Blue","`Elephant"
 "5","Green","Mouse"
@@ -76,96 +82,146 @@ Each quiz is a folder in `/collections/` containing:
 ```
 
 **Format Rules:**
+- **Column-based**: Each column represents one question
 - **Row 1**: Question text
 - **Row 2**: Image filename (optional, leave empty if no image)
 - **Row 3+**: Answer options
 - **Correct Answers**: Prefix with backtick `` ` `` (e.g., `` `4 ``)
-- **Multiple Choice**: One correct answer = radio buttons
-- **Multiple Select**: Multiple correct answers = checkboxes
+- **Question Types**: Single correct = radio, multiple correct = checkbox
+
+### Supported Archive Formats:
+- **ZIP** (.zip)
+- **7-Zip** (.7z)
+- **Gzip** (.gz)
+- **Tar Gzip** (.tar.gz, .tgz)
 
 ## Configuration
 
-### Owner Setup
-Edit `collections/config.js` to add authorized owner emails:
+### Owner Management
+Edit `data/owners.json` to configure authorized owners:
 
-```javascript
-const ownerIdentities = [
-    'owner@example.com',
-    'teacher@school.edu'
-];
-
-const testFolders = ['sample', 'quiz2', 'quiz3'];
+```json
+{
+  "owners": [
+    {
+      "username": "admin@example.com",
+      "displayName": "Admin User",
+      "role": "admin",
+      "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz", "manage_owners"],
+      "isActive": true
+    }
+  ],
+  "settings": {
+    "allowNewOwnerRegistration": false,
+    "defaultPermissions": ["create_quiz", "manage_sessions"],
+    "sessionTimeout": 3600000,
+    "maxQuizzesPerOwner": 50
+  }
+}
 ```
 
-### Adding New Quizzes
-1. Create a new folder in `/collections/` (e.g., `/collections/myquiz/`)
-2. Add `quiz.csv` with your questions
-3. Add any image files referenced in the CSV
-4. Update `testFolders` array in `collections/config.js`
+### Firebase Configuration
+Firebase configuration is embedded in the application code:
+- **Firestore**: Real-time database for quizzes and sessions
+- **Storage**: Shared image storage system
+- **Security Rules**: Configured for read/write access
 
-## Technical Features
+## Technical Architecture
 
-- **Single Page Application**: All functionality in one page for better performance
-- **Enhanced Analytics**: Real-time tracking of client answer selections
-- **Pure Client-Side**: No backend required, runs entirely in browser
-- **Mobile-Optimized**: 100% mobile-first design for cellphone use
-- **Role-Based Interface**: Dynamic interface switching based on user role
-- **Shared Utilities**: Common JavaScript modules for efficiency
-- **CSV Processing**: Simple text-based quiz format
-- **Image Support**: Optional images for questions
-- **Touch-Friendly**: Large buttons and easy navigation
-- **Instant Feedback**: Immediate results with answer highlighting
-- **404 Protection**: Non-owners see 404 when no active session
+### Firebase Backend
+- **Firestore Collections**:
+  - `quizzes`: Quiz data and questions
+  - `sessions`: Active quiz sessions
+  - `shared_images`: Efficient image storage
+  - `users/{userName}/answers`: User-specific answer collections
+
+### Real-Time Features
+- **Live Monitoring**: Owner sees participant answers in real-time
+- **Session Management**: Automatic session detection and updates
+- **Participant Tracking**: Real-time client count and participation stats
+- **Data Synchronization**: Firebase onSnapshot for live updates
+
+### Archive Processing
+- **JS7z Integration**: WebAssembly-based archive extraction
+- **Multi-Format Support**: Handles ZIP, 7Z, GZ, TAR.GZ formats
+- **Client-Side Processing**: No server-side dependencies required
+- **Progress Tracking**: Real-time upload and processing feedback
+
+### Security Features
+- **Owner Authentication**: JSON-based owner management system
+- **Permission System**: Granular role-based access control
+- **Content Security Policy**: Strict CSP headers for security
+- **Firebase Security Rules**: Database-level access control
+
+## Deployment
+
+### Netlify Deployment
+1. Connect your GitHub repository to Netlify
+2. Configure build settings:
+   - **Build command**: None (static site)
+   - **Publish directory**: `.` (root)
+3. Deploy automatically on git push
+
+### Environment Setup
+- **No environment variables needed**: Firebase config is embedded
+- **Static hosting compatible**: Runs entirely client-side
+- **CDN optimized**: Fast global content delivery
 
 ## Browser Compatibility
 
-- **Modern Mobile Browsers**: Chrome, Safari, Firefox on iOS/Android
-- **Desktop Support**: Also works on desktop browsers
-- **JavaScript Required**: Full functionality requires JavaScript enabled
+- **Modern Browsers**: Chrome 80+, Safari 13+, Firefox 75+, Edge 80+
+- **Mobile Support**: iOS Safari 13+, Chrome Mobile 80+
+- **WebAssembly Required**: For archive extraction functionality
+- **JavaScript Required**: Full functionality requires modern JavaScript
 
 ## Troubleshooting
 
-### Quiz Not Loading
-- Check if quiz folder exists in `/collections/`
-- Verify `quiz.csv` file is present and properly formatted
-- Check browser console for errors
-- Ensure quiz is listed in `testFolders` array
+### Quiz Upload Issues
+- Verify archive contains `quiz.csv` file
+- Check CSV format matches specification
+- Ensure image files are web-compatible (JPG, PNG)
+- Check browser console for detailed error messages
 
-### Owner Can't Login
-- Verify email pattern matches in `collections/config.js` `ownerIdentities`
-- Check for typos in name/email
-- Clear browser cache and try again
+### Firebase Connection Issues
+- Verify Firebase configuration is correct
+- Check browser network tab for connection errors
+- Ensure Firestore security rules allow access
+- Clear browser cache and reload
 
-### Images Not Displaying
-- Verify image files are in the same folder as `quiz.csv`
-- Check image filenames match exactly (case-sensitive)
-- Ensure images are web-compatible formats (jpg, png, gif)
+### Archive Extraction Errors
+- Ensure WebAssembly is supported in browser
+- Try different archive format if one fails
+- Check that JS7z library files are accessible
+- Verify archive is not corrupted
 
-## Architecture Notes
+### Real-Time Sync Problems
+- Check Firebase project status
+- Verify internet connection stability
+- Refresh page to re-establish connection
+- Check browser console for WebSocket errors
 
-### Single Page Application
-- **Unified Interface**: Login, owner dashboard, and client quiz in one page
-- **Dynamic Switching**: JavaScript handles interface transitions
-- **State Management**: LocalStorage for session persistence
-- **Enhanced Analytics**: Real-time option selection tracking
+## Performance Optimization
 
-### Mobile-First Design
-- **Touch Targets**: All buttons sized for easy finger tapping
-- **Single Column**: Vertical layout optimized for portrait orientation
-- **Responsive Text**: Font sizes optimized for small screens
-- **Minimal UI**: Clean, distraction-free interface
+- **Shared Image Storage**: Eliminates duplicate image uploads
+- **Efficient Data Structure**: Optimized Firestore document organization
+- **Real-Time Subscriptions**: Minimal data transfer with onSnapshot
+- **Mobile-First Loading**: Optimized for mobile network conditions
 
-### Enhanced Analytics
-- **Real-time Tracking**: Live updates of client answer selections
-- **Option Counts**: Display format "X of A; Y of B; Z of C"
-- **Question Performance**: Success rates and response counts
-- **Owner Visibility**: Correct answers always visible regardless of randomization
+## Development
 
-### Static Hosting Compatible
-- **No Backend**: Runs entirely in browser
-- **Netlify Optimized**: Built specifically for Netlify deployment
-- **Fast Loading**: Minimal dependencies and optimized assets
+### Local Development
+1. Clone the repository
+2. Serve files using a local web server (due to CORS restrictions)
+3. Access via `http://localhost:PORT` (not file:// protocol)
+
+### Adding Features
+- **Owner Functions**: Extend `js/owner.js`
+- **Client Functions**: Extend `js/client.js`
+- **Firebase Operations**: Modify `js/firebase_service.js`
+- **UI Styling**: Update `styles.css` (mobile-first approach)
 
 ---
 
-**Version**: v0.3 | **Single Page App** | **Enhanced Analytics** | **Mobile-First** | **Netlify Ready** | **License**: MIT
+**Version**: v2.0 | **Firebase Backend** | **Real-Time Platform** | **Mobile-First** | **Multi-Format Support** | **License**: MIT
+
+**Live Demo**: [https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)

@@ -1484,14 +1484,12 @@ button {
     font-size: 16px;
     color: #333;
     margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.owner-details {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 5px;
-    font-size: 14px;
-}
+
 
 .owner-username {
     color: #007bff;

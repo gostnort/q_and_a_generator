@@ -2,28 +2,22 @@
   publish = "."
   base = "."
 
-# Redirects for single-page application
+# SPA redirects - serve index.html for all routes
 [[redirects]]
-  from = "/test/*"
-  to = "/test/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/test"
-  to = "/test/index.html"
+  from = "/*"
+  to = "/index.html"
   status = 200
 
 # Environment variables (set these in Netlify dashboard)
-# JSONBIN_API_KEY should be set in Netlify dashboard, not in this file
-# Go to Site settings > Environment variables and add:
-# Key: JSONBIN_API_KEY
+# Firebase configuration is handled in the JavaScript code
+# No additional environment variables needed for Firebase
 
 # Security headers for HTML pages only
 [[headers]]
-  for = "/test"
+  for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.jsonbin.io; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com; frame-ancestors 'none'"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Cache-Control = "public, max-age=1800"
 
