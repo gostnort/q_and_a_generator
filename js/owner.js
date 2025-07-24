@@ -40,37 +40,88 @@ window.uploadQuizPackage = async function() {
     try {
         // 读取文件为ArrayBuffer
         const arrayBuffer = await archiveFile.arrayBuffer();
-        // 初始化JS7z
-        const js7z = await JS7z();
+        
+        // 初始化JS7z - 修复递归调用问题
+        let js7z;
+        try {
+            js7z = await JS7z();
+        } catch (initError) {
+            throw new Error(`JS7z初始化失败: ${initError.message}`);
+        }
+        
+        // 确保虚拟文件系统目录存在
+        try {
+            js7z.FS.mkdir('/out');
+        } catch (e) {
+            // 目录可能已存在，忽略错误
+        }
+        
         // 写入虚拟文件系统
         js7z.FS.writeFile('/archive', new Uint8Array(arrayBuffer));
-        // 解压到/out目录
+        
+        // 解压到/out目录 - 修复Promise处理
         await new Promise((resolve, reject) => {
-            js7z.onExit = (code) => code === 0 ? resolve() : reject(new Error('解压失败'));
-            js7z.callMain(['x', '/archive', '-o/out']);
+            const timeout = setTimeout(() => {
+                reject(new Error('解压超时（30秒）'));
+            }, 30000);
+            
+            js7z.onExit = (code) => {
+                clearTimeout(timeout);
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`解压失败，退出码: ${code}`));
+                }
+            };
+            
+            // 使用try-catch包装callMain调用
+            try {
+                js7z.callMain(['x', '/archive', '-o/out']);
+            } catch (callError) {
+                clearTimeout(timeout);
+                reject(new Error(`解压调用失败: ${callError.message}`));
+            }
         });
+        
         // 读取/out目录下的文件
-        const files = js7z.FS.readdir('/out');
+        let files;
+        try {
+            files = js7z.FS.readdir('/out');
+        } catch (readError) {
+            throw new Error(`读取解压目录失败: ${readError.message}`);
+        }
+        
         let quizCsv = null;
         let images = [];
+        
         for (const file of files) {
             if (file === '.' || file === '..') continue;//忽略.和..
-            if (file.toLowerCase() === 'quiz.csv') {//读取quiz.csv
-                quizCsv = js7z.FS.readFile('/out/quiz.csv');
-            } else if (//读取图片
-                file.toLowerCase().endsWith('.png') ||
-                file.toLowerCase().endsWith('.jpg') ||
-                file.toLowerCase().endsWith('.jpeg')
-            ) {
-                const imgData = js7z.FS.readFile(`/out/${file}`);
-                images.push({ name: file, data: imgData });
+            
+            try {
+                if (file.toLowerCase() === 'quiz.csv') {//读取quiz.csv
+                    quizCsv = js7z.FS.readFile('/out/quiz.csv');
+                    console.log('CSV文件读取成功，大小:', quizCsv.length, '字节');
+                } else if (//读取图片
+                    file.toLowerCase().endsWith('.png') ||
+                    file.toLowerCase().endsWith('.jpg') ||
+                    file.toLowerCase().endsWith('.jpeg')
+                ) {
+                    const imgData = js7z.FS.readFile(`/out/${file}`);
+                    images.push({ name: file, data: imgData });
+                    console.log(`图片文件读取成功: ${file}, 大小:`, imgData.length, '字节');
+                }
+            } catch (fileError) {
+                console.warn(`读取文件 ${file} 失败:`, fileError);
+                // 继续处理其他文件
             }
-            // 其他类型文件暂时忽略
         }
+        
         if (!quizCsv) {
-            throw new Error('quiz.csv未找到');
+            throw new Error('quiz.csv未找到或读取失败');
         }
         progressDiv.innerHTML = '正在上传到Firebase...';
+        console.log(`准备上传: Quiz名称=${quizName}, CSV大小=${quizCsv.length}字节, 图片数量=${images.length}`);
+        
         // 使用 quizUpload 工具解析并上传，传递进度回调
         await window.quizUpload.uploadQuizPackage({
             quizName,
@@ -78,13 +129,31 @@ window.uploadQuizPackage = async function() {
             images,
             onProgress: (message) => {
                 progressDiv.innerHTML = message;
+                console.log('上传进度:', message);
             }
         });
-        closeUploadModal();//关闭上传模态框
-        loadQuizList();//加载Quiz列表
+        
+        progressDiv.innerHTML = '✅ 上传完成！';
+        console.log('Quiz上传成功完成');
+        
+        // 延迟关闭模态框，让用户看到成功消息
+        setTimeout(() => {
+            closeUploadModal();//关闭上传模态框
+            loadQuizList();//加载Quiz列表
+        }, 1500);
+        
     } catch (error) {
         progressDiv.innerHTML = `❌ 上传失败: ${error.message}`;
-        console.error('Upload error:', error);
+        console.error('Upload error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        
+        // 如果是JS7z相关错误，提供更多帮助信息
+        if (error.message.includes('JS7z') || error.message.includes('call stack')) {
+            progressDiv.innerHTML += '<br><small>提示：如果问题持续，请刷新页面重试</small>';
+        }
     }
 };
 

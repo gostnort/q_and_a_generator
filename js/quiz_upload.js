@@ -61,8 +61,26 @@ window.quizUpload = {
             const image = images[i];
             onProgress(`正在上传图片 ${i + 1}/${images.length}: ${image.name}`);
             
-            // 转换为base64
-            const base64 = btoa(String.fromCharCode(...image.data));
+            // 转换为base64 - 修复大文件的栈溢出问题
+            let base64;
+            try {
+                // 对于大文件，分块处理避免栈溢出
+                if (image.data.length > 10000) {
+                    let binaryString = '';
+                    const chunkSize = 8192; // 8KB chunks
+                    for (let j = 0; j < image.data.length; j += chunkSize) {
+                        const chunk = image.data.slice(j, j + chunkSize);
+                        binaryString += String.fromCharCode(...chunk);
+                    }
+                    base64 = btoa(binaryString);
+                } else {
+                    // 小文件直接转换
+                    base64 = btoa(String.fromCharCode(...image.data));
+                }
+                console.log(`图片 ${image.name} 转换为base64成功，原始大小: ${image.data.length}字节`);
+            } catch (conversionError) {
+                throw new Error(`图片 ${image.name} base64转换失败: ${conversionError.message}`);
+            }
             
             // 上传到shared_images集合
             const imageDoc = await addDoc(imageCollection, {
