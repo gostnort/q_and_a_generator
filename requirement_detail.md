@@ -20,14 +20,56 @@ A web-based quiz sharing platform built with Netlify (frontend hosting) and Fire
 
 ---
 
+## Project File Structure
+
+```
+q_and_a_generator/
+├── index.html                 # Main SPA entry point (12KB, 320 lines)
+├── styles.css                 # Mobile-first CSS styling (27KB, 1547 lines)  
+├── netlify.toml               # Deployment config, redirects, CSP headers (1.1KB, 38 lines)
+├── 404.html                   # Error page for invalid routes (11KB, 397 lines)
+├── README.md                  # Project documentation and setup guide (8.4KB, 227 lines)
+├── requirement_detail.md      # This comprehensive documentation file (12KB, 322 lines)
+├── LICENSE                    # MIT License file (1.1KB, 22 lines)
+├── review.ico                 # Favicon for the application (33KB, 145 lines)
+├── sample_quiz.zip           # Sample quiz package for testing (381KB)
+│
+├── js/                       # JavaScript application files
+│   ├── owner.js              # Owner interface logic (20KB, 596 lines)
+│   ├── client.js             # Client interface logic (5.3KB, 152 lines)
+│   ├── firebase_service.js   # Firebase data layer abstraction (15KB, 375 lines)
+│   ├── quiz_upload.js        # Quiz upload processing (7.1KB, 179 lines)
+│   ├── owner_service.js      # Owner authentication & management (6.6KB, 219 lines)
+│   └── common.js             # Shared utility functions (1.1KB, 35 lines)
+│
+├── data/                     # Configuration and data files
+│   └── owners.json           # Owner authentication configuration (557B, 19 lines)
+│
+├── js7z/                     # JS7z WebAssembly library for archive extraction
+│   ├── js7z.js               # JavaScript wrapper for 7z functionality (100KB, 22 lines)
+│   └── js7z.wasm             # WebAssembly binary for archive processing (1.4MB)
+│
+├── sample_quiz/              # Sample quiz data for testing and reference
+│   ├── quiz.csv              # Sample quiz questions in CSV format (596B, 9 lines)
+│   ├── pic (1).png           # Sample image 1 (87KB, 274 lines)
+│   ├── pic (2).png           # Sample image 2 (149KB, 310 lines)
+│   └── pic (3).png           # Sample image 3 (159KB, 450 lines)
+│
+└── .git/                     # Git version control directory
+```
+
 ## File Structure & Purposes
 
 ### Root Files
 - `index.html` - Main SPA entry point, Firebase initialization, UI containers
-- `styles.css` - Mobile-first CSS styling
+- `styles.css` - Mobile-first CSS styling with responsive design
 - `netlify.toml` - Deployment config, redirects, CSP headers
-- `404.html` - Error page for invalid routes
+- `404.html` - Error page for invalid routes and no active sessions
 - `README.md` - Project documentation and setup guide
+- `requirement_detail.md` - Comprehensive technical documentation (this file)
+- `LICENSE` - MIT License for open source distribution
+- `review.ico` - Application favicon
+- `sample_quiz.zip` - Pre-packaged sample quiz for testing uploads
 
 ### JavaScript Files (`js/` directory)
 
@@ -159,6 +201,37 @@ Row 3+: Answer options (prefix with ` for correct answers)
 - `shuffleArray(array: Array)` → `Array` - Fisher-Yates shuffle algorithm
 - `isValidOwner(username: string)` → `boolean` - Validates owner using owner_service
 - `currentUser: string` - Global variable for current logged-in user
+
+### Data Files (`data/` directory)
+
+#### `data/owners.json` - Owner Configuration
+**Purpose**: Stores authorized owner accounts and system settings
+**Size**: 557 bytes, 19 lines
+**Format**: JSON configuration file with owners array and settings object
+
+### Library Files (`js7z/` directory)
+
+#### `js7z/js7z.js` - Archive Processing Library
+**Purpose**: JavaScript wrapper for 7z WebAssembly functionality
+**Size**: 100KB, 22 lines
+**Capabilities**: Extracts ZIP, 7Z, GZ, TAR.GZ, and other archive formats
+
+#### `js7z/js7z.wasm` - WebAssembly Binary
+**Purpose**: Compiled 7z extraction engine for client-side archive processing
+**Size**: 1.4MB WebAssembly binary
+**Performance**: High-speed archive extraction without server dependency
+
+### Sample Data (`sample_quiz/` directory)
+
+#### `sample_quiz/quiz.csv` - Sample Quiz Data
+**Purpose**: Example CSV format for quiz questions and answers
+**Size**: 596 bytes, 9 lines
+**Structure**: Questions (row 1), images (row 2), options (rows 3+)
+
+#### `sample_quiz/pic (1-3).png` - Sample Images
+**Purpose**: Example images referenced in the sample quiz
+**Sizes**: 87KB, 149KB, 159KB respectively
+**Usage**: Demonstrates image integration in quiz questions
 
 ---
 
