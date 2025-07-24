@@ -401,17 +401,49 @@ window.firebaseService = {
     async onAnswersUpdate(sessionId, callback) {
         const db = window.db;
         
-        const { collectionGroup, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-        
-        // 监听所有用户answers子集合的变化
-        const answersQuery = query(
-            collectionGroup(db, 'answers'),
-            where('sessionId', '==', sessionId)
-        );
-        
-        return onSnapshot(answersQuery, (snapshot) => {
-            console.log('Real-time update triggered, documents count:', snapshot.docs.length);
-            this.getRealTimeAnswers(sessionId).then(callback);
-        });
+        try {
+            const { collectionGroup, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            // 监听所有用户answers子集合的变化
+            const answersQuery = query(
+                collectionGroup(db, 'answers'),
+                where('sessionId', '==', sessionId)
+            );
+            
+            return onSnapshot(answersQuery, 
+                (snapshot) => {
+                    console.log('Real-time update triggered, documents count:', snapshot.docs.length);
+                    this.getRealTimeAnswers(sessionId).then(callback);
+                },
+                (error) => {
+                    // 处理Firebase索引错误
+                    const isIndexError = error.message.includes('index') || 
+                                       error.message.includes('COLLECTION_GROUP') ||
+                                       error.code === 'failed-precondition';
+                    
+                    if (isIndexError) {
+                        console.info('📋 Firebase索引正在创建中，暂时使用轮询方式获取数据...');
+                        // 当索引不可用时，返回空的监听器函数
+                        callback({
+                            _meta: {
+                                totalClients: 0,
+                                clientList: [],
+                                indexPending: true,
+                                message: 'Firebase正在创建必要的索引，请稍候...'
+                            }
+                        });
+                        // 返回一个空的取消函数
+                        return () => {};
+                    } else {
+                        console.error('Real-time monitoring error:', error);
+                        throw error;
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Error setting up real-time listener:', error);
+            // 返回一个空的取消函数
+            return () => {};
+        }
     }
 }; 

@@ -345,7 +345,7 @@ async function startRealTimeMonitoring() {
     // 立即获取一次数据
     refreshMonitoring();
     
-    // 每15秒刷新一次
+    // 每15秒刷新一次（即使实时监听失败，轮询仍然工作）
     refreshInterval = setInterval(refreshMonitoring, 15000);
     
     // 实时监听答案变化
@@ -356,6 +356,9 @@ async function startRealTimeMonitoring() {
         console.log('Real-time monitoring started successfully');
     } catch (error) {
         console.error('Error starting real-time monitoring:', error);
+        console.info('继续使用轮询方式监控 (每15秒刷新)');
+        // 即使实时监听失败，轮询依然继续工作
+        answersUnsubscribe = null;
     }
 }
 
