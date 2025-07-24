@@ -106,20 +106,28 @@ function displayQuiz(session) {
             input.id = optionId;
             input.name = inputName;
             input.value = option.text;
+            input.className = 'option-input';
             
             // 添加事件监听器
             input.addEventListener('change', function() {
                 updateAnswer(question.id, option.text, isMultipleChoice);
+                // 添加视觉反馈
+                updateOptionVisualFeedback(questionDiv, input);
             });
             
-            // 创建label元素
+            // 创建label元素 - 包装整个选项区域
             const label = document.createElement('label');
             label.setAttribute('for', optionId);
-            label.className = 'option-text';
-            label.textContent = option.text;
+            label.className = 'option-label';
             
-            // 组装选项
-            optionDiv.appendChild(input);
+            // 创建选项文本容器
+            const optionText = document.createElement('span');
+            optionText.className = 'option-text';
+            optionText.textContent = option.text;
+            
+            // 组装选项：input在前，文本在后
+            label.appendChild(input);
+            label.appendChild(optionText);
             optionDiv.appendChild(label);
             questionDiv.appendChild(optionDiv);
         });
@@ -207,3 +215,25 @@ window.submitQuiz = function() {
         submitBtn.textContent = '已提交';
     }
 }; 
+
+// 更新选项视觉反馈
+function updateOptionVisualFeedback(questionDiv, changedInput) {
+    // 获取该问题的所有选项
+    const allOptions = questionDiv.querySelectorAll('.option');
+    
+    // 更新所有选项的样式
+    allOptions.forEach(optionDiv => {
+        const input = optionDiv.querySelector('.option-input');
+        const label = optionDiv.querySelector('.option-label');
+        
+        if (input && label) {
+            if (input.checked) {
+                label.classList.add('selected');
+                optionDiv.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+                optionDiv.classList.remove('selected');
+            }
+        }
+    });
+} 

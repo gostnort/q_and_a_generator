@@ -255,22 +255,24 @@ function showSessionManagement(sessionData) {
     `;
 }
 
-// 结束Session（带选项）
+// 结束Session（完全删除）
 window.endSession = async function() {
     if (!ownerCurrentSession) {
         alert('没有活跃的Session');
         return;
     }
     
-    // 询问是否删除答题记录
-    const deleteAnswers = confirm(
+    // 确认结束Session
+    const confirmEnd = confirm(
         '确认结束当前Session吗？\n\n' +
-        '选择"确定"：结束Session并保留答题记录（用于后续分析）\n' +
-        '选择"取消"：取消操作\n\n' +
-        '如需完全清除答题记录，请在结束后使用"清理数据"功能。'
+        '⚠️ 注意：这将会：\n' +
+        '• 完全删除Session记录\n' +
+        '• 删除所有用户的答题记录\n' +
+        '• 客户端将无法继续参与测试\n\n' +
+        '此操作不可撤销！'
     );
     
-    if (!deleteAnswers && !confirm('是否只结束Session但保留答题记录？')) {
+    if (!confirmEnd) {
         return; // 用户取消操作
     }
     
@@ -281,17 +283,20 @@ window.endSession = async function() {
             endButton.disabled = true;
         }
         
-        // 结束session，暂时保留答题记录
-        await window.firebaseService.endSession(ownerCurrentSession.id, false);
+        // 停止实时监控
+        stopRealTimeMonitoring();
+        
+        // 结束session并完全删除
+        await window.firebaseService.endSession(ownerCurrentSession.id, true);
         
         ownerCurrentSession = null;
         
         // 刷新界面
         displayOwnerStats();
-        document.getElementById('sessionInfo').innerHTML = '<p>当前没有活跃的Session</p>';
+        document.getElementById('sessionManagement').style.display = 'none';
         document.getElementById('realTimeResults').innerHTML = '';
         
-        alert('Session已结束！答题记录已保留。');
+        alert('Session已结束并完全删除！');
         
     } catch (error) {
         console.error('结束Session失败:', error);

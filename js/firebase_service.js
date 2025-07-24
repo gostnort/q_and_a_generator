@@ -147,21 +147,17 @@ window.firebaseService = {
         };
     },
 
-    // 结束Session（同时清理相关数据）
-    // 功能：结束session并可选择性删除相关answers
+    // 结束Session（完全删除session和相关数据）
+    // 功能：结束session并完全删除session文档和相关answers
     // 参数：sessionId, deleteAnswers (是否删除相关answers)
-    async endSession(sessionId, deleteAnswers = false) {
+    async endSession(sessionId, deleteAnswers = true) {
         const db = window.db;
-        const { doc, updateDoc, collection, query, where, getDocs, writeBatch, collectionGroup } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const { doc, deleteDoc, collection, query, where, getDocs, writeBatch, collectionGroup } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
         try {
-            // 更新session状态
-            await updateDoc(doc(db, 'sessions', sessionId), {
-                isActive: false,
-                endTime: new Date()
-            });
+            console.log('开始结束Session:', sessionId);
             
-            // 如果需要删除answers
+            // 如果需要删除answers，先删除相关的用户答案
             if (deleteAnswers) {
                 console.log('清理session相关answers...');
                 
@@ -173,15 +169,19 @@ window.firebaseService = {
                 
                 if (answersSnapshot.docs.length > 0) {
                     const batch = writeBatch(db);
-                    answersSnapshot.docs.forEach(doc => {
-                        batch.delete(doc.ref);
+                    answersSnapshot.docs.forEach(answerDoc => {
+                        batch.delete(answerDoc.ref);
                     });
                     await batch.commit();
                     console.log(`已删除 ${answersSnapshot.docs.length} 个相关answers`);
                 }
             }
             
-            console.log('Session结束完成');
+            // 完全删除session文档
+            await deleteDoc(doc(db, 'sessions', sessionId));
+            console.log('Session文档已从Firebase中删除');
+            
+            console.log('Session结束完成，已从数据库中移除');
             
         } catch (error) {
             console.error('结束Session时出错:', error);
