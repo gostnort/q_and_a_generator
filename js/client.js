@@ -137,6 +137,8 @@ function displayQuiz(session) {
         // Log what was actually added
         const addedInputs = questionDiv.querySelectorAll('input[type="radio"], input[type="checkbox"]');
         console.log(`Question ${question.id}: Added ${addedInputs.length} input controls to DOM`);
+        console.log('Input elements:', addedInputs);
+        console.log('Question div structure:', questionDiv.innerHTML);
     });
 }
 

@@ -398,20 +398,20 @@ window.firebaseService = {
     // 监听答案更新（实时）
     // 功能：为owner监控页面提供实时数据更新
     // 使用collectionGroup监听所有用户的answers变化
-    onAnswersUpdate(sessionId, callback) {
+    async onAnswersUpdate(sessionId, callback) {
         const db = window.db;
         
-        import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js').then(({ collectionGroup, query, where, onSnapshot }) => {
-            // 监听所有用户answers子集合的变化
-            const answersQuery = query(
-                collectionGroup(db, 'answers'),
-                where('sessionId', '==', sessionId)
-            );
-            
-            return onSnapshot(answersQuery, (snapshot) => {
-                console.log('Real-time update triggered, documents count:', snapshot.docs.length);
-                this.getRealTimeAnswers(sessionId).then(callback);
-            });
+        const { collectionGroup, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        
+        // 监听所有用户answers子集合的变化
+        const answersQuery = query(
+            collectionGroup(db, 'answers'),
+            where('sessionId', '==', sessionId)
+        );
+        
+        return onSnapshot(answersQuery, (snapshot) => {
+            console.log('Real-time update triggered, documents count:', snapshot.docs.length);
+            this.getRealTimeAnswers(sessionId).then(callback);
         });
     }
 }; 

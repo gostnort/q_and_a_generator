@@ -339,7 +339,7 @@ window.cleanupSessionData = async function(sessionId) {
 };
 
 // 开始实时监控
-function startRealTimeMonitoring() {
+async function startRealTimeMonitoring() {
     if (!ownerCurrentSession) return;
     
     // 立即获取一次数据
@@ -349,9 +349,14 @@ function startRealTimeMonitoring() {
     refreshInterval = setInterval(refreshMonitoring, 15000);
     
     // 实时监听答案变化
-    answersUnsubscribe = window.firebaseService.onAnswersUpdate(ownerCurrentSession.id, (data) => {
-        displayRealTimeResults(data);
-    });
+    try {
+        answersUnsubscribe = await window.firebaseService.onAnswersUpdate(ownerCurrentSession.id, (data) => {
+            displayRealTimeResults(data);
+        });
+        console.log('Real-time monitoring started successfully');
+    } catch (error) {
+        console.error('Error starting real-time monitoring:', error);
+    }
 }
 
 // 停止实时监控
