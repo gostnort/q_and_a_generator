@@ -1,34 +1,92 @@
+/* 移动端基础优化 */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, "Microsoft YaHei", "微软雅黑", "Helvetica Neue", Helvetica, sans-serif;
-    max-width: 8.5in;
-    margin: 0 auto;
-    padding: 20px;
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+    padding: 20px 0 0 0;
     line-height: 1.6;
+    background: #f5f5f5;
+    /* 移动端优化 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;
+    overflow-x: hidden;
+}
+
+/* 移动端触摸优化 */
+button, input, select, textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 0;
+}
+
+/* 防止移动端缩放 */
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+input[type="number"],
+textarea,
+select {
+    font-size: 16px;
+}
+
+/* 移动端滚动优化 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 10px;
     padding: 10px;
     background-color: #f5f5f5;
-    border-radius: 5px;
+    border-radius: 0;
+    box-sizing: border-box;
 }
 
-.header-left {
+.header-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.header-bottom {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.header-left, .header-right {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
 }
 
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.zip-name {
+.quiz-name {
     margin: 0;
     font-weight: bold;
     color: #333;
@@ -37,15 +95,27 @@ body {
 .header-separator {
     border: none;
     border-top: 2px solid #ddd;
-    margin: 0 0 30px 0;
+    margin: 0 0 10px 0;
 }
 
 button {
-    padding: 8px 16px;
+    width: 100%;
+    padding: 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 18px;
+    margin: 8px 0;
+    box-sizing: border-box;
+}
+
+.header-bottom button {
+    width: auto;
+    padding: 12px 16px;
+    margin: 0 5px 0 0;
+    font-size: 16px;
+    flex: 1;
+    min-width: 80px;
 }
 
 .submit-btn {
@@ -76,27 +146,27 @@ button {
 }
 
 .question {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 20px;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    page-break-inside: avoid;
+    background: #fff;
 }
 
 .question-header {
     font-weight: bold;
-    font-size: 16px;
-    margin-bottom: 15px;
+    font-size: 18px;
+    margin-bottom: 10px;
 }
 
 .question-image {
-    margin: 15px 0;
+    margin: 10px 0;
     text-align: center;
 }
 
 .question-image img {
     width: 100%;
-    max-height: 400px;
+    max-height: 200px;
     border: 1px solid #ddd;
     border-radius: 4px;
     object-fit: contain;
@@ -104,27 +174,60 @@ button {
 
 .option {
     margin: 8px 0;
-    padding: 8px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-left: 20px;
+    padding: 12px;
+    border-radius: 6px;
+    background: #f9f9f9;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-.option input {
-    margin-right: 12px;
-    width: 18px;
-    height: 18px;
-    transform: scale(1.2);
+.option:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.option.selected {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    width: 100%;
+    margin: 0;
+}
+
+.option-input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #007bff;
+    flex-shrink: 0;
+}
+
+.option-input[type="radio"] {
+    border-radius: 50%;
+}
+
+.option-input[type="checkbox"] {
+    border-radius: 3px;
 }
 
 .option-text {
     flex: 1;
+    font-size: 16px;
+    line-height: 1.4;
+    color: #333;
+    user-select: none;
 }
 
 .result-icon {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
 }
 
@@ -147,60 +250,52 @@ button {
     z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: rgba(0,0,0,0.4);
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
+    margin: 30% auto;
+    padding: 16px;
     border-radius: 8px;
-    width: 400px;
-    max-width: 80%;
+    width: 90vw;
+    max-width: 90vw;
+    box-sizing: border-box;
 }
 
 .modal-content input {
     width: 100%;
-    padding: 8px;
+    padding: 12px;
     margin: 8px 0;
     box-sizing: border-box;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 16px;
 }
 
 .modal-buttons {
     text-align: right;
-    margin-top: 15px;
+    margin-top: 10px;
 }
 
 .modal-buttons button {
     margin-left: 10px;
 }
 
-@media print {
-    .header button {
-        display: none;
-    }
-    
-    .no-print {
-        display: none !important;
-    }
-    
-    body {
-        font-size: 12px;
-    }
-    
-    .question {
-        page-break-inside: avoid;
-        margin-bottom: 20px;
-    }
-}
-
 .hide {
     display: none;
-} 
+}
+
+.not-found-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    color: #666;
+}
 
 /* Login Interface Styles */
 .login-container {
@@ -209,40 +304,45 @@ button {
     align-items: center;
     min-height: 100vh;
     background-color: #f5f5f5;
+    width: 100vw;
+    padding: 0;
 }
 
 .login-box {
     background-color: white;
-    padding: 40px;
+    padding: 24px 12px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     text-align: center;
-    min-width: 300px;
+    width: 95vw;
+    min-width: unset;
+    box-sizing: border-box;
 }
 
 .login-box h1 {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     color: #333;
+    font-size: 22px;
 }
 
 .login-box input {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 20px;
+    padding: 14px;
+    margin-bottom: 16px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 18px;
     box-sizing: border-box;
 }
 
 .login-box button {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
 }
 
@@ -252,20 +352,27 @@ button {
 
 /* Owner Interface Styles */
 .owner-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    width: 100%;
+    max-width: 100vw;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .owner-email {
     font-size: 14px;
     color: #666;
-    margin-left: 10px;
+    margin-left: 0;
 }
 
 .logout-btn {
     background-color: #dc3545;
     color: white;
+    width: auto;
+    padding: 8px 16px;
+    margin: 0;
+    font-size: 14px;
 }
 
 .logout-btn:hover {
@@ -274,62 +381,1549 @@ button {
 
 .owner-controls {
     background-color: #f8f9fa;
-    padding: 20px;
+    padding: 12px;
     border-radius: 8px;
-    margin: 20px 0;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
-.zip-selector {
+.test-selector {
     display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
 }
 
-.zip-selector label {
+.test-selector label {
     font-weight: bold;
-    min-width: 100px;
 }
 
-.zip-selector select {
-    flex: 1;
-    padding: 8px;
+.quiz-preview {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.quiz-preview h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.test-selector select {
+    width: 100%;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
 }
 
-.zip-selector button {
+.test-selector button {
     background-color: #28a745;
     color: white;
-    padding: 8px 16px;
+    padding: 14px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 18px;
+    width: 100%;
 }
 
-.zip-selector button:hover {
+.test-selector button:hover {
     background-color: #218838;
 }
 
 /* Client Interface Styles */
 .client-container {
-    max-width: 8.5in;
+    width: 100vw;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Owner-specific styles */
+.owner-correct-answer {
+    background-color: #d4edda;
+    border: 1px solid #28a745;
+}
+
+.correct-indicator {
+    color: #28a745;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Client controls (for quiz selection) */
+.client-controls {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 20px 0;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
+/* Owner Dashboard - Session Management */
+.session-info {
+    background-color: #e7f3ff;
+    border: 1px solid #0066cc;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.session-detail {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.end-session-btn {
+    background-color: #dc3545;
+    color: white;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.end-session-btn:hover {
+    background-color: #c82333;
+}
+
+.start-session-btn {
+    background-color: #28a745;
+    color: white;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.start-session-btn:hover {
+    background-color: #218838;
+}
+
+/* Client Monitoring */
+.client-monitoring {
+    margin: 20px 0;
+}
+
+.monitoring-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.refresh-btn {
+    background-color: #17a2b8;
+    color: white;
+    width: auto;
+    padding: 8px 16px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.refresh-btn:hover {
+    background-color: #138496;
+}
+
+.submission-count {
+    font-weight: bold;
+    color: #666;
+}
+
+.submissions-list {
+    margin-top: 15px;
+}
+
+.no-submissions {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+    font-style: italic;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.submission-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 10px 0;
+    background: white;
+}
+
+.submission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.client-info strong {
+    font-size: 16px;
+    color: #333;
+}
+
+.submission-time {
+    font-size: 12px;
+    color: #666;
+    margin-left: 10px;
+}
+
+.submission-score {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.submission-score.passed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.submission-score.failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.submission-details {
+    padding: 12px;
+}
+
+.toggle-details-btn {
+    background-color: #6c757d;
+    color: white;
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.toggle-details-btn:hover {
+    background-color: #5a6268;
+}
+
+.answer-details {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.answers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.answer-item {
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.answer-item.correct {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+}
+
+.answer-item.incorrect {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+}
+
+.answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.question-number {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.answer-icon {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.answer-text {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.selected-answer, .correct-answer {
+    font-size: 12px;
+    margin: 2px 0;
+}
+
+.selected-answer {
+    color: #666;
+}
+
+.correct-answer {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.no-answers {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Client Interface - Status */
+.quiz-status {
+    text-align: center;
+    padding: 30px;
+    margin: 20px 0;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.status-message {
+    font-size: 18px;
+    color: #666;
+}
+
+/* Mobile Session Indicator */
+.mobile-session-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.session-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.indicator-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    animation: pulse 2s infinite;
+}
+
+.indicator-dot.active {
+    background-color: #28a745;
+}
+
+.indicator-text {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.error-message {
+    font-size: 18px;
+    color: #dc3545;
+    font-weight: bold;
+}
+
+
+
+ 
+
+/* Analytics Display Styles */
+.analytics-display {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.analytics-display strong {
+    color: #212529;
+}
+
+/* 404 Interface Styles */
+.not-found-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+.error-container {
+    max-width: 500px;
     margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.error-container h1 {
+    color: #e74c3c;
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.error-container p {
+    color: #666;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.error-container a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.error-container a:hover {
+    text-decoration: underline;
+}
+
+
+
+/* Enhanced Score Label Styles */
+.score-label.passed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.score-label.failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Owner Name Display */
+.owner-name {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Hide/Show Utility */
+.hide {
+    display: none !important;
+}
+
+/* Responsive Design - 移动端优先 */
+@media (max-width: 768px) {
+    /* 基础移动端优化 */
+    body {
+        font-size: 16px; /* 防止iOS缩放 */
+        line-height: 1.4;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* 登录界面移动端优化 */
+    .login-box {
+        padding: 30px 20px;
+        margin: 20px;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+    
+    .login-box h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .login-box input {
+        font-size: 16px; /* 防止iOS缩放 */
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .login-box button {
+        font-size: 16px;
+        padding: 15px 20px;
+        width: 100%;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+    
+    /* 头部移动端优化 */
+    .header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+        margin: 0;
+    }
+    
+    .user-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-size: 14px;
+        gap: 10px;
+    }
+    
+    .score-display {
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    .score-display.passed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .score-display.failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .logout-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 5px;
+    }
+    
+    /* 错误容器移动端优化 */
+    .error-container {
+        margin: 20px;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    /* 按钮通用移动端优化 */
+    button {
+        font-size: 16px;
+        padding: 12px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        touch-action: manipulation; /* 改善触摸体验 */
+    }
+    
+    /* 问题显示移动端优化 */
+    .question {
+        margin: 15px 0;
+        padding: 15px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .question-header {
+        font-size: 16px;
+        line-height: 1.4;
+        padding: 10px 0;
+        font-weight: 600;
+    }
+    
+    .option {
+        padding: 14px 10px;
+        margin: 10px 0;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        background: #f9f9f9;
+        cursor: pointer;
+    }
+    
+    .option:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+    
+    .option.selected {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+    }
+    
+    .option-label {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+        width: 100%;
+        margin: 0;
+    }
+    
+    .option-input {
+        width: 22px;
+        height: 22px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: #007bff;
+        flex-shrink: 0;
+        transform: scale(1.1);
+    }
+    
+    .option-input[type="radio"] {
+        border-radius: 50%;
+    }
+    
+    .option-input[type="checkbox"] {
+        border-radius: 4px;
+    }
+    
+    .option-text {
+        font-size: 15px;
+        line-height: 1.4;
+        color: #333;
+        user-select: none;
+        flex: 1;
+    }
+    
+    /* 图片移动端优化 */
+    .question-image {
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    .question-image img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* 提交按钮移动端优化 */
+    .submit-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+        margin-top: 20px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 8px;
+    }
+    
+    .submit-btn:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    /* 分数标签移动端优化 */
+    .score-label {
+        font-size: 14px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-align: center;
+    }
+    
+    /* 分析显示移动端优化 */
+    .analytics-display {
+        font-size: 12px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        margin-top: 10px;
+    }
+    
+    /* 新增功能的移动端优化 */
+    
+    /* 模态框移动端优化 */
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+        max-width: none;
+        padding: 15px;
+    }
+    
+    .close {
+        font-size: 24px;
+        padding: 5px;
+    }
+    
+    /* 上传表单移动端优化 */
+    .upload-form {
+        margin-top: 15px;
+    }
+    
+    .form-group input {
+        font-size: 16px; /* 防止iOS缩放 */
+        padding: 12px;
+    }
+    
+    .upload-btn, .cancel-btn {
+        width: 100%;
+        margin: 5px 0;
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    /* Quiz列表移动端优化 */
+    .quiz-item {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px;
+    }
+    
+    .quiz-info {
+        margin-bottom: 10px;
+    }
+    
+    .quiz-actions {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .select-btn, .delete-btn {
+        flex: 1;
+        margin: 0 5px;
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .new-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+    
+    /* 实时监控移动端优化 */
+    .real-time-results {
+        max-height: 300px;
+    }
+    
+    .question-stats {
+        padding: 12px;
+        margin: 8px 0;
+    }
+    
+    .question-stats h4 {
+        font-size: 16px;
+        line-height: 1.3;
+    }
+    
+    .option-stat {
+        padding: 8px 0;
+        font-size: 14px;
+    }
+    
+    .option-count {
+        font-size: 14px;
+    }
+    
+    /* 监控控制移动端优化 */
+    .monitoring-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .refresh-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    #lastUpdateTime {
+        text-align: center;
+        margin: 5px 0;
+        font-size: 12px;
+    }
+    
+    /* 404页面移动端优化 */
+    .not-found {
+        padding: 30px 15px;
+    }
+    
+    .not-found h1 {
+        font-size: 24px;
+    }
+    
+    .status-info {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .status-info p {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    
+    /* Owner控制区域移动端优化 */
+    .owner-controls {
+        padding: 15px;
+    }
+    
+    .quiz-management, .session-management, .real-time-monitoring {
+        margin-bottom: 25px;
+    }
+    
+    .quiz-management h3, .session-management h3, .real-time-monitoring h3 {
+        font-size: 18px;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .session-info {
+        padding: 12px;
+    }
+    
+    .end-session-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+    
+    /* 通用移动端优化 */
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .user-info {
+        font-size: 14px;
+    }
+    
+    .logout-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    /* 问题显示移动端优化 */
+    .question-header {
+        font-size: 16px;
+        line-height: 1.4;
+        padding: 10px 0;
+    }
+    
+    .option {
+        padding: 12px 8px;
+        margin: 6px 0;
+    }
+    
+
+    
+    .option-text {
+        font-size: 15px;
+        line-height: 1.3;
+    }
+    
+    /* 提交按钮移动端优化 */
+    .submit-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+        margin-top: 20px;
+    }
+    
+    /* 图片移动端优化 */
+    .question-image img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+}
+
+/* 新增样式 - 模态框和上传功能 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* 上传表单样式 */
+.upload-form {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.form-group small {
+    color: #666;
+    font-size: 12px;
+}
+
+.upload-btn, .cancel-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.upload-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Quiz列表样式 */
+.quiz-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.quiz-info h4 {
+    margin: 0 0 5px 0;
+}
+
+.quiz-info p {
+    margin: 2px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.quiz-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.select-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.new-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* 实时监控样式 */
+.real-time-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.question-stats {
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.question-stats h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.option-stats {
+    margin-top: 10px;
+}
+
+.option-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.option-count {
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* 监控控制样式 */
+.monitoring-controls {
+    margin-bottom: 15px;
+}
+
+.refresh-btn {
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#lastUpdateTime {
+    margin-left: 10px;
+    color: #666;
+    font-size: 14px;
+}
+
+/* 404页面样式 */
+.not-found {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.not-found h1 {
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+.status-info {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.status-info p {
+    margin: 5px 0;
+}
+
+/* Owner控制区域样式 */
+.owner-controls {
     padding: 20px;
 }
 
-/* Owner Questions Display */
-#ownerQuestions .question {
-    border: 2px solid #28a745;
+.quiz-management, .session-management, .real-time-monitoring {
+    margin-bottom: 30px;
+}
+
+.quiz-management h3, .session-management h3, .real-time-monitoring h3 {
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.session-info {
     background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
 }
 
-#ownerQuestions .correct-answer {
-    background-color: #d4edda;
-    border-left: 4px solid #28a745;
+.end-session-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 10px;
 }
 
-.client-count {
+/* Owner管理样式 */
+.owner-management {
+    margin-bottom: 30px;
+}
+
+.owner-management h3 {
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.owner-stats {
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #007bff;
+}
+
+.stat-number {
+    font-size: 24px;
     font-weight: bold;
     color: #007bff;
-    margin-left: 10px;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.owner-list h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.owner-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.owner-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.owner-item.current-user {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.owner-info {
+    flex: 1;
+}
+
+.owner-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+
+.owner-username {
+    color: #007bff;
+    font-weight: 500;
+}
+
+.owner-role {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.owner-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.owner-status.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.owner-status.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.owner-email {
+    font-size: 12px;
+    color: #666;
+}
+
+.owner-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.deactivate-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.deactivate-btn:hover {
+    background-color: #c82333;
+} 
+
+/* Firebase Test Styles */
+.firebase-test-section {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.firebase-test-section h3 {
+    color: #343a40;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.test-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.test-btn:hover {
+    background-color: #0056b3;
+}
+
+.test-output {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.test-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.test-summary {
+    background-color: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.test-result {
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.test-result.test-pass {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.test-result.test-fail {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.test-result.test-warning {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.test-result strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.test-result p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.test-result details {
+    margin-top: 8px;
+}
+
+.test-result details summary {
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.test-result details pre {
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    overflow-x: auto;
+    margin-top: 5px;
+}
+
+.test-final-summary {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 20px;
+    color: #856404;
+}
+
+.test-final-summary h4 {
+    margin-top: 0;
+    color: #343a40;
+}
+
+.test-final-summary ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.test-final-summary li {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+/* Mobile responsive styles for test section */
+@media (max-width: 768px) {
+    .firebase-test-section {
+        margin: 15px 0;
+        padding: 15px;
+    }
+    
+    .test-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    
+    .test-output {
+        max-height: 300px;
+        font-size: 12px;
+        padding: 10px;
+    }
+    
+    .test-result {
+        padding: 10px;
+        margin: 8px 0;
+    }
+    
+    .test-result p {
+        font-size: 12px;
+    }
+}
+
+/* Firebase Index Pending Notice */
+.index-pending-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    color: #856404;
+}
+
+.index-pending-notice h4 {
+    margin: 0 0 10px 0;
+    color: #856404;
+    font-size: 18px;
+}
+
+.index-pending-notice p {
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.index-pending-notice small {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Database Maintenance Styles */
+.database-maintenance {
+    margin-bottom: 30px;
+}
+
+.database-maintenance h3 {
+    border-bottom: 2px solid #17a2b8;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #17a2b8;
+}
+
+.maintenance-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.cleanup-btn {
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.cleanup-btn:hover {
+    background-color: #e0a800;
+}
+
+.sessions-list-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.session-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.session-item h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.session-item p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.session-item strong {
+    color: #333;
+}
+
+.session-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.session-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+/* Mobile responsive styles for database maintenance */
+@media (max-width: 768px) {
+    .maintenance-controls {
+        flex-direction: column;
+    }
+    
+    .maintenance-controls button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .session-actions {
+        flex-direction: column;
+    }
+    
+    .session-actions button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .sessions-list-container {
+        max-height: 400px;
+    }
+    
+    .session-item {
+        padding: 10px;
+    }
 } 

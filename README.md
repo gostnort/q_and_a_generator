@@ -1,346 +1,237 @@
-# Q&A Generator - Multi-Client Edition
+# Q&A Generator - 实时问答平台
 
-A web-based Q&A quiz generator with advanced multi-client tracking and owner/client architecture. Features real-time client monitoring, custom password dialogs, and seamless session management.
+一个现代化的实时问答平台，支持多种压缩格式上传，具备实时监控功能，基于 Firebase 后端。提供管理员后台和用户答题界面。
 
-## ✨ New Features (v0.2)
+## ✨ 主要功能
 
-### 🔥 **Multi-Client Tracking**
-- **Real client identification** based on login names
-- **Individual client statistics** with scores and timestamps
-- **Live client list** showing all connected users
-- **Per-client answer history** with submission tracking
+### 🎯 **实时问答系统**
+- **管理员后台**：上传、管理问卷，实时监控答题情况
+- **用户答题界面**：交互式答题体验，即时反馈
+- **实时监控**：实时追踪参与者答案和统计数据
+- **会话管理**：开始/结束答题会话，参与者追踪
 
-### 🔐 **Enhanced Password Security**
-- **Custom password dialogs** with proper OK/Cancel handling
-- **No unwanted browser prompts** - complete dialog control
-- **Retry logic** for incorrect passwords
-- **Clean cancellation** without error messages
+### 📱 **移动优先设计**
+- **100% 移动优化**：专为移动设备优化设计
+- **触摸友好界面**：大按钮和直观导航
+- **响应式布局**：在所有屏幕尺寸上完美工作
+- **渐进式网页应用**：快速加载和离线功能
 
-### 👥 **Owner Priority System**
-- **First owner becomes active** - controls the quiz
-- **Other owners become clients** when someone else is active
-- **Seamless role switching** when active owner logs out
-- **Multi-owner support** with clear active owner indication
+### 🚀 **高级功能**
+- **多格式支持**：上传 ZIP、7Z、TAR.GZ、GZ 压缩包
+- **图片共享**：高效的共享图片存储系统
+- **实时同步**：基于 Firebase 的实时数据同步
+- **智能随机化**：问题和选项随机打乱，公平评估
+- **级联删除**：全面的数据清理和一致性维护
 
-### 🎨 **Improved User Experience**
-- **Clean UI** - quiz selection disappears after loading
-- **Real-time updates** across all client sessions
-- **Better session management** with automatic cleanup
-- **Responsive design** with proper spacing
+## 如何使用
 
-## How It Works
+### 管理员操作流程
+1. **登录**：输入管理员凭据（在 `data/owners.json` 中配置）
+2. **上传问卷**：使用压缩包上传创建新问卷
+3. **管理问卷**：查看、选择和删除现有问卷
+4. **开始会话**：启动问卷会话供用户参与
+5. **实时监控**：观看实时参与者统计和答案
+6. **结束会话**：停止会话并可选择保留数据
 
-### For Owners
-1. **Login**: Enter your registered email address
-2. **Become Active Owner**: First owner to login controls the quiz
-3. **Select Quiz**: Choose from available ZIP files in the `/zip` folder
-4. **Monitor Real Clients**: View individual client names, scores, and answer statistics
-5. **See Live Updates**: Watch as clients submit answers in real-time
-6. **Logout**: End session and deactivate quiz for all clients
+### 用户操作流程
+1. **登录**：输入姓名加入活跃会话
+2. **答题**：回答带图片的多选题
+3. **实时提交**：选择后答案立即提交
+4. **即时反馈**：查看结果和正确答案高亮
+5. **会话感知**：自动检测活跃的问卷会话
 
-### For Clients (Including Other Owners)
-1. **Login**: Enter any identifier when a quiz is active
-2. **Take Quiz**: Complete the randomized questions
-3. **Individual Tracking**: Your answers are tracked separately by your login name
-4. **View Results**: See your score and correct answers
-5. **Automatic Logout**: Return to login when active owner logs out
-
-### Multi-Client Scenarios
-```
-Example with 3 owners configured:
-- owner1@email.com logs in first → Becomes active owner
-- owner2@email.com logs in → Becomes client (sees "owner1@email.com is active owner")
-- owner3@email.com logs in → Also becomes client
-- Regular users (John, Mary) → Also become clients
-- All tracked separately with individual statistics
-```
-
-## File Structure
+## 项目结构
 
 ```
 /
-├── index.html          # Single entry point for all users
-├── script.js           # Main application logic with multi-client support
-├── styles.css          # Enhanced styling with client list
-├── config.js           # Owner email configuration
-├── zip/                # Quiz files directory
-│   ├── .gitkeep       # Ensures directory is tracked
-│   └── sample*.zip    # Sample quiz files
-├── js7z/              # ZIP extraction library
-├── _redirects         # Netlify routing configuration
-├── netlify.toml       # Netlify build configuration
-└── README.md          # This file
+├── index.html              # 主应用入口
+├── styles.css              # 移动优先响应式样式
+├── js/                     # JavaScript 模块
+│   ├── firebase_service.js # Firebase 后端集成
+│   ├── quiz_upload.js      # 问卷上传和处理
+│   ├── owner_service.js    # 管理员认证和管理
+│   ├── owner.js            # 管理员后台功能
+│   ├── client.js           # 用户答题界面
+│   └── common.js           # 共享工具函数
+├── data/
+│   └── owners.json         # 管理员配置和权限
+├── js7z/                   # 压缩包解压库
+│   ├── js7z.js            # JS7z 主库
+│   └── js7z.wasm          # WebAssembly 二进制文件
+├── netlify.toml            # Netlify 部署配置
+├── 404.html                # 自定义 404 错误页面
+└── README.md               # 本文件
 ```
 
-## Quiz File Format
+## 问卷包格式
 
-ZIP files in the `/zip` folder should contain:
-- **CSV file**: Questions and answers
-  - Row 1: Question text
-  - Row 2: Image filename (optional)
-  - Row 3+: Answer options (prefix with `` ` `` for correct answers)
-- **Image files**: Referenced in the CSV (optional)
-- **Password protection**: Fully supported with custom dialogs
+上传包含以下内容的压缩包：
 
-### Example CSV Structure:
-```
-"What is 2+2?","What color is the sky?","Which is larger?"
-"","sky.jpg","elephant.jpg"
-"`4","Blue","Elephant"
-"3","`Blue","`Elephant"
-"5","Green","Mouse"
-"6","Red","Cat"
+### 必需文件：
+- **quiz.csv**：CSV 格式的问题和答案
+- **images/**：包含图片文件的文件夹（可选）
+
+### CSV 结构：
+```csv
+"2+2等于多少？","天空是什么颜色？","哪个更大？"
+"calc.jpg","sky.jpg","elephant.jpg"
+"`4","蓝色","大象"
+"3","`蓝色","`大象"
+"5","绿色","老鼠"
+"6","红色","猫"
 ```
 
-## Owner Configuration
+**格式规则：**
+- **基于列**：每列代表一个问题
+- **第1行**：问题文本
+- **第2行**：图片文件名（可选，无图片留空）
+- **第3行及以下**：答案选项
+- **正确答案**：用反引号 `` ` `` 前缀标记（例如：`` `4 ``）
+- **问题类型**：单个正确答案=单选，多个正确答案=多选
 
-Edit `config.js` to add authorized owner emails:
+### 支持的压缩格式：
+- **ZIP** (.zip)
+- **7-Zip** (.7z)
+- **Gzip** (.gz)
+- **Tar Gzip** (.tar.gz, .tgz)
 
-```javascript
-const ownerIdentities = [
-    'owner@example.com',
-    'admin@example.com',
-    'teacher@school.edu'
-];
-```
+## 配置说明
 
-## Multi-Client Data Structure
+### 管理员配置
+编辑 `data/owners.json` 来配置授权管理员：
 
-Client answers are stored with individual tracking:
-```javascript
+```json
 {
-    "John": [
-        {answers: [...], timestamp: 123456, score: 85},
-        {answers: [...], timestamp: 123789, score: 92}
-    ],
-    "Mary": [
-        {answers: [...], timestamp: 123567, score: 78}
-    ],
-    "owner2@email.com": [
-        {answers: [...], timestamp: 123678, score: 95}
-    ]
+  "owners": [
+    {
+      "username": "admin@example.com",
+      "displayName": "主管理员",
+      "role": "admin",
+      "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz", "manage_owners"],
+      "isActive": true
+    }
+  ],
+  "settings": {
+    "allowNewOwnerRegistration": false,
+    "defaultPermissions": ["create_quiz", "manage_sessions"],
+    "sessionTimeout": 3600000,
+    "maxQuizzesPerOwner": 50
+  }
 }
 ```
 
-## Deployment to Netlify
+### Firebase 配置
+Firebase 配置已嵌入到应用代码中：
+- **Firestore**：问卷和会话的实时数据库
+- **Storage**：共享图片存储系统
+- **安全规则**：配置读写访问权限
 
-### Method 1: Drag & Drop
-1. Zip the entire project folder
-2. Go to [Netlify](https://netlify.com)
-3. Drag the ZIP file to the deploy area
-4. Your site will be live instantly
+## 快速开始
 
-### Method 2: Git Integration
-1. Push code to GitHub repository
-2. Connect repository to Netlify
-3. Netlify will auto-deploy on every push
+### 1. 管理员首次使用
+1. 修改 `data/owners.json` 添加你的管理员账户
+2. 访问 [https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)
+3. 输入你在 owners.json 中配置的用户名登录
+4. 上传你的第一个问卷压缩包
 
-### Method 3: Netlify CLI
-```bash
-npm install -g netlify-cli
-netlify deploy --prod
-```
+### 2. 创建问卷包
+1. 准备 CSV 文件，按照上述格式编写问题
+2. 准备图片文件（JPG/PNG格式）
+3. 将 CSV 和图片打包成 ZIP 文件
+4. 在管理员后台上传
 
-## Adding Quiz Files
+### 3. 开始答题会话
+1. 在管理员后台选择问卷
+2. 点击"开始会话"
+3. 分享链接给用户参与答题
+4. 实时监控答题进度
 
-### Via GitHub (Recommended)
-1. Upload ZIP files to the `/zip` folder in your repository
-2. Commit and push changes
-3. Netlify will automatically redeploy
+## 技术架构
 
-### Via Netlify Interface
-1. Go to your Netlify site dashboard
-2. Go to "Site settings" → "Build & deploy" → "Environment variables"
-3. Upload files through the file manager (if available)
+### Firebase 后端
+- **Firestore 集合**：
+  - `quizzes`：问卷数据和问题
+  - `sessions`：活跃问卷会话
+  - `shared_images`：高效图片存储
+  - `users/{userName}/answers`：用户专属答案集合
 
-## Local Development
+### 实时功能
+- **实时监控**：管理员实时查看参与者答案
+- **会话管理**：自动会话检测和更新
+- **参与者追踪**：实时客户端计数和参与统计
+- **数据同步**：Firebase onSnapshot 实现实时更新
 
-For local testing, you need a web server due to CORS restrictions:
+### 压缩包处理
+- **JS7z 集成**：基于 WebAssembly 的压缩包解压
+- **多格式支持**：处理 ZIP、7Z、GZ、TAR.GZ 格式
+- **客户端处理**：无需服务器端依赖
+- **进度追踪**：实时上传和处理反馈
 
-### Option 1: Python
-```bash
-python -m http.server 8000
-```
+## 部署说明
 
-### Option 2: Node.js
-```bash
-npx serve
-```
+### Netlify 部署
+1. 将 GitHub 仓库连接到 Netlify
+2. 配置构建设置：
+   - **构建命令**：无（静态站点）
+   - **发布目录**：`.`（根目录）
+3. 推送代码自动部署
 
-### Option 3: Chrome Development Mode (Windows)
-```bash
-# Double-click launch_dev_chrome.bat
-```
+### 环境配置
+- **无需环境变量**：Firebase 配置已嵌入
+- **静态托管兼容**：完全客户端运行
+- **CDN 优化**：快速全球内容交付
 
-## Advanced Session Management
+## 浏览器兼容性
 
-### Owner Session Control
-- **Active Owner Tracking**: Only one owner can be active at a time
-- **Complete Data Cleanup**: All quiz data cleared on owner logout
-- **Session Isolation**: Each owner session is independent
-- **Automatic Client Logout**: All clients return to login when owner logs out
+- **现代浏览器**：Chrome 80+、Safari 13+、Firefox 75+、Edge 80+
+- **移动端支持**：iOS Safari 13+、Chrome Mobile 80+
+- **需要 WebAssembly**：用于压缩包解压功能
+- **需要 JavaScript**：完整功能需要现代 JavaScript
 
-### Client Session Features
-- **Individual Identity Tracking**: Each login name = unique client
-- **Answer History**: Multiple submissions tracked per client
-- **Real-time Synchronization**: Instant updates across all sessions
-- **Automatic Role Detection**: Owners become clients when another owner is active
+## 常见问题
 
-## Security Features
+### 问卷上传问题
+- 验证压缩包包含 `quiz.csv` 文件
+- 检查 CSV 格式是否符合规范
+- 确保图片文件是网络兼容格式（JPG、PNG）
+- 查看浏览器控制台获取详细错误信息
 
-- **Email-based Owner Authentication**: Only registered emails can access owner features
-- **Owner Priority System**: First-come-first-served owner activation
-- **Session Isolation**: Each session is completely independent
-- **Automatic Cleanup**: All data cleared on owner logout
-- **Answer Obfuscation**: Shared quizzes don't reveal correct answers easily
-- **Custom Password Dialogs**: No browser security prompts
+### Firebase 连接问题
+- 验证 Firebase 配置是否正确
+- 检查浏览器网络标签查看连接错误
+- 确保 Firestore 安全规则允许访问
+- 清除浏览器缓存并重新加载
 
-## Browser Compatibility
+### 压缩包解压错误
+- 确保浏览器支持 WebAssembly
+- 如果一种格式失败，尝试不同的压缩格式
+- 检查 JS7z 库文件是否可访问
+- 验证压缩包未损坏
 
-- **Modern Browsers**: Chrome, Firefox, Safari, Edge (latest versions)
-- **JavaScript Required**: Full functionality requires JavaScript enabled
-- **File API Support**: Required for ZIP file processing
-- **LocalStorage Support**: Required for multi-client tracking
+### 实时同步问题
+- 检查 Firebase 项目状态
+- 验证网络连接稳定性
+- 刷新页面重新建立连接
+- 检查浏览器控制台查看 WebSocket 错误
 
-## Troubleshooting
+## 性能优化
 
-### Quiz Not Loading
-- Check if ZIP file exists in `/zip` folder
-- Verify ZIP file contains valid CSV
-- Check browser console for errors
-- Try entering password if ZIP is protected
+- **共享图片存储**：消除重复图片上传
+- **高效数据结构**：优化的 Firestore 文档组织
+- **实时订阅**：onSnapshot 最小化数据传输
+- **移动优先加载**：针对移动网络条件优化
 
-### Owner Can't Login
-- Verify email is listed in `config.js`
-- Check if another owner is already active
-- Check for typos in email address
-- Clear browser cache and try again
+## 示例问卷
 
-### Clients Can't Access Quiz
-- Ensure an owner is logged in and has selected a quiz
-- Check if quiz file loaded successfully
-- Verify client is using correct URL
-- Wait for active owner to start a quiz
-
-### Password Dialog Issues
-- Custom dialog should appear for password-protected ZIPs
-- Click "OK" to submit password (dialog disappears immediately)
-- Click "Cancel" to select different quiz
-- Try again with correct password if extraction fails
-
-## Technical Details
-
-- **ZIP Processing**: Uses js7z library for client-side extraction
-- **Session Storage**: localStorage for session management with multi-client support
-- **Real-time Updates**: Storage events for cross-tab communication
-- **Multi-Client Tracking**: Individual client identification and statistics
-- **Password Handling**: Custom dialogs with proper event handling
-- **Responsive Design**: Works on desktop and mobile devices
-- **Print Support**: Built-in print functionality for quizzes
-
-## Architecture Notes
-
-### Client-Side Architecture
-- **No Backend Required**: Pure client-side application
-- **Static Hosting Compatible**: Perfect for Netlify, GitHub Pages, etc.
-- **LocalStorage Based**: Multi-client tracking using browser storage
-- **Real-time Sync**: Storage events for instant updates
-
-### Scalability Considerations
-- **Small to Medium Groups**: Ideal for classrooms, workshops, small teams
-- **Single Device Limitation**: All clients must use the same browser/device family
-- **Storage Limits**: LocalStorage has size limitations for very large datasets
-
-### Production Recommendations
-For large-scale deployment with many concurrent users across different devices, consider:
-- **Backend Server**: For true multi-device support
-- **WebSocket Support**: For real-time features across devices
-- **Database Storage**: For persistent client data
-- **User Authentication**: For secure multi-device sessions
+项目包含了示例问卷文件 `sample_quiz.zip`，您可以：
+1. 下载并解压查看格式
+2. 直接上传测试系统功能
+3. 参考其 CSV 结构创建自己的问卷
 
 ---
 
-## Version History
+**版本**：v2.0 | **Firebase 后端** | **实时平台** | **移动优先** | **多格式支持** | **许可证**：MIT
 
-### v0.2 (Current)
-- ✅ Multi-client tracking with individual identification
-- ✅ Custom password dialogs with proper event handling
-- ✅ Owner priority system with role switching
-- ✅ Enhanced session management and cleanup
-- ✅ Real-time client statistics and monitoring
-- ✅ Improved UI/UX with clean interfaces
+**在线演示**：[https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)
 
-### v0.1
-- ✅ Basic owner/client architecture
-- ✅ ZIP file quiz loading
-- ✅ Simple session management
-- ✅ Basic quiz functionality
-
----
-
-# Q&A Generator - 中文简介
-
-基于Web的问答测验生成器，具有先进的多客户端跟踪和管理员/客户端架构。
-
-## 新功能特性 (v0.2)
-
-### 🔥 **多客户端跟踪**
-- **真实客户端识别** - 基于登录名称
-- **个人客户端统计** - 包含分数和时间戳
-- **实时客户端列表** - 显示所有连接用户
-- **每客户端答题历史** - 提交记录跟踪
-
-### 🔐 **增强密码安全**
-- **自定义密码对话框** - 正确的确定/取消处理
-- **无浏览器提示** - 完全对话框控制
-- **重试逻辑** - 密码错误重试
-- **干净取消** - 无错误消息
-
-### 👥 **管理员优先系统**
-- **首个管理员激活** - 控制测验
-- **其他管理员成为客户端** - 当有人已激活时
-- **无缝角色切换** - 活跃管理员登出时
-- **多管理员支持** - 明确活跃管理员指示
-
-## 使用方法
-
-### 管理员操作
-1. **登录**：输入已注册的邮箱地址
-2. **成为活跃管理员**：首个登录的管理员控制测验
-3. **选择测验**：从 `/zip` 文件夹中选择测验文件
-4. **监控真实客户端**：查看个人客户端姓名、分数和答题统计
-5. **查看实时更新**：观看客户端实时提交答案
-6. **登出**：结束会话并停用所有客户端的测验
-
-### 客户端操作（包括其他管理员）
-1. **登录**：在测验激活时输入任意标识符
-2. **参加测验**：完成随机排序的题目
-3. **个人跟踪**：您的答案按登录名称单独跟踪
-4. **查看结果**：查看得分和正确答案
-5. **自动登出**：活跃管理员登出时自动返回登录页面
-
-## 部署到Netlify
-
-### 方法1：拖拽部署
-1. 将整个项目文件夹压缩
-2. 访问 [Netlify](https://netlify.com)
-3. 将ZIP文件拖拽到部署区域
-4. 网站立即上线
-
-### 方法2：Git集成
-1. 将代码推送到GitHub仓库
-2. 将仓库连接到Netlify
-3. 每次推送自动部署
-
-## 技术特点
-
-- **多客户端跟踪**：基于登录名称的个人识别
-- **自定义密码对话框**：完全控制的密码处理
-- **管理员优先系统**：智能角色分配
-- **实时同步**：跨标签页即时更新
-- **完整数据清理**：管理员登出时清空所有数据
-- **响应式设计**：桌面和移动设备完美适配
-
----
-
-**版本**: v0.2 | **最后更新**: 2024年 | **许可证**: MIT
+**技术支持**：如有问题，请检查浏览器控制台错误信息，或参考项目中的 `requirement_detail.md` 技术文档。

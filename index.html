@@ -2,65 +2,338 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com; frame-ancestors 'none'">
     <title>Q&A Generator</title>
+    <link rel="icon" type="image/x-icon" href="review.ico">
     <link rel="stylesheet" href="styles.css">
-    <script src="js7z/js7z.js" type="text/javascript"></script>
+    <!-- JSZip库 -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script> -->
+    <!-- JS7z库 -->
+    <script src="js7z/js7z.js"></script>
 </head>
 <body>
     <!-- Login Interface -->
-    <div id="loginInterface" class="login-container">
+    <div id="loginInterface" class="interface">
         <div class="login-box">
             <h1>Q&A Generator</h1>
-            <input type="email" id="ownerIdentity" placeholder="Enter Username">
+            <p>Enter your name to continue:</p>
+                <input type="text" id="userName" placeholder="Enter your username" required>
+                <!-- NOT checked the duplicate username yet -->
             <button onclick="login()">Login</button>
         </div>
     </div>
 
-    <!-- Owner Interface -->
-    <div id="ownerInterface" class="owner-container" style="display: none;">
+    <!-- Owner Dashboard -->
+    <div id="ownerDashboard" class="interface" style="display: none;">
         <div class="header">
-            <div class="header-left">
-                <h2>Owner Dashboard</h2>
-                <span id="ownerEmail" class="owner-email"></span>
-            </div>
-            <div class="header-right">
-                <button class="logout-btn" onclick="logout()">Logout</button>
+            <h1>Owner Dashboard</h1>
+            <div class="user-info">
+                <span id="ownerName"></span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
             </div>
         </div>
         
         <div class="owner-controls">
-            <div class="zip-selector">
-                <label for="zipFiles">Select Quiz:</label>
-                <select id="zipFiles"></select>
-                <button onclick="loadQuiz()">Load Quiz</button>
+            <!-- 新建按钮 -->
+            <div class="new-quiz-section">
+                <button onclick="showUploadModal()" class="new-btn">新建Quiz</button>
+            </div>
+            
+            <!-- Quiz管理区域 -->
+            <div class="dashboard-section">
+                <h3>Quiz Management</h3>
+                <button onclick="showUploadModal()" class="upload-btn">Upload New Quiz</button>
+                <button onclick="testFirebaseDB()" class="test-btn" style="background-color: #007bff; margin-left: 10px;">Test Firebase DB</button>
+                <div id="quizList"></div>
+            </div>
+            
+            <!-- Firebase Test Results -->
+            <div id="firebaseTestResults" class="firebase-test-section" style="display: none;">
+                <h3>Firebase DB Test Results</h3>
+                <div id="testOutput" class="test-output"></div>
+            </div>
+            
+            <!-- 实时监控 -->
+            <div class="real-time-monitoring">
+                <h3>实时监控</h3>
+                <div class="monitoring-controls">
+                    <button onclick="refreshMonitoring()" class="refresh-btn">刷新</button>
+                    <span id="lastUpdateTime"></span>
+                </div>
+                <div id="realTimeResults"></div>
+            </div>
+            
+            <!-- Session管理 -->
+            <div id="sessionManagement" class="session-management" style="display: none;">
+                <h3>Session管理</h3>
+                <div id="activeSessionInfo" class="session-info">
+                    <h4>当前活跃Session</h4>
+                    <div id="sessionDetails"></div>
+                    <button onclick="endSession()" class="end-session-btn">结束Session</button>
+                </div>
+            </div>
+            
+            <!-- 数据库维护 -->
+            <div class="database-maintenance">
+                <h3>数据库维护</h3>
+                <div class="maintenance-controls">
+                    <button onclick="loadSessionList()" class="refresh-btn">刷新Session列表</button>
+                    <button onclick="cleanupOrphanedAnswers()" class="cleanup-btn" style="background-color: #ffc107; color: #000;">清理孤立答案</button>
+                </div>
+                <div id="sessionsList">
+                    <p>点击"刷新Session列表"查看所有Sessions</p>
+                </div>
+            </div>
+            
+            <!-- Owner管理 (仅管理员可见) -->
+            <div id="ownerManagement" class="owner-management" style="display: none;">
+                <h3>Owner管理</h3>
+                <div class="owner-stats">
+                    <div id="ownerStats"></div>
+                </div>
+                <div class="owner-list">
+                    <h4>Owner列表</h4>
+                    <div id="ownerList"></div>
+                </div>
             </div>
         </div>
-        
-        <div id="ownerQuestions"></div>
     </div>
 
-    <!-- Client Quiz Interface -->
-    <div id="clientInterface" class="client-container" style="display: none;">
+    <!-- Client Interface -->
+    <div id="clientInterface" class="interface" style="display: none;">
         <div class="header">
-            <div class="header-left">
-                <h2 class="zip-name" id="zipName">Quiz</h2>
-            </div>
-            <div class="header-right">
-                <div class="score-label" id="scoreLabel"></div>
-                <button class="submit-btn" id="submitBtn" onclick="submitAnswers()">Submit</button>
-                <button class="print-btn" id="printBtn" onclick="printQuiz()">Print</button>
-                <button class="share-btn" id="shareBtn" onclick="shareQuiz()">Share</button>
+            <h1 id="clientQuizTitle"></h1>
+            <div class="user-info">
+                <span id="clientName"></span>
+                <span id="clientScore" class="score-display" style="display: none;"></span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
             </div>
         </div>
         
-        <hr class="header-separator">
-        
-        <div id="questionsContainer"></div>
+        <div id="quizContainer" class="quiz-container">
+            <div class="quiz-header">
+                <h2 id="quizTitle"></h2>
+            </div>
+            
+            <div id="questionsContainer"></div>
+            
+            <div class="submit-section">
+                <button onclick="submitQuiz()" class="submit-btn">提交Quiz</button>
+            </div>
+        </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <!-- 404 Interface -->
+    <div id="notFoundInterface" class="interface" style="display: none;">
+        <div class="not-found">
+            <h1>测试未准备好</h1>
+            <p>您已成功登录，但Owner还没有准备好测试。</p>
+            <p>请等待Owner启动测试，或联系Owner确认测试状态。</p>
+            <div class="status-info">
+                <p><strong>当前状态:</strong> 等待Owner准备测试</p>
+                <p><strong>建议:</strong> 请稍后再试，或联系测试管理员</p>
+            </div>
+            <button onclick="logout()" class="back-btn">返回登录</button>
+            <button onclick="checkForActiveSession()" class="refresh-btn">刷新检查</button>
+        </div>
+    </div>
+
+    <!-- 上传模态框 -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadModal()">&times;</span>
+            <h2>上传新Quiz</h2>
+            
+            <div class="upload-form">
+                <div class="form-group">
+                    <label for="zipFile">选择Quiz包 (压缩文件):</label>
+                    <input type="file" id="zipFile" accept=".zip,.7z,.gz,.tar.gz,.tgz" required>
+                    <small>压缩包应包含: quiz.csv 和 images/ 文件夹</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quizName">Quiz名称:</label>
+                    <input type="text" id="quizName" placeholder="输入Quiz名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <button onclick="uploadQuizPackage()" class="upload-btn">上传</button>
+                    <button onclick="closeUploadModal()" class="cancel-btn">取消</button>
+                </div>
+                
+                <div id="uploadProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCT4VCPw8QoBrQ3H5VhLDMG7kudyEx_H_w",
+            authDomain: "q-and-a-generator.firebaseapp.com",
+            projectId: "q-and-a-generator",
+            storageBucket: "q-and-a-generator.firebasestorage.app",
+            messagingSenderId: "1009574042925",
+            appId: "1:1009574042925:web:a9c885ba6a6aec3ac087a4"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        
+        // Export to global scope
+        window.db = db;
+        window.storage = storage;
+        window.firebaseApp = app;
+        
+        console.log('Firebase initialized successfully');
+    </script>
+    
+    <script src="js/firebase_service.js"></script>
+    <script src="js/quiz_upload.js"></script>
+    <script src="js/owner_service.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/owner.js"></script>
+    <script src="js/client.js"></script>
+    
+    <script>
+        // 主应用逻辑
+        let currentUser = '';
+        let currentUserRole = '';
+        
+        // 登录函数
+        async function login() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('Please enter your name.');
+                return;
+            }
+            currentUser = userName;
+            sessionStorage.setItem('userName', userName);
+            // 检查是否为Owner
+            const isOwner = isValidOwner(userName);
+            if (isOwner) {
+                currentUserRole = 'owner';
+                // Authenticate with owner service
+                if (window.ownerService) {
+                    const owner = window.ownerService.authenticateOwner(userName);
+                    if (owner) {
+                        console.log(`Welcome, ${owner.displayName}! Role: ${owner.role}`);
+                    }
+                }
+                showOwnerDashboard();
+            } else {
+                currentUserRole = 'client';
+                // 检查是否有活跃session
+                const activeSession = await window.firebaseService.getActiveSession();
+                if (activeSession) {
+                    showClientInterface();
+                } else {
+                    show404Page();
+                }
+            }
+        }
+        
+        // 显示Owner Dashboard
+        function showOwnerDashboard() {
+            hideAllInterfaces();
+            document.getElementById('ownerDashboard').style.display = 'block';
+            
+            // Display owner information
+            if (window.ownerService) {
+                const owner = window.ownerService.getCurrentOwner();
+                if (owner) {
+                    document.getElementById('ownerName').textContent = `${owner.displayName} (${owner.role})`;
+                } else {
+                    document.getElementById('ownerName').textContent = currentUser;
+                }
+            } else {
+                document.getElementById('ownerName').textContent = currentUser;
+            }
+            
+            // 初始化Owner Dashboard
+            if (typeof initializeOwnerDashboard === 'function') {
+                initializeOwnerDashboard();
+            }
+        }
+        
+        // 显示Client Interface
+        function showClientInterface() {
+            hideAllInterfaces();
+            document.getElementById('clientInterface').style.display = 'block';
+            document.getElementById('clientName').textContent = currentUser;
+            
+            // 初始化Client Interface
+            if (typeof initializeClientInterface === 'function') {
+                initializeClientInterface();
+            }
+        }
+        
+        // 显示404页面
+        function show404Page() {
+            hideAllInterfaces();
+            document.getElementById('notFoundInterface').style.display = 'block';
+        }
+        
+        // 隐藏所有界面
+        function hideAllInterfaces() {
+            document.getElementById('loginInterface').style.display = 'none';
+            document.getElementById('ownerDashboard').style.display = 'none';
+            document.getElementById('clientInterface').style.display = 'none';
+            document.getElementById('notFoundInterface').style.display = 'none';
+        }
+        
+        // 登出函数
+        function logout() {
+            // Logout from owner service if available
+            if (window.ownerService) {
+                window.ownerService.logout();
+            }
+            
+            sessionStorage.removeItem('userName');
+            currentUser = '';
+            currentUserRole = '';
+            showLogin();
+        }
+        
+        // 显示登录页面
+        function showLogin() {
+            hideAllInterfaces();
+            document.getElementById('loginInterface').style.display = 'block';
+        }
+        
+        // 检查活跃session
+        async function checkForActiveSession() {
+            const activeSession = await window.firebaseService.getActiveSession();
+            if (activeSession) {
+                showClientInterface();
+            }
+        }
+        
+        // 允许Enter键登录
+        document.getElementById('userName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // 页面加载时检查现有session
+        window.addEventListener('load', function() {
+            const savedUser = sessionStorage.getItem('userName');
+            if (savedUser) {
+                currentUser = savedUser;
+                login();
+            }
+        });
+    </script>
 </body>
 </html> 

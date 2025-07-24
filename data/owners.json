@@ -1,0 +1,19 @@
+{
+  "owners": [
+    {
+      "username": "gostnort@hotmail.com",
+      "displayName": "Gostnort",
+      "role": "admin",
+      "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz", "manage_owners"],
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "isActive": true
+    }
+  ],
+  "settings": {
+    "allowNewOwnerRegistration": false,
+    "defaultPermissions": ["create_quiz", "manage_sessions"],
+    "sessionTimeout": 3600000,
+    "maxQuizzesPerOwner": 50,
+    "lastUpdated": "2024-01-01T00:00:00.000Z"
+  }
+} 
