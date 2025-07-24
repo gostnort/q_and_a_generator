@@ -611,12 +611,35 @@ window.deactivateOwner = async function(username) {
 
 // Firebase DB测试函数
 window.testFirebaseDB = async function() {
+    console.log('🔴 Firebase test button clicked');
+    
+    // Immediate visual feedback
+    alert('🔴 Firebase test started - check console and Firebase test section below');
+    
     const testResultsDiv = document.getElementById('firebaseTestResults');
     const testOutputDiv = document.getElementById('testOutput');
     
     // 显示测试结果区域
     testResultsDiv.style.display = 'block';
     testOutputDiv.innerHTML = '<div class="test-loading">🔄 Running Firebase DB Tests...</div>';
+    
+    // Quick test first
+    try {
+        if (window.db) {
+            testOutputDiv.innerHTML += '<div style="color: green; margin: 10px 0;"><strong>✅ QUICK TEST: Firebase DB object exists</strong></div>';
+        } else {
+            testOutputDiv.innerHTML += '<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST: Firebase DB object missing</strong></div>';
+            return;
+        }
+        
+        if (window.firebaseService) {
+            testOutputDiv.innerHTML += '<div style="color: green; margin: 10px 0;"><strong>✅ QUICK TEST: Firebase service exists</strong></div>';
+        } else {
+            testOutputDiv.innerHTML += '<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST: Firebase service missing</strong></div>';
+        }
+    } catch (error) {
+        testOutputDiv.innerHTML += `<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST ERROR: ${error.message}</strong></div>`;
+    }
     
     const results = [];
     let passCount = 0;

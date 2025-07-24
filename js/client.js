@@ -25,6 +25,9 @@ function escapeAttr(text) {
 
 // 初始化Client Interface
 window.initializeClientInterface = async function() {
+    console.log('🔴 Initializing client interface...');
+    document.getElementById('clientStatus').textContent = 'Client: Loading quiz...';
+    
     await loadActiveQuiz();
 };
 
@@ -53,6 +56,12 @@ async function loadActiveQuiz() {
 
 // 显示Quiz
 function displayQuiz(session) {
+    console.log('🔴 displayQuiz function called with session:', session);
+    console.log('🔴 About to create DOM elements for questions');
+    
+    // Update debug status
+    document.getElementById('clientStatus').textContent = `Client: ✅ Displaying ${session.questions.length} questions`;
+    
     // Set both the header title and quiz title (remove "Quiz" prefix)
     document.getElementById('clientQuizTitle').textContent = session.quizName;
     document.getElementById('quizTitle').textContent = session.quizName;
@@ -60,7 +69,15 @@ function displayQuiz(session) {
     const container = document.getElementById('questionsContainer');
     container.innerHTML = '';
     
+    // Add visible debugging info
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = 'background: yellow; padding: 10px; border: 2px solid red; margin: 10px 0;';
+    debugDiv.innerHTML = `<strong>DEBUG: displayQuiz called with ${session.questions.length} questions</strong>`;
+    container.appendChild(debugDiv);
+    
     session.questions.forEach((question, index) => {
+        console.log(`🔴 Processing question ${index + 1}:`, question);
+        
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
         questionDiv.setAttribute('data-question-id', question.id);
@@ -93,12 +110,16 @@ function displayQuiz(session) {
         
         // 显示选项
         question.options.forEach((option, optIndex) => {
+            console.log(`🔴 Creating option ${optIndex} for question ${question.id}:`, option);
+            
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
             
             const optionId = `question_${question.id}_option_${optIndex}`;
             const inputName = isMultipleChoice ? `question_${question.id}_option_${optIndex}` : `question_${question.id}`;
             const inputType = isMultipleChoice ? 'checkbox' : 'radio';
+            
+            console.log(`🔴 Creating ${inputType} with name: ${inputName}`);
             
             // 创建input元素
             const input = document.createElement('input');
@@ -121,9 +142,16 @@ function displayQuiz(session) {
             // 组装选项
             optionDiv.appendChild(input);
             optionDiv.appendChild(label);
+            
+            // Add visible debugging for input creation
+            const inputDebug = document.createElement('span');
+            inputDebug.style.cssText = 'color: red; font-weight: bold; margin-left: 10px;';
+            inputDebug.textContent = `[${inputType}]`;
+            optionDiv.appendChild(inputDebug);
+            
             questionDiv.appendChild(optionDiv);
             
-            console.log(`Created ${inputType} for option: ${option.text}`);
+            console.log(`🔴 Created ${inputType} for option: ${option.text}`);
         });
         
         container.appendChild(questionDiv);
