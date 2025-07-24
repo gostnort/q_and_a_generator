@@ -41,11 +41,17 @@
             </div>
             
             <!-- Quiz管理区域 -->
-            <div class="quiz-management">
-                <h3>Quiz管理</h3>
-                <div id="quizList" class="quiz-list">
-                    <!-- 动态生成的quiz列表 -->
-                </div>
+            <div class="dashboard-section">
+                <h3>Quiz Management</h3>
+                <button onclick="showUploadModal()" class="upload-btn">Upload New Quiz</button>
+                <button onclick="testFirebaseDB()" class="test-btn" style="background-color: #007bff; margin-left: 10px;">Test Firebase DB</button>
+                <div id="quizList"></div>
+            </div>
+            
+            <!-- Firebase Test Results -->
+            <div id="firebaseTestResults" class="firebase-test-section" style="display: none;">
+                <h3>Firebase DB Test Results</h3>
+                <div id="testOutput" class="test-output"></div>
             </div>
             
             <!-- Session管理 -->

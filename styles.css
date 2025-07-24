@@ -1563,3 +1563,163 @@ button {
 .deactivate-btn:hover {
     background-color: #c82333;
 } 
+
+/* Firebase Test Styles */
+.firebase-test-section {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.firebase-test-section h3 {
+    color: #343a40;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.test-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.test-btn:hover {
+    background-color: #0056b3;
+}
+
+.test-output {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.test-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.test-summary {
+    background-color: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.test-result {
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.test-result.test-pass {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.test-result.test-fail {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.test-result strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.test-result p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.test-result details {
+    margin-top: 8px;
+}
+
+.test-result details summary {
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.test-result details pre {
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    overflow-x: auto;
+    margin-top: 5px;
+}
+
+.test-final-summary {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 20px;
+    color: #856404;
+}
+
+.test-final-summary h4 {
+    margin-top: 0;
+    color: #343a40;
+}
+
+.test-final-summary ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.test-final-summary li {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+/* Mobile responsive styles for test section */
+@media (max-width: 768px) {
+    .firebase-test-section {
+        margin: 15px 0;
+        padding: 15px;
+    }
+    
+    .test-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    
+    .test-output {
+        max-height: 300px;
+        font-size: 12px;
+        padding: 10px;
+    }
+    
+    .test-result {
+        padding: 10px;
+        margin: 8px 0;
+    }
+    
+    .test-result p {
+        font-size: 12px;
+    }
+} 

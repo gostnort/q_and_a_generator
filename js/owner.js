@@ -594,3 +594,210 @@ window.deactivateOwner = async function(username) {
         alert(`停用失败: ${error.message}`);
     }
 }; 
+
+// Firebase DB测试函数
+window.testFirebaseDB = async function() {
+    const testResultsDiv = document.getElementById('firebaseTestResults');
+    const testOutputDiv = document.getElementById('testOutput');
+    
+    // 显示测试结果区域
+    testResultsDiv.style.display = 'block';
+    testOutputDiv.innerHTML = '<div class="test-loading">🔄 Running Firebase DB Tests...</div>';
+    
+    const results = [];
+    let passCount = 0;
+    let totalTests = 0;
+    
+    // 测试辅助函数
+    const addTestResult = (testName, success, message, details = '') => {
+        totalTests++;
+        if (success) passCount++;
+        
+        const status = success ? '✅ PASS' : '❌ FAIL';
+        const className = success ? 'test-pass' : 'test-fail';
+        
+        results.push(`
+            <div class="test-result ${className}">
+                <strong>${status} - ${testName}</strong>
+                <p>${message}</p>
+                ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
+            </div>
+        `);
+        
+        // 实时更新显示
+        updateTestDisplay(results, passCount, totalTests);
+    };
+    
+    const updateTestDisplay = (results, passed, total) => {
+        const summary = `<div class="test-summary">Tests: ${passed}/${total} passed</div>`;
+        testOutputDiv.innerHTML = summary + results.join('');
+    };
+    
+    try {
+        // 测试 1: Firebase 基础连接
+        try {
+            if (window.db && window.storage && window.firebaseApp) {
+                addTestResult('Firebase Connection', true, 'Firebase app, database, and storage are properly initialized');
+            } else {
+                addTestResult('Firebase Connection', false, 'Firebase components not properly initialized', 
+                    `DB: ${!!window.db}, Storage: ${!!window.storage}, App: ${!!window.firebaseApp}`);
+            }
+        } catch (error) {
+            addTestResult('Firebase Connection', false, 'Firebase initialization error', error.message);
+        }
+        
+        // 测试 2: Firebase Service 可用性
+        try {
+            if (window.firebaseService && typeof window.firebaseService.getAllQuizzes === 'function') {
+                addTestResult('Firebase Service', true, 'Firebase service methods are available');
+            } else {
+                addTestResult('Firebase Service', false, 'Firebase service not properly loaded');
+            }
+        } catch (error) {
+            addTestResult('Firebase Service', false, 'Firebase service error', error.message);
+        }
+        
+        // 测试 3: getAllQuizzes 操作
+        try {
+            const startTime = Date.now();
+            const quizzes = await window.firebaseService.getAllQuizzes();
+            const duration = Date.now() - startTime;
+            
+            addTestResult('Get All Quizzes', true, 
+                `Successfully retrieved ${quizzes.length} quizzes in ${duration}ms`,
+                quizzes.map(q => `Quiz: ${q.name} (${q.questions.length} questions)`).join('\n'));
+        } catch (error) {
+            addTestResult('Get All Quizzes', false, 'Failed to retrieve quizzes', error.message);
+        }
+        
+        // 测试 4: getActiveSession 操作
+        try {
+            const startTime = Date.now();
+            const session = await window.firebaseService.getActiveSession();
+            const duration = Date.now() - startTime;
+            
+            if (session) {
+                addTestResult('Get Active Session', true, 
+                    `Found active session: ${session.quizName} in ${duration}ms`,
+                    `Session ID: ${session.id}\nQuiz ID: ${session.quizId}\nQuestions: ${session.questions?.length || 0}`);
+            } else {
+                addTestResult('Get Active Session', true, 
+                    `No active session found (normal) in ${duration}ms`);
+            }
+        } catch (error) {
+            addTestResult('Get Active Session', false, 'Failed to check active session', error.message);
+        }
+        
+        // 测试 5: 共享图片集合读取
+        try {
+            const db = window.db;
+            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            const startTime = Date.now();
+            const imagesSnapshot = await getDocs(collection(db, 'shared_images'));
+            const duration = Date.now() - startTime;
+            
+            addTestResult('Shared Images Collection', true, 
+                `Successfully read shared_images collection: ${imagesSnapshot.docs.length} images in ${duration}ms`,
+                imagesSnapshot.docs.map(doc => `Image: ${doc.data().originalName}`).join('\n'));
+        } catch (error) {
+            addTestResult('Shared Images Collection', false, 'Failed to read shared_images collection', error.message);
+        }
+        
+        // 测试 6: Collection Group Query (answers)
+        try {
+            const db = window.db;
+            const { collectionGroup, getDocs, query, limit } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            const startTime = Date.now();
+            const answersQuery = query(collectionGroup(db, 'answers'), limit(10));
+            const answersSnapshot = await getDocs(answersQuery);
+            const duration = Date.now() - startTime;
+            
+            addTestResult('Collection Group Query (answers)', true, 
+                `Successfully executed collection group query: ${answersSnapshot.docs.length} answers found in ${duration}ms`,
+                'This test verifies that Firebase indexes are properly created for collection group queries');
+        } catch (error) {
+            const isIndexError = error.message.includes('index') || error.message.includes('COLLECTION_GROUP');
+            const status = isIndexError ? '⚠️ INDEX NEEDED' : '❌ FAIL';
+            
+            addTestResult('Collection Group Query (answers)', false, 
+                isIndexError ? 'Collection group query requires index (will auto-create)' : 'Collection group query failed',
+                `Error: ${error.message}\n\n${isIndexError ? 'This is expected for new Firebase projects. The index will be created automatically when the query is first executed.' : ''}`);
+        }
+        
+        // 测试 7: Firestore 写入权限 (创建测试文档)
+        try {
+            const db = window.db;
+            const { collection, addDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            const startTime = Date.now();
+            const testDoc = await addDoc(collection(db, 'test'), {
+                testMessage: 'Firebase DB test',
+                timestamp: new Date()
+            });
+            
+            // 立即删除测试文档
+            await deleteDoc(testDoc);
+            const duration = Date.now() - startTime;
+            
+            addTestResult('Firestore Write Permissions', true, 
+                `Successfully created and deleted test document in ${duration}ms`,
+                'Write permissions are working correctly');
+        } catch (error) {
+            addTestResult('Firestore Write Permissions', false, 'Failed to write to Firestore', error.message);
+        }
+        
+        // 测试 8: Real-time listener test
+        try {
+            const db = window.db;
+            const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            const startTime = Date.now();
+            const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+                const duration = Date.now() - startTime;
+                addTestResult('Real-time Listeners', true, 
+                    `Real-time listener established successfully in ${duration}ms`,
+                    `Found ${snapshot.docs.length} sessions`);
+                unsubscribe(); // 取消监听
+            });
+            
+            // 如果3秒内没有回调，认为失败
+            setTimeout(() => {
+                try {
+                    unsubscribe();
+                    addTestResult('Real-time Listeners', false, 'Real-time listener timeout', 'No callback received within 3 seconds');
+                } catch (e) {
+                    // Listener已经被触发并取消了，忽略
+                }
+            }, 3000);
+            
+        } catch (error) {
+            addTestResult('Real-time Listeners', false, 'Failed to establish real-time listener', error.message);
+        }
+        
+    } catch (overallError) {
+        addTestResult('Overall Test', false, 'Test execution failed', overallError.message);
+    }
+    
+    // 添加最终总结
+    setTimeout(() => {
+        const finalSummary = `
+            <div class="test-final-summary">
+                <h4>📊 Test Summary</h4>
+                <p><strong>Overall Status:</strong> ${passCount === totalTests ? '🟢 All tests passed' : passCount > totalTests * 0.7 ? '🟡 Most tests passed' : '🔴 Multiple failures detected'}</p>
+                <p><strong>Success Rate:</strong> ${passCount}/${totalTests} (${Math.round(passCount/totalTests*100)}%)</p>
+                <p><strong>Recommendation:</strong> ${passCount === totalTests ? 'Firebase DB is working correctly' : passCount > totalTests * 0.7 ? 'Minor issues detected, check failed tests above' : 'Significant issues detected, check Firebase configuration'}</p>
+                <p><strong>Common Issues:</strong></p>
+                <ul>
+                    <li>Collection group index errors are normal and self-resolve</li>
+                    <li>Network connectivity issues may cause timeouts</li>
+                    <li>Firebase security rules may block some operations</li>
+                </ul>
+            </div>
+        `;
+        testOutputDiv.innerHTML += finalSummary;
+    }, 4000); // 等待异步测试完成
+    
+    console.log('Firebase DB test completed');
+}; 
