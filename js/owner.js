@@ -345,19 +345,18 @@ async function startRealTimeMonitoring() {
     // 立即获取一次数据
     refreshMonitoring();
     
-    // 每15秒刷新一次（即使实时监听失败，轮询仍然工作）
-    refreshInterval = setInterval(refreshMonitoring, 15000);
+    // 每10秒刷新一次
+    refreshInterval = setInterval(refreshMonitoring, 10000);
     
     // 实时监听答案变化
     try {
         answersUnsubscribe = await window.firebaseService.onAnswersUpdate(ownerCurrentSession.id, (data) => {
             displayRealTimeResults(data);
         });
-        console.log('Real-time monitoring started successfully');
+        console.log('✅ 实时监控启动成功');
     } catch (error) {
-        console.error('Error starting real-time monitoring:', error);
-        console.info('继续使用轮询方式监控 (每15秒刷新)');
-        // 即使实时监听失败，轮询依然继续工作
+        console.error('启动实时监控时出错:', error);
+        console.info('继续使用轮询方式监控 (每10秒刷新)');
         answersUnsubscribe = null;
     }
 }
@@ -387,7 +386,9 @@ window.refreshMonitoring = async function() {
         document.getElementById('lastUpdateTime').textContent = 
             `最后更新: ${new Date().toLocaleTimeString()}`;
     } catch (error) {
-        console.error('Error refreshing monitoring:', error);
+        console.error('刷新监控数据时出错:', error);
+        document.getElementById('realTimeResults').innerHTML = 
+            '<p style="color: red;">获取数据失败: ' + error.message + '</p>';
     }
 };
 
@@ -403,14 +404,13 @@ function displayRealTimeResults(answers) {
     // 获取客户端统计信息
     const clientInfo = answers._meta || { totalClients: 0, clientList: [] };
     
-    // 检查是否为索引待创建状态
-    if (clientInfo.indexPending) {
+    // 检查是否有错误
+    if (clientInfo.error) {
         resultsDiv.innerHTML = `
             <div class="real-time-results">
-                <div class="index-pending-notice">
-                    <h4>🔄 Firebase正在初始化</h4>
+                <div style="color: red; padding: 15px; border: 1px solid #f5c6cb; background: #f8d7da; border-radius: 5px;">
+                    <h4>❌ 监控出错</h4>
                     <p>${clientInfo.message}</p>
-                    <p><small>这是新项目的正常现象，通常在1-2分钟内完成。完成后将自动显示实时数据。</small></p>
                 </div>
             </div>
         `;
@@ -422,8 +422,8 @@ function displayRealTimeResults(answers) {
     // 显示客户端统计
     html += `
         <div class="client-stats">
-            <h4>客户端参与统计</h4>
-            <p>参与人数: ${clientInfo.totalClients} 人</p>
+            <h4>📊 客户端参与统计</h4>
+            <p>参与人数: <strong>${clientInfo.totalClients}</strong> 人</p>
             <div class="client-list">
                 <strong>参与客户端:</strong> ${clientInfo.clientList.join(', ') || '暂无'}
             </div>

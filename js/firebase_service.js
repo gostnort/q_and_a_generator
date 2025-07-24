@@ -152,7 +152,7 @@ window.firebaseService = {
     // 参数：sessionId, deleteAnswers (是否删除相关answers)
     async endSession(sessionId, deleteAnswers = true) {
         const db = window.db;
-        const { doc, deleteDoc, collection, query, where, getDocs, writeBatch, collectionGroup } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const { doc, deleteDoc, collection, query, where, getDocs, writeBatch } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
         try {
             console.log('开始结束Session:', sessionId);
@@ -161,8 +161,9 @@ window.firebaseService = {
             if (deleteAnswers) {
                 console.log('清理session相关answers...');
                 
+                // 使用简单的answers集合查询，无需索引
                 const answersQuery = query(
-                    collectionGroup(db, 'answers'),
+                    collection(db, 'answers'),
                     where('sessionId', '==', sessionId)
                 );
                 const answersSnapshot = await getDocs(answersQuery);
@@ -214,9 +215,9 @@ window.firebaseService = {
             if (sessionIds.length > 0) {
                 console.log('步骤2: 删除用户answers...');
                 
-                // 使用collectionGroup查询所有用户的answers
+                // 使用简单的answers集合查询，无需索引
                 const answersQuery = query(
-                    collectionGroup(db, 'answers'),
+                    collection(db, 'answers'),
                     where('sessionId', 'in', sessionIds)
                 );
                 const answersSnapshot = await getDocs(answersQuery);
@@ -292,13 +293,13 @@ window.firebaseService = {
     // 提交答案
     // 功能：客户端提交单个题目的答案
     // 参数：sessionId, questionId, answers数组, userName
-    // 存储路径：users/{userName}/answers/{answerId}
+    // 存储路径：answers/{answerId} - 使用扁平结构，避免collectionGroup
     async submitAnswer(sessionId, questionId, answers, userName) {
         const db = window.db;
         const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
-        // 使用用户专属的answers集合
-        const userAnswersCollection = collection(db, 'users', userName, 'answers');
+        // 使用扁平的answers集合，避免collectionGroup查询
+        const answersCollection = collection(db, 'answers');
         
         const answerData = {
             sessionId: sessionId,
@@ -308,28 +309,30 @@ window.firebaseService = {
             timestamp: serverTimestamp()
         };
         
-        console.log('Submitting answer to user collection:', answerData);
-        const docRef = await addDoc(userAnswersCollection, answerData);
+        console.log('Submitting answer to flat answers collection:', answerData);
+        const docRef = await addDoc(answersCollection, answerData);
         return docRef.id;
     },
 
-    // 获取实时答案统计
-    // 功能：owner监控页面调用，从所有用户的answers子集合中统计数据
+    // 获取答案统计
+    // 功能：owner监控页面调用，从扁平answers集合中统计数据
     // 返回：每个题目的回答人数和各选项的选择次数，以及客户端信息
     async getRealTimeAnswers(sessionId) {
         const db = window.db;
-        const { collection, query, where, getDocs, collectionGroup } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
         try {
-            // 使用collectionGroup查询所有用户的answers子集合
+            // 使用简单的answers集合查询，无需索引
             const answersQuery = query(
-                collectionGroup(db, 'answers'),
+                collection(db, 'answers'),
                 where('sessionId', '==', sessionId)
             );
             
             const snapshot = await getDocs(answersQuery);
             const stats = {}; // 按题目ID分组的统计
             const clients = new Set(); // 参与的客户端
+            
+            console.log(`找到 ${snapshot.docs.length} 个答案记录`);
             
             // 遍历所有答案，统计每个选项的选择次数
             snapshot.docs.forEach(doc => {
@@ -373,75 +376,53 @@ window.firebaseService = {
             return stats;
             
         } catch (error) {
-            // 检查是否为Firebase索引错误
-            const isIndexError = error.message.includes('index') || error.message.includes('COLLECTION_GROUP');
-            
-            if (isIndexError) {
-                // 索引错误 - 返回空统计但不在控制台显示错误
-                console.info('📋 Firebase正在创建索引，暂时返回空统计数据。索引创建完成后将自动恢复正常。');
-                return {
-                    _meta: {
-                        totalClients: 0,
-                        clientList: [],
-                        indexPending: true,
-                        message: 'Firebase正在创建必要的索引，请稍候...'
-                    }
-                };
-            } else {
-                // 其他错误 - 记录并重抛
-                console.error('获取实时答案统计时出错:', error);
-                throw error;
-            }
+            console.error('获取答案统计时出错:', error);
+            return {
+                _meta: {
+                    totalClients: 0,
+                    clientList: [],
+                    error: true,
+                    message: '获取数据时出错: ' + error.message
+                }
+            };
         }
     },
 
     // 监听答案更新（实时）
     // 功能：为owner监控页面提供实时数据更新
-    // 使用collectionGroup监听所有用户的answers变化
+    // 使用简单的answers集合监听
     async onAnswersUpdate(sessionId, callback) {
         const db = window.db;
         
         try {
-            const { collectionGroup, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            const { collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
             
-            // 监听所有用户answers子集合的变化
+            // 监听扁平answers集合的变化，无需索引
             const answersQuery = query(
-                collectionGroup(db, 'answers'),
+                collection(db, 'answers'),
                 where('sessionId', '==', sessionId)
             );
             
             return onSnapshot(answersQuery, 
                 (snapshot) => {
-                    console.log('Real-time update triggered, documents count:', snapshot.docs.length);
+                    console.log('实时更新触发，答案数量:', snapshot.docs.length);
                     this.getRealTimeAnswers(sessionId).then(callback);
                 },
                 (error) => {
-                    // 处理Firebase索引错误
-                    const isIndexError = error.message.includes('index') || 
-                                       error.message.includes('COLLECTION_GROUP') ||
-                                       error.code === 'failed-precondition';
-                    
-                    if (isIndexError) {
-                        console.info('📋 Firebase索引正在创建中，暂时使用轮询方式获取数据...');
-                        // 当索引不可用时，返回空的监听器函数
-                        callback({
-                            _meta: {
-                                totalClients: 0,
-                                clientList: [],
-                                indexPending: true,
-                                message: 'Firebase正在创建必要的索引，请稍候...'
-                            }
-                        });
-                        // 返回一个空的取消函数
-                        return () => {};
-                    } else {
-                        console.error('Real-time monitoring error:', error);
-                        throw error;
-                    }
+                    console.error('实时监控错误:', error);
+                    // 发生错误时提供错误信息
+                    callback({
+                        _meta: {
+                            totalClients: 0,
+                            clientList: [],
+                            error: true,
+                            message: '监控出错: ' + error.message
+                        }
+                    });
                 }
             );
         } catch (error) {
-            console.error('Error setting up real-time listener:', error);
+            console.error('设置实时监听器出错:', error);
             // 返回一个空的取消函数
             return () => {};
         }
