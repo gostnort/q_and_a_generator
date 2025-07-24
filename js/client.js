@@ -64,10 +64,14 @@ function displayQuiz(session) {
         const inputType = isMultipleChoice ? 'checkbox' : 'radio';
         
         // 显示选项
+        console.log(`Question ${question.id}: isMultipleChoice=${isMultipleChoice}, options:`, question.options);
+        
         question.options.forEach((option, optIndex) => {
             const optionId = `question_${question.id}_option_${optIndex}`;
             const inputName = isMultipleChoice ? `question_${question.id}_option_${optIndex}` : `question_${question.id}`;
             const inputType = isMultipleChoice ? 'checkbox' : 'radio';
+            
+            console.log(`Creating ${inputType} for option: ${option.text}`);
             
             html += `
                 <div class="option">
@@ -78,6 +82,7 @@ function displayQuiz(session) {
             `;
         });
         
+        console.log(`Final HTML for question ${question.id}:`, html);
         questionDiv.innerHTML = html;
         container.appendChild(questionDiv);
     });

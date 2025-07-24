@@ -99,10 +99,16 @@ q_and_a_generator/
 **Key Functions**:
 - `initializeClientInterface()` → `Promise<void>` - Initializes client interface
 - `loadActiveQuiz()` → `Promise<void>` - Loads active session and quiz data
-- `displayQuiz(session: Object)` → `void` - Renders quiz questions with images
+- `displayQuiz(session: Object)` → `void` - Renders quiz questions with images and proper input controls
 - `updateAnswer(questionId: string, selectedOption: string, isMultiple: boolean)` → `void` - Updates answer state and submits to Firebase
 - `submitQuiz()` → `void` - Calculates results and shows completion message
 - `show404Page()` → `void` - Displays no active quiz message
+
+**Input Control Behavior**:
+- **Single-choice questions**: Displays radio buttons (only one option can be selected)
+- **Multi-choice questions**: Displays checkboxes (multiple options can be selected)
+- **Automatic detection**: Determines input type based on number of correct answers in question.options
+- **Unique naming**: Radio buttons share the same name for mutual exclusion, checkboxes have unique names
 
 #### `js/firebase_service.js` - Firebase Data Layer
 **Purpose**: Centralized Firebase operations, abstracts Firestore interactions
@@ -311,6 +317,26 @@ Row 3+: Answer options (prefix with ` for correct answers)
 2. **Immediate Submission**: Answer auto-submitted to user's answers subcollection
 3. **Real-time Aggregation**: Server aggregates answers across all users
 4. **Live Updates**: Owner dashboard updates via Firestore listeners
+
+---
+
+## Known Issues & Debugging
+
+### Current Issues
+1. **Firebase Collection Group Queries**: May encounter permission errors in Firestore console
+   - **Error**: "The query requires a COLLECTION_GROUP_ASC index for collection 'answers'"
+   - **Impact**: Real-time monitoring may not work until Firestore indexes are created
+   - **Solution**: Firebase automatically creates indexes when queries are first executed
+
+2. **Missing Input Controls**: Client interface may show options without radio buttons/checkboxes
+   - **Symptoms**: Options display as plain text without selection controls
+   - **Debug**: Check browser console for HTML generation logs
+   - **Cause**: Usually JavaScript execution issues or CSS styling problems
+
+### Debugging Tools
+- **Client Interface**: Added console.log statements in `displayQuiz()` function
+- **Input Control Detection**: Logs show whether questions are detected as single/multi-choice
+- **HTML Generation**: Final HTML output is logged for verification
 
 ---
 
