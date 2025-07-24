@@ -2,6 +2,27 @@
 let clientCurrentSession = null;
 let clientCurrentAnswers = {};
 
+// HTML转义辅助函数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 安全的属性值转义函数
+function escapeAttr(text) {
+    return text.replace(/[&<>"']/g, function(match) {
+        switch (match) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#39;';
+            default: return match;
+        }
+    });
+}
+
 // 初始化Client Interface
 window.initializeClientInterface = async function() {
     await loadActiveQuiz();
@@ -44,48 +65,67 @@ function displayQuiz(session) {
         questionDiv.className = 'question';
         questionDiv.setAttribute('data-question-id', question.id);
         
-        let html = `
-            <div class="question-header">
-                ${index + 1}. ${question.text}
-            </div>
-        `;
+        // 创建问题标题
+        const questionHeader = document.createElement('div');
+        questionHeader.className = 'question-header';
+        questionHeader.textContent = `${index + 1}. ${question.text}`;
+        questionDiv.appendChild(questionHeader);
         
         // 显示图片（base64格式）
         if (question.imageData && question.imageData.base64) {
-            html += `
-                <div class="question-image">
-                    <img src="data:image/png;base64,${question.imageData.base64}" 
-                         alt="Question image" onerror="this.style.display='none'">
-                </div>
-            `;
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'question-image';
+            
+            const img = document.createElement('img');
+            img.src = `data:image/png;base64,${question.imageData.base64}`;
+            img.alt = 'Question image';
+            img.onerror = function() { this.style.display = 'none'; };
+            
+            imageDiv.appendChild(img);
+            questionDiv.appendChild(imageDiv);
         }
         
         // 检查是否为多选题（多个正确答案）
         const correctCount = question.options.filter(opt => opt.correct).length;
         const isMultipleChoice = correctCount > 1;
-        const inputType = isMultipleChoice ? 'checkbox' : 'radio';
+        
+        console.log(`Question ${question.id}: isMultipleChoice=${isMultipleChoice}, correctCount=${correctCount}, options:`, question.options);
         
         // 显示选项
-        console.log(`Question ${question.id}: isMultipleChoice=${isMultipleChoice}, options:`, question.options);
-        
         question.options.forEach((option, optIndex) => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+            
             const optionId = `question_${question.id}_option_${optIndex}`;
             const inputName = isMultipleChoice ? `question_${question.id}_option_${optIndex}` : `question_${question.id}`;
             const inputType = isMultipleChoice ? 'checkbox' : 'radio';
             
-            console.log(`Creating ${inputType} for option: ${option.text}`);
+            // 创建input元素
+            const input = document.createElement('input');
+            input.type = inputType;
+            input.id = optionId;
+            input.name = inputName;
+            input.value = option.text;
             
-            html += `
-                <div class="option">
-                    <input type="${inputType}" id="${optionId}" name="${inputName}" 
-                           value="${option.text}" onchange="updateAnswer('${question.id}', '${option.text}', ${isMultipleChoice})">
-                    <label for="${optionId}" class="option-text">${option.text}</label>
-                </div>
-            `;
+            // 添加事件监听器
+            input.addEventListener('change', function() {
+                updateAnswer(question.id, option.text, isMultipleChoice);
+            });
+            
+            // 创建label元素
+            const label = document.createElement('label');
+            label.setAttribute('for', optionId);
+            label.className = 'option-text';
+            label.textContent = option.text;
+            
+            // 组装选项
+            optionDiv.appendChild(input);
+            optionDiv.appendChild(label);
+            questionDiv.appendChild(optionDiv);
+            
+            console.log(`Created ${inputType} for option: ${option.text}`);
         });
         
-        console.log(`Final HTML for question ${question.id}:`, html);
-        questionDiv.innerHTML = html;
         container.appendChild(questionDiv);
         
         // Debug: Check if input elements were actually created

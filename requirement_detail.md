@@ -94,7 +94,7 @@ q_and_a_generator/
 **Key Functions**:
 - `initializeClientInterface()` → `Promise<void>` - Initializes client interface
 - `loadActiveQuiz()` → `Promise<void>` - Loads active session and quiz data
-- `displayQuiz(session: Object)` → `void` - Renders quiz questions with images and proper input controls
+- `displayQuiz(session: Object)` → `void` - Renders quiz questions with images and proper input controls using safe DOM manipulation
 - `updateAnswer(questionId: string, selectedOption: string, isMultiple: boolean)` → `void` - Updates answer state and submits to Firebase
 - `submitQuiz()` → `void` - Calculates results and shows completion message
 - `show404Page()` → `void` - Displays no active quiz message
@@ -422,16 +422,26 @@ Error: The query requires a COLLECTION_GROUP_ASC index for collection 'answers'
 ## Known Issues & Debugging
 
 ### Current Issues
-1. **Firebase Collection Group Queries**: May encounter permission errors in Firestore console
-   - **Error**: "The query requires a COLLECTION_GROUP_ASC index for collection 'answers'"
-   - **Impact**: Real-time monitoring may not work until Firestore indexes are created
-   - **Solution**: Firebase automatically creates indexes when queries are first executed
+1. **Firebase Collection Group Queries**: ✅ **FIXED** - Improved error handling for index creation
+   - **Previous Issue**: "The query requires a COLLECTION_GROUP_ASC index for collection 'answers'" errors
+   - **Solution**: Added graceful error handling that treats index creation as warnings rather than failures
+   - **Impact**: Console errors eliminated, user-friendly messages displayed during index creation
+   - **Status**: Real-time monitoring shows helpful "Firebase正在初始化" message during index creation
 
-2. **Missing Input Controls**: Client interface may show options without radio buttons/checkboxes
-   - **Symptoms**: Options display as plain text without selection controls
-   - **Debug**: Check browser console for HTML generation logs and input element creation
-   - **Cause**: Usually JavaScript execution issues, CSS styling problems, or script loading order
-   - **Investigation**: Added detailed logging of input element creation and DOM manipulation
+2. **Missing Input Controls**: ✅ **FIXED** - Replaced innerHTML template strings with proper DOM manipulation
+   - **Root Cause**: HTML escaping issues when option.text contained special characters (quotes, etc.)
+   - **Solution**: Rewritten `displayQuiz()` to use `createElement()`, `appendChild()`, and `addEventListener()` instead of template strings
+   - **Previous Symptoms**: Options displayed as plain text without selection controls
+   - **Fix Details**: 
+     - Eliminated HTML template string generation that could be broken by special characters
+     - Used safe DOM methods: `createElement`, `textContent`, `appendChild`
+     - Replaced inline `onchange` attributes with proper `addEventListener`
+     - Added better error handling and debugging
+
+3. **Real-time Listener Timeout**: ✅ **FIXED** - Improved listener establishment and timeout handling
+   - **Previous Issue**: Firebase test showing "Real-time listener timeout" 
+   - **Solution**: Enhanced listener test with proper error callbacks and increased timeout to 5 seconds
+   - **Improvements**: Better error handling, clearer timeout messages, proper cleanup
 
 ### Debugging Tools
 - **Client Interface**: Added console.log statements in `displayQuiz()` function

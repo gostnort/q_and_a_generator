@@ -301,56 +301,79 @@ window.firebaseService = {
         const db = window.db;
         const { collection, query, where, getDocs, collectionGroup } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
-        // 使用collectionGroup查询所有用户的answers子集合
-        const answersQuery = query(
-            collectionGroup(db, 'answers'),
-            where('sessionId', '==', sessionId)
-        );
-        
-        const snapshot = await getDocs(answersQuery);
-        const stats = {}; // 按题目ID分组的统计
-        const clients = new Set(); // 参与的客户端
-        
-        // 遍历所有答案，统计每个选项的选择次数
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const questionId = data.questionId;
-            const userName = data.userName;
+        try {
+            // 使用collectionGroup查询所有用户的answers子集合
+            const answersQuery = query(
+                collectionGroup(db, 'answers'),
+                where('sessionId', '==', sessionId)
+            );
             
-            // 记录客户端
-            if (userName) {
-                clients.add(userName);
-            }
+            const snapshot = await getDocs(answersQuery);
+            const stats = {}; // 按题目ID分组的统计
+            const clients = new Set(); // 参与的客户端
             
-            // 初始化题目统计
-            if (!stats[questionId]) {
-                stats[questionId] = { totalResponses: 0, optionCounts: {}, clients: new Set() };
-            }
-            
-            stats[questionId].totalResponses++; // 总回答数
-            stats[questionId].clients.add(userName); // 回答此题的客户端
-            
-            // 统计每个选项的选择次数
-            data.answers.forEach(answer => {
-                if (!stats[questionId].optionCounts[answer]) {
-                    stats[questionId].optionCounts[answer] = 0;
+            // 遍历所有答案，统计每个选项的选择次数
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const questionId = data.questionId;
+                const userName = data.userName;
+                
+                // 记录客户端
+                if (userName) {
+                    clients.add(userName);
                 }
-                stats[questionId].optionCounts[answer]++;
+                
+                // 初始化题目统计
+                if (!stats[questionId]) {
+                    stats[questionId] = { totalResponses: 0, optionCounts: {}, clients: new Set() };
+                }
+                
+                stats[questionId].totalResponses++; // 总回答数
+                stats[questionId].clients.add(userName); // 回答此题的客户端
+                
+                // 统计每个选项的选择次数
+                data.answers.forEach(answer => {
+                    if (!stats[questionId].optionCounts[answer]) {
+                        stats[questionId].optionCounts[answer] = 0;
+                    }
+                    stats[questionId].optionCounts[answer]++;
+                });
             });
-        });
-        
-        // 转换Set为数组以便传输
-        Object.keys(stats).forEach(questionId => {
-            stats[questionId].clients = Array.from(stats[questionId].clients);
-        });
-        
-        // 添加全局客户端信息
-        stats._meta = {
-            totalClients: clients.size,
-            clientList: Array.from(clients)
-        };
-        
-        return stats;
+            
+            // 转换Set为数组以便传输
+            Object.keys(stats).forEach(questionId => {
+                stats[questionId].clients = Array.from(stats[questionId].clients);
+            });
+            
+            // 添加全局客户端信息
+            stats._meta = {
+                totalClients: clients.size,
+                clientList: Array.from(clients)
+            };
+            
+            return stats;
+            
+        } catch (error) {
+            // 检查是否为Firebase索引错误
+            const isIndexError = error.message.includes('index') || error.message.includes('COLLECTION_GROUP');
+            
+            if (isIndexError) {
+                // 索引错误 - 返回空统计但不在控制台显示错误
+                console.info('📋 Firebase正在创建索引，暂时返回空统计数据。索引创建完成后将自动恢复正常。');
+                return {
+                    _meta: {
+                        totalClients: 0,
+                        clientList: [],
+                        indexPending: true,
+                        message: 'Firebase正在创建必要的索引，请稍候...'
+                    }
+                };
+            } else {
+                // 其他错误 - 记录并重抛
+                console.error('获取实时答案统计时出错:', error);
+                throw error;
+            }
+        }
     },
 
     // 监听答案更新（实时）

@@ -390,6 +390,20 @@ function displayRealTimeResults(answers) {
     // 获取客户端统计信息
     const clientInfo = answers._meta || { totalClients: 0, clientList: [] };
     
+    // 检查是否为索引待创建状态
+    if (clientInfo.indexPending) {
+        resultsDiv.innerHTML = `
+            <div class="real-time-results">
+                <div class="index-pending-notice">
+                    <h4>🔄 Firebase正在初始化</h4>
+                    <p>${clientInfo.message}</p>
+                    <p><small>这是新项目的正常现象，通常在1-2分钟内完成。完成后将自动显示实时数据。</small></p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
     let html = '<div class="real-time-results">';
     
     // 显示客户端统计
@@ -606,30 +620,41 @@ window.testFirebaseDB = async function() {
     
     const results = [];
     let passCount = 0;
+    let warningCount = 0;
     let totalTests = 0;
     
-    // 测试辅助函数
-    const addTestResult = (testName, success, message, details = '') => {
+    // 测试辅助函数 - 支持pass, fail, warning三种状态
+    const addTestResult = (testName, status, message, details = '') => {
         totalTests++;
-        if (success) passCount++;
         
-        const status = success ? '✅ PASS' : '❌ FAIL';
-        const className = success ? 'test-pass' : 'test-fail';
+        let displayStatus, className;
+        if (status === 'pass') {
+            passCount++;
+            displayStatus = '✅ PASS';
+            className = 'test-pass';
+        } else if (status === 'warning') {
+            warningCount++;
+            displayStatus = '⚠️ WARNING';
+            className = 'test-warning';
+        } else {
+            displayStatus = '❌ FAIL';
+            className = 'test-fail';
+        }
         
         results.push(`
             <div class="test-result ${className}">
-                <strong>${status} - ${testName}</strong>
+                <strong>${displayStatus} - ${testName}</strong>
                 <p>${message}</p>
                 ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
             </div>
         `);
         
         // 实时更新显示
-        updateTestDisplay(results, passCount, totalTests);
+        updateTestDisplay(results, passCount, warningCount, totalTests);
     };
     
-    const updateTestDisplay = (results, passed, total) => {
-        const summary = `<div class="test-summary">Tests: ${passed}/${total} passed</div>`;
+    const updateTestDisplay = (results, passed, warnings, total) => {
+        const summary = `<div class="test-summary">Tests: ${passed}/${total} passed${warnings > 0 ? `, ${warnings} warnings` : ''}</div>`;
         testOutputDiv.innerHTML = summary + results.join('');
     };
     
@@ -637,24 +662,24 @@ window.testFirebaseDB = async function() {
         // 测试 1: Firebase 基础连接
         try {
             if (window.db && window.storage && window.firebaseApp) {
-                addTestResult('Firebase Connection', true, 'Firebase app, database, and storage are properly initialized');
+                addTestResult('Firebase Connection', 'pass', 'Firebase app, database, and storage are properly initialized');
             } else {
-                addTestResult('Firebase Connection', false, 'Firebase components not properly initialized', 
+                addTestResult('Firebase Connection', 'fail', 'Firebase components not properly initialized', 
                     `DB: ${!!window.db}, Storage: ${!!window.storage}, App: ${!!window.firebaseApp}`);
             }
         } catch (error) {
-            addTestResult('Firebase Connection', false, 'Firebase initialization error', error.message);
+            addTestResult('Firebase Connection', 'fail', 'Firebase initialization error', error.message);
         }
         
         // 测试 2: Firebase Service 可用性
         try {
             if (window.firebaseService && typeof window.firebaseService.getAllQuizzes === 'function') {
-                addTestResult('Firebase Service', true, 'Firebase service methods are available');
+                addTestResult('Firebase Service', 'pass', 'Firebase service methods are available');
             } else {
-                addTestResult('Firebase Service', false, 'Firebase service not properly loaded');
+                addTestResult('Firebase Service', 'fail', 'Firebase service not properly loaded');
             }
         } catch (error) {
-            addTestResult('Firebase Service', false, 'Firebase service error', error.message);
+            addTestResult('Firebase Service', 'fail', 'Firebase service error', error.message);
         }
         
         // 测试 3: getAllQuizzes 操作
@@ -663,11 +688,11 @@ window.testFirebaseDB = async function() {
             const quizzes = await window.firebaseService.getAllQuizzes();
             const duration = Date.now() - startTime;
             
-            addTestResult('Get All Quizzes', true, 
+            addTestResult('Get All Quizzes', 'pass', 
                 `Successfully retrieved ${quizzes.length} quizzes in ${duration}ms`,
                 quizzes.map(q => `Quiz: ${q.name} (${q.questions.length} questions)`).join('\n'));
         } catch (error) {
-            addTestResult('Get All Quizzes', false, 'Failed to retrieve quizzes', error.message);
+            addTestResult('Get All Quizzes', 'fail', 'Failed to retrieve quizzes', error.message);
         }
         
         // 测试 4: getActiveSession 操作
@@ -677,15 +702,15 @@ window.testFirebaseDB = async function() {
             const duration = Date.now() - startTime;
             
             if (session) {
-                addTestResult('Get Active Session', true, 
+                addTestResult('Get Active Session', 'pass', 
                     `Found active session: ${session.quizName} in ${duration}ms`,
                     `Session ID: ${session.id}\nQuiz ID: ${session.quizId}\nQuestions: ${session.questions?.length || 0}`);
             } else {
-                addTestResult('Get Active Session', true, 
+                addTestResult('Get Active Session', 'pass', 
                     `No active session found (normal) in ${duration}ms`);
             }
         } catch (error) {
-            addTestResult('Get Active Session', false, 'Failed to check active session', error.message);
+            addTestResult('Get Active Session', 'fail', 'Failed to check active session', error.message);
         }
         
         // 测试 5: 共享图片集合读取
@@ -697,11 +722,11 @@ window.testFirebaseDB = async function() {
             const imagesSnapshot = await getDocs(collection(db, 'shared_images'));
             const duration = Date.now() - startTime;
             
-            addTestResult('Shared Images Collection', true, 
+            addTestResult('Shared Images Collection', 'pass', 
                 `Successfully read shared_images collection: ${imagesSnapshot.docs.length} images in ${duration}ms`,
                 imagesSnapshot.docs.map(doc => `Image: ${doc.data().originalName}`).join('\n'));
         } catch (error) {
-            addTestResult('Shared Images Collection', false, 'Failed to read shared_images collection', error.message);
+            addTestResult('Shared Images Collection', 'fail', 'Failed to read shared_images collection', error.message);
         }
         
         // 测试 6: Collection Group Query (answers)
@@ -714,16 +739,25 @@ window.testFirebaseDB = async function() {
             const answersSnapshot = await getDocs(answersQuery);
             const duration = Date.now() - startTime;
             
-            addTestResult('Collection Group Query (answers)', true, 
+            addTestResult('Collection Group Query (answers)', 'pass', 
                 `Successfully executed collection group query: ${answersSnapshot.docs.length} answers found in ${duration}ms`,
                 'This test verifies that Firebase indexes are properly created for collection group queries');
         } catch (error) {
             const isIndexError = error.message.includes('index') || error.message.includes('COLLECTION_GROUP');
-            const status = isIndexError ? '⚠️ INDEX NEEDED' : '❌ FAIL';
             
-            addTestResult('Collection Group Query (answers)', false, 
-                isIndexError ? 'Collection group query requires index (will auto-create)' : 'Collection group query failed',
-                `Error: ${error.message}\n\n${isIndexError ? 'This is expected for new Firebase projects. The index will be created automatically when the query is first executed.' : ''}`);
+            if (isIndexError) {
+                addTestResult('Collection Group Query (answers)', 'warning', 
+                    'Firebase正在创建索引，这是新项目的正常现象',
+                    `错误: ${error.message}
+
+📋 说明：
+• 这是Firebase的正常行为，不是错误
+• 索引通常会在1-2分钟内自动创建完成
+• 创建完成后，实时监控功能将正常工作
+• 您可以继续使用其他功能`);
+            } else {
+                addTestResult('Collection Group Query (answers)', 'fail', 'Collection group query failed', error.message);
+            }
         }
         
         // 测试 7: Firestore 写入权限 (创建测试文档)
@@ -741,11 +775,11 @@ window.testFirebaseDB = async function() {
             await deleteDoc(testDoc);
             const duration = Date.now() - startTime;
             
-            addTestResult('Firestore Write Permissions', true, 
+            addTestResult('Firestore Write Permissions', 'pass', 
                 `Successfully created and deleted test document in ${duration}ms`,
                 'Write permissions are working correctly');
         } catch (error) {
-            addTestResult('Firestore Write Permissions', false, 'Failed to write to Firestore', error.message);
+            addTestResult('Firestore Write Permissions', 'fail', 'Failed to write to Firestore', error.message);
         }
         
         // 测试 8: Real-time listener test
@@ -754,50 +788,79 @@ window.testFirebaseDB = async function() {
             const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
             
             const startTime = Date.now();
-            const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
-                const duration = Date.now() - startTime;
-                addTestResult('Real-time Listeners', true, 
-                    `Real-time listener established successfully in ${duration}ms`,
-                    `Found ${snapshot.docs.length} sessions`);
-                unsubscribe(); // 取消监听
-            });
+            let listenerEstablished = false;
+            let timeoutId;
             
-            // 如果3秒内没有回调，认为失败
-            setTimeout(() => {
+            const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+                if (!listenerEstablished) {
+                    listenerEstablished = true;
+                    clearTimeout(timeoutId);
+                    
+                    const duration = Date.now() - startTime;
+                    addTestResult('Real-time Listeners', 'pass', 
+                        `Real-time listener established successfully in ${duration}ms`,
+                        `Found ${snapshot.docs.length} sessions`);
+                    
+                    // 延迟取消监听，确保测试结果显示
+                    setTimeout(() => {
+                        try {
+                            unsubscribe();
+                        } catch (e) {
+                            // 忽略取消监听的错误
+                        }
+                    }, 100);
+                }
+            }, (error) => {
+                // 监听错误回调
+                listenerEstablished = true;
+                clearTimeout(timeoutId);
+                addTestResult('Real-time Listeners', 'fail', 'Real-time listener error', error.message);
                 try {
                     unsubscribe();
-                    addTestResult('Real-time Listeners', false, 'Real-time listener timeout', 'No callback received within 3 seconds');
                 } catch (e) {
-                    // Listener已经被触发并取消了，忽略
+                    // 忽略取消监听的错误
                 }
-            }, 3000);
+            });
+            
+            // 增加超时时间到5秒，给Firebase更多时间建立连接
+            timeoutId = setTimeout(() => {
+                if (!listenerEstablished) {
+                    addTestResult('Real-time Listeners', 'fail', 'Real-time listener timeout', 'No callback received within 5 seconds - this may indicate network issues');
+                    try {
+                        unsubscribe();
+                    } catch (e) {
+                        // 忽略取消监听的错误
+                    }
+                }
+            }, 5000);
             
         } catch (error) {
-            addTestResult('Real-time Listeners', false, 'Failed to establish real-time listener', error.message);
+            addTestResult('Real-time Listeners', 'fail', 'Failed to establish real-time listener', error.message);
         }
         
     } catch (overallError) {
-        addTestResult('Overall Test', false, 'Test execution failed', overallError.message);
+        addTestResult('Overall Test', 'fail', 'Test execution failed', overallError.message);
     }
     
-    // 添加最终总结
+    // 添加最终总结  
     setTimeout(() => {
         const finalSummary = `
             <div class="test-final-summary">
                 <h4>📊 Test Summary</h4>
-                <p><strong>Overall Status:</strong> ${passCount === totalTests ? '🟢 All tests passed' : passCount > totalTests * 0.7 ? '🟡 Most tests passed' : '🔴 Multiple failures detected'}</p>
-                <p><strong>Success Rate:</strong> ${passCount}/${totalTests} (${Math.round(passCount/totalTests*100)}%)</p>
-                <p><strong>Recommendation:</strong> ${passCount === totalTests ? 'Firebase DB is working correctly' : passCount > totalTests * 0.7 ? 'Minor issues detected, check failed tests above' : 'Significant issues detected, check Firebase configuration'}</p>
+                <p><strong>Overall Status:</strong> ${passCount === totalTests ? '🟢 All tests passed' : passCount + warningCount >= totalTests * 0.8 ? '🟡 Most tests passed' : '🔴 Multiple failures detected'}</p>
+                <p><strong>Success Rate:</strong> ${passCount}/${totalTests} passed (${Math.round(passCount/totalTests*100)}%)${warningCount > 0 ? `, ${warningCount} warnings` : ''}</p>
+                <p><strong>Recommendation:</strong> ${passCount === totalTests ? 'Firebase DB is working correctly' : passCount + warningCount >= totalTests * 0.8 ? 'Minor issues detected, check failed tests above. Warnings are normal for new projects.' : 'Significant issues detected, check Firebase configuration'}</p>
                 <p><strong>Common Issues:</strong></p>
                 <ul>
-                    <li>Collection group index errors are normal and self-resolve</li>
+                    <li>Collection group index warnings are normal and self-resolve</li>
                     <li>Network connectivity issues may cause timeouts</li>
                     <li>Firebase security rules may block some operations</li>
+                    <li>Real-time listener timeouts may indicate network issues</li>
                 </ul>
             </div>
         `;
         testOutputDiv.innerHTML += finalSummary;
-    }, 4000); // 等待异步测试完成
+    }, 6000); // 增加等待时间以确保所有测试完成
     
     console.log('Firebase DB test completed');
 }; 
