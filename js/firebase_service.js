@@ -258,11 +258,30 @@ window.firebaseService = {
                 console.log('Quiz questions删除完成');
             }
             
-            // 第五步：删除quiz主文档
-            console.log('步骤5: 删除quiz主文档...');
+            // 第五步：删除相关的shared_images
+            console.log('步骤5: 删除相关的shared_images...');
+            const imagesQuery = query(
+                collection(db, 'shared_images'),
+                where('quizId', '==', quizId)
+            );
+            const imagesSnapshot = await getDocs(imagesQuery);
+            
+            console.log(`找到 ${imagesSnapshot.docs.length} 个相关图片`);
+            
+            if (imagesSnapshot.docs.length > 0) {
+                const imagesBatch = writeBatch(db);
+                imagesSnapshot.docs.forEach(imgDoc => {
+                    imagesBatch.delete(imgDoc.ref);
+                });
+                await imagesBatch.commit();
+                console.log('相关图片删除完成');
+            }
+            
+            // 第六步：删除quiz主文档
+            console.log('步骤6: 删除quiz主文档...');
             await deleteDoc(doc(db, 'quizzes', quizId));
             
-            console.log('✅ Quiz级联删除完成');
+            console.log('✅ Quiz级联删除完成（包括相关图片）');
             
         } catch (error) {
             console.error('Quiz删除过程中出错:', error);

@@ -1,111 +1,111 @@
-# Q&A Generator - Real-Time Quiz Platform
+# Q&A Generator - 实时问答平台
 
-A modern web-based quiz platform with real-time monitoring, multi-format archive support, and Firebase backend. Features owner dashboard for quiz management and client interface for interactive quiz participation.
+一个现代化的实时问答平台，支持多种压缩格式上传，具备实时监控功能，基于 Firebase 后端。提供管理员后台和用户答题界面。
 
-## ✨ Features
+## ✨ 主要功能
 
-### 🎯 **Real-Time Quiz Platform**
-- **Owner Dashboard**: Upload, manage, and monitor quizzes in real-time
-- **Client Interface**: Interactive quiz participation with immediate feedback
-- **Live Monitoring**: Real-time tracking of participant answers and statistics
-- **Session Management**: Start/stop quiz sessions with participant tracking
+### 🎯 **实时问答系统**
+- **管理员后台**：上传、管理问卷，实时监控答题情况
+- **用户答题界面**：交互式答题体验，即时反馈
+- **实时监控**：实时追踪参与者答案和统计数据
+- **会话管理**：开始/结束答题会话，参与者追踪
 
-### 📱 **Mobile-First Design**
-- **100% Mobile Optimized**: Designed specifically for mobile devices
-- **Touch-Friendly Interface**: Large buttons and intuitive navigation
-- **Responsive Layout**: Works perfectly on all screen sizes
-- **Progressive Web App**: Fast loading and offline-capable
+### 📱 **移动优先设计**
+- **100% 移动优化**：专为移动设备优化设计
+- **触摸友好界面**：大按钮和直观导航
+- **响应式布局**：在所有屏幕尺寸上完美工作
+- **渐进式网页应用**：快速加载和离线功能
 
-### 🚀 **Advanced Features**
-- **Multi-Format Support**: Upload ZIP, 7Z, TAR.GZ, and GZ archives
-- **Image Sharing**: Efficient shared image storage system
-- **Real-Time Sync**: Firebase-powered real-time data synchronization
-- **Smart Randomization**: Questions and options shuffled for fair assessment
-- **Cascade Deletion**: Comprehensive data cleanup and consistency
+### 🚀 **高级功能**
+- **多格式支持**：上传 ZIP、7Z、TAR.GZ、GZ 压缩包
+- **图片共享**：高效的共享图片存储系统
+- **实时同步**：基于 Firebase 的实时数据同步
+- **智能随机化**：问题和选项随机打乱，公平评估
+- **级联删除**：全面的数据清理和一致性维护
 
-## How It Works
+## 如何使用
 
-### For Owners
-1. **Login**: Enter your credentials (configured in `data/owners.json`)
-2. **Upload Quiz**: Create new quizzes using archive upload
-3. **Manage Quizzes**: View, select, and delete existing quizzes
-4. **Start Session**: Launch quiz sessions for client participation
-5. **Monitor Live**: Watch real-time participant statistics and answers
-6. **End Session**: Stop sessions and optionally preserve data
+### 管理员操作流程
+1. **登录**：输入管理员凭据（在 `data/owners.json` 中配置）
+2. **上传问卷**：使用压缩包上传创建新问卷
+3. **管理问卷**：查看、选择和删除现有问卷
+4. **开始会话**：启动问卷会话供用户参与
+5. **实时监控**：观看实时参与者统计和答案
+6. **结束会话**：停止会话并可选择保留数据
 
-### For Clients
-1. **Login**: Enter your name to join active sessions
-2. **Take Quiz**: Answer questions with images and multiple choice options
-3. **Real-Time Submission**: Answers submitted immediately upon selection
-4. **Instant Feedback**: See results with correct answers highlighted
-5. **Session Awareness**: Automatic detection of active quiz sessions
+### 用户操作流程
+1. **登录**：输入姓名加入活跃会话
+2. **答题**：回答带图片的多选题
+3. **实时提交**：选择后答案立即提交
+4. **即时反馈**：查看结果和正确答案高亮
+5. **会话感知**：自动检测活跃的问卷会话
 
-## Project Structure
+## 项目结构
 
 ```
 /
-├── index.html              # Main application entry point
-├── styles.css              # Mobile-first responsive styling
-├── js/                     # JavaScript modules
-│   ├── firebase_service.js # Firebase backend integration
-│   ├── quiz_upload.js      # Quiz upload and processing
-│   ├── owner_service.js    # Owner authentication and management
-│   ├── owner.js            # Owner dashboard functionality
-│   ├── client.js           # Client quiz interface
-│   └── common.js           # Shared utilities
+├── index.html              # 主应用入口
+├── styles.css              # 移动优先响应式样式
+├── js/                     # JavaScript 模块
+│   ├── firebase_service.js # Firebase 后端集成
+│   ├── quiz_upload.js      # 问卷上传和处理
+│   ├── owner_service.js    # 管理员认证和管理
+│   ├── owner.js            # 管理员后台功能
+│   ├── client.js           # 用户答题界面
+│   └── common.js           # 共享工具函数
 ├── data/
-│   └── owners.json         # Owner configuration and permissions
-├── js7z/                   # Archive extraction library
-│   ├── js7z.js            # JS7z main library
-│   └── js7z.wasm          # WebAssembly binary
-├── netlify.toml            # Netlify deployment configuration
-├── 404.html                # Custom 404 error page
-└── README.md               # This file
+│   └── owners.json         # 管理员配置和权限
+├── js7z/                   # 压缩包解压库
+│   ├── js7z.js            # JS7z 主库
+│   └── js7z.wasm          # WebAssembly 二进制文件
+├── netlify.toml            # Netlify 部署配置
+├── 404.html                # 自定义 404 错误页面
+└── README.md               # 本文件
 ```
 
-## Quiz Package Format
+## 问卷包格式
 
-Upload quiz packages as compressed archives containing:
+上传包含以下内容的压缩包：
 
-### Required Files:
-- **quiz.csv**: Questions and answers in CSV format
-- **images/**: Folder containing image files (optional)
+### 必需文件：
+- **quiz.csv**：CSV 格式的问题和答案
+- **images/**：包含图片文件的文件夹（可选）
 
-### CSV Structure:
+### CSV 结构：
 ```csv
-"What is 2+2?","What color is the sky?","Which is larger?"
+"2+2等于多少？","天空是什么颜色？","哪个更大？"
 "calc.jpg","sky.jpg","elephant.jpg"
-"`4","Blue","Elephant"
-"3","`Blue","`Elephant"
-"5","Green","Mouse"
-"6","Red","Cat"
+"`4","蓝色","大象"
+"3","`蓝色","`大象"
+"5","绿色","老鼠"
+"6","红色","猫"
 ```
 
-**Format Rules:**
-- **Column-based**: Each column represents one question
-- **Row 1**: Question text
-- **Row 2**: Image filename (optional, leave empty if no image)
-- **Row 3+**: Answer options
-- **Correct Answers**: Prefix with backtick `` ` `` (e.g., `` `4 ``)
-- **Question Types**: Single correct = radio, multiple correct = checkbox
+**格式规则：**
+- **基于列**：每列代表一个问题
+- **第1行**：问题文本
+- **第2行**：图片文件名（可选，无图片留空）
+- **第3行及以下**：答案选项
+- **正确答案**：用反引号 `` ` `` 前缀标记（例如：`` `4 ``）
+- **问题类型**：单个正确答案=单选，多个正确答案=多选
 
-### Supported Archive Formats:
+### 支持的压缩格式：
 - **ZIP** (.zip)
 - **7-Zip** (.7z)
 - **Gzip** (.gz)
 - **Tar Gzip** (.tar.gz, .tgz)
 
-## Configuration
+## 配置说明
 
-### Owner Management
-Edit `data/owners.json` to configure authorized owners:
+### 管理员配置
+编辑 `data/owners.json` 来配置授权管理员：
 
 ```json
 {
   "owners": [
     {
       "username": "admin@example.com",
-      "displayName": "Admin User",
+      "displayName": "主管理员",
       "role": "admin",
       "permissions": ["create_quiz", "manage_sessions", "view_analytics", "delete_quiz", "manage_owners"],
       "isActive": true
@@ -120,108 +120,118 @@ Edit `data/owners.json` to configure authorized owners:
 }
 ```
 
-### Firebase Configuration
-Firebase configuration is embedded in the application code:
-- **Firestore**: Real-time database for quizzes and sessions
-- **Storage**: Shared image storage system
-- **Security Rules**: Configured for read/write access
+### Firebase 配置
+Firebase 配置已嵌入到应用代码中：
+- **Firestore**：问卷和会话的实时数据库
+- **Storage**：共享图片存储系统
+- **安全规则**：配置读写访问权限
 
-## Technical Architecture
+## 快速开始
 
-### Firebase Backend
-- **Firestore Collections**:
-  - `quizzes`: Quiz data and questions
-  - `sessions`: Active quiz sessions
-  - `shared_images`: Efficient image storage
-  - `users/{userName}/answers`: User-specific answer collections
+### 1. 管理员首次使用
+1. 修改 `data/owners.json` 添加你的管理员账户
+2. 访问 [https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)
+3. 输入你在 owners.json 中配置的用户名登录
+4. 上传你的第一个问卷压缩包
 
-### Real-Time Features
-- **Live Monitoring**: Owner sees participant answers in real-time
-- **Session Management**: Automatic session detection and updates
-- **Participant Tracking**: Real-time client count and participation stats
-- **Data Synchronization**: Firebase onSnapshot for live updates
+### 2. 创建问卷包
+1. 准备 CSV 文件，按照上述格式编写问题
+2. 准备图片文件（JPG/PNG格式）
+3. 将 CSV 和图片打包成 ZIP 文件
+4. 在管理员后台上传
 
-### Archive Processing
-- **JS7z Integration**: WebAssembly-based archive extraction
-- **Multi-Format Support**: Handles ZIP, 7Z, GZ, TAR.GZ formats
-- **Client-Side Processing**: No server-side dependencies required
-- **Progress Tracking**: Real-time upload and processing feedback
+### 3. 开始答题会话
+1. 在管理员后台选择问卷
+2. 点击"开始会话"
+3. 分享链接给用户参与答题
+4. 实时监控答题进度
 
-### Security Features
-- **Owner Authentication**: JSON-based owner management system
-- **Permission System**: Granular role-based access control
-- **Content Security Policy**: Strict CSP headers for security
-- **Firebase Security Rules**: Database-level access control
+## 技术架构
 
-## Deployment
+### Firebase 后端
+- **Firestore 集合**：
+  - `quizzes`：问卷数据和问题
+  - `sessions`：活跃问卷会话
+  - `shared_images`：高效图片存储
+  - `users/{userName}/answers`：用户专属答案集合
 
-### Netlify Deployment
-1. Connect your GitHub repository to Netlify
-2. Configure build settings:
-   - **Build command**: None (static site)
-   - **Publish directory**: `.` (root)
-3. Deploy automatically on git push
+### 实时功能
+- **实时监控**：管理员实时查看参与者答案
+- **会话管理**：自动会话检测和更新
+- **参与者追踪**：实时客户端计数和参与统计
+- **数据同步**：Firebase onSnapshot 实现实时更新
 
-### Environment Setup
-- **No environment variables needed**: Firebase config is embedded
-- **Static hosting compatible**: Runs entirely client-side
-- **CDN optimized**: Fast global content delivery
+### 压缩包处理
+- **JS7z 集成**：基于 WebAssembly 的压缩包解压
+- **多格式支持**：处理 ZIP、7Z、GZ、TAR.GZ 格式
+- **客户端处理**：无需服务器端依赖
+- **进度追踪**：实时上传和处理反馈
 
-## Browser Compatibility
+## 部署说明
 
-- **Modern Browsers**: Chrome 80+, Safari 13+, Firefox 75+, Edge 80+
-- **Mobile Support**: iOS Safari 13+, Chrome Mobile 80+
-- **WebAssembly Required**: For archive extraction functionality
-- **JavaScript Required**: Full functionality requires modern JavaScript
+### Netlify 部署
+1. 将 GitHub 仓库连接到 Netlify
+2. 配置构建设置：
+   - **构建命令**：无（静态站点）
+   - **发布目录**：`.`（根目录）
+3. 推送代码自动部署
 
-## Troubleshooting
+### 环境配置
+- **无需环境变量**：Firebase 配置已嵌入
+- **静态托管兼容**：完全客户端运行
+- **CDN 优化**：快速全球内容交付
 
-### Quiz Upload Issues
-- Verify archive contains `quiz.csv` file
-- Check CSV format matches specification
-- Ensure image files are web-compatible (JPG, PNG)
-- Check browser console for detailed error messages
+## 浏览器兼容性
 
-### Firebase Connection Issues
-- Verify Firebase configuration is correct
-- Check browser network tab for connection errors
-- Ensure Firestore security rules allow access
-- Clear browser cache and reload
+- **现代浏览器**：Chrome 80+、Safari 13+、Firefox 75+、Edge 80+
+- **移动端支持**：iOS Safari 13+、Chrome Mobile 80+
+- **需要 WebAssembly**：用于压缩包解压功能
+- **需要 JavaScript**：完整功能需要现代 JavaScript
 
-### Archive Extraction Errors
-- Ensure WebAssembly is supported in browser
-- Try different archive format if one fails
-- Check that JS7z library files are accessible
-- Verify archive is not corrupted
+## 常见问题
 
-### Real-Time Sync Problems
-- Check Firebase project status
-- Verify internet connection stability
-- Refresh page to re-establish connection
-- Check browser console for WebSocket errors
+### 问卷上传问题
+- 验证压缩包包含 `quiz.csv` 文件
+- 检查 CSV 格式是否符合规范
+- 确保图片文件是网络兼容格式（JPG、PNG）
+- 查看浏览器控制台获取详细错误信息
 
-## Performance Optimization
+### Firebase 连接问题
+- 验证 Firebase 配置是否正确
+- 检查浏览器网络标签查看连接错误
+- 确保 Firestore 安全规则允许访问
+- 清除浏览器缓存并重新加载
 
-- **Shared Image Storage**: Eliminates duplicate image uploads
-- **Efficient Data Structure**: Optimized Firestore document organization
-- **Real-Time Subscriptions**: Minimal data transfer with onSnapshot
-- **Mobile-First Loading**: Optimized for mobile network conditions
+### 压缩包解压错误
+- 确保浏览器支持 WebAssembly
+- 如果一种格式失败，尝试不同的压缩格式
+- 检查 JS7z 库文件是否可访问
+- 验证压缩包未损坏
 
-## Development
+### 实时同步问题
+- 检查 Firebase 项目状态
+- 验证网络连接稳定性
+- 刷新页面重新建立连接
+- 检查浏览器控制台查看 WebSocket 错误
 
-### Local Development
-1. Clone the repository
-2. Serve files using a local web server (due to CORS restrictions)
-3. Access via `http://localhost:PORT` (not file:// protocol)
+## 性能优化
 
-### Adding Features
-- **Owner Functions**: Extend `js/owner.js`
-- **Client Functions**: Extend `js/client.js`
-- **Firebase Operations**: Modify `js/firebase_service.js`
-- **UI Styling**: Update `styles.css` (mobile-first approach)
+- **共享图片存储**：消除重复图片上传
+- **高效数据结构**：优化的 Firestore 文档组织
+- **实时订阅**：onSnapshot 最小化数据传输
+- **移动优先加载**：针对移动网络条件优化
+
+## 示例问卷
+
+项目包含了示例问卷文件 `sample_quiz.zip`，您可以：
+1. 下载并解压查看格式
+2. 直接上传测试系统功能
+3. 参考其 CSV 结构创建自己的问卷
 
 ---
 
-**Version**: v2.0 | **Firebase Backend** | **Real-Time Platform** | **Mobile-First** | **Multi-Format Support** | **License**: MIT
+**版本**：v2.0 | **Firebase 后端** | **实时平台** | **移动优先** | **多格式支持** | **许可证**：MIT
 
-**Live Demo**: [https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)
+**在线演示**：[https://gostnort-review.netlify.app/](https://gostnort-review.netlify.app/)
+
+**技术支持**：如有问题，请检查浏览器控制台错误信息，或参考项目中的 `requirement_detail.md` 技术文档。

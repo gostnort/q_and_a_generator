@@ -47,15 +47,13 @@ window.quizUpload = {
         return questions;
     },
 
-    // uploadImages - 第一步：上传所有图片，返回文件名到ID的映射
-    async uploadImages(images, onProgress) {
+    // uploadImages - 修改为包含quizId
+    async uploadImages(images, quizId, onProgress) {
         const db = window.db;
         const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
         
-        onProgress('正在上传图片...');
-        
-        const imageMap = new Map(); // 文件名 -> 图片ID映射
         const imageCollection = collection(db, 'shared_images');
+        const imageMap = new Map();
         
         for (let i = 0; i < images.length; i++) {
             const image = images[i];
@@ -82,16 +80,17 @@ window.quizUpload = {
                 throw new Error(`图片 ${image.name} base64转换失败: ${conversionError.message}`);
             }
             
-            // 上传到shared_images集合
+            // 上传到shared_images集合，包含quizId
             const imageDoc = await addDoc(imageCollection, {
                 originalName: image.name,
                 base64: base64,
+                quizId: quizId,  // 新增：关联到quiz
                 uploadedAt: new Date()
             });
             
             // 记录文件名到ID的映射
             imageMap.set(image.name, imageDoc.id);
-            console.log(`图片上传成功: ${image.name} -> ${imageDoc.id}`);
+            console.log(`图片上传成功: ${image.name} -> ${imageDoc.id} (关联到quiz: ${quizId})`);
         }
         
         return imageMap;
@@ -114,39 +113,7 @@ window.quizUpload = {
         });
     },
 
-    // uploadQuizWithImageIds - 第三步：上传quiz和questions（包含图片ID）
-    async uploadQuizWithImageIds(quizName, questions, onProgress) {
-        const db = window.db;
-        const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-        
-        onProgress('正在创建Quiz文档...');
-        
-        // 创建quiz文档
-        const quizRef = await addDoc(collection(db, 'quizzes'), {
-            quizName: quizName,
-            createdAt: new Date()
-        });
-        
-        onProgress('正在上传题目...');
-        
-        // 创建questions子集合
-        const questionsCollection = collection(quizRef, 'questions');
-        
-        for (let i = 0; i < questions.length; i++) {
-            const question = questions[i];
-            onProgress(`正在上传题目 ${i + 1}/${questions.length}`);
-            
-            await addDoc(questionsCollection, {
-                text: question.text,
-                imageId: question.imageId || null, // 图片ID（可为空）
-                options: question.options
-            });
-        }
-        
-        return quizRef.id;
-    },
-
-    // uploadQuizPackage - 主入口函数：完整的三步上传流程
+    // uploadQuizPackage - 主入口函数：完整的四步上传流程
     async uploadQuizPackage({ quizName, quizCsv, images, onProgress }) {
         try {
             onProgress('开始解析CSV...');
@@ -155,16 +122,38 @@ window.quizUpload = {
             const questions = this.parseQuizCSV(quizCsv);
             console.log('解析完成，题目数量:', questions.length);
             
-            // 第一步：上传所有图片，获取ID映射
-            const imageMap = await this.uploadImages(images, onProgress);
+            // 第一步：创建quiz文档，获取quizId
+            onProgress('正在创建Quiz文档...');
+            const db = window.db;
+            const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            
+            const quizRef = await addDoc(collection(db, 'quizzes'), {
+                quizName: quizName,
+                createdAt: new Date()
+            });
+            const quizId = quizRef.id;
+            console.log('Quiz文档创建完成，ID:', quizId);
+
+            // 第二步：上传图片，关联到quiz
+            const imageMap = await this.uploadImages(images, quizId, onProgress);
             console.log('图片上传完成，映射:', imageMap);
             
-            // 第二步：替换题目中的图片引用为ID
+            // 第三步：替换题目中的图片引用为ID
             const questionsWithImageIds = this.replaceImageReferences(questions, imageMap);
             console.log('图片引用替换完成');
             
-            // 第三步：上传quiz和questions
-            const quizId = await this.uploadQuizWithImageIds(quizName, questionsWithImageIds, onProgress);
+            // 第四步：上传questions到quiz的subcollection
+            onProgress('正在上传题目...');
+            const questionsCollection = collection(db, 'quizzes', quizId, 'questions');
+            
+            for (let i = 0; i < questionsWithImageIds.length; i++) {
+                const question = questionsWithImageIds[i];
+                await addDoc(questionsCollection, {
+                    text: question.text,
+                    imageId: question.imageId || null,
+                    options: question.options
+                });
+            }
             
             onProgress('✅ 上传完成！');
             console.log('Quiz上传完成，ID:', quizId);

@@ -611,35 +611,12 @@ window.deactivateOwner = async function(username) {
 
 // Firebase DB测试函数
 window.testFirebaseDB = async function() {
-    console.log('🔴 Firebase test button clicked');
-    
-    // Immediate visual feedback
-    alert('🔴 Firebase test started - check console and Firebase test section below');
-    
     const testResultsDiv = document.getElementById('firebaseTestResults');
     const testOutputDiv = document.getElementById('testOutput');
     
     // 显示测试结果区域
     testResultsDiv.style.display = 'block';
     testOutputDiv.innerHTML = '<div class="test-loading">🔄 Running Firebase DB Tests...</div>';
-    
-    // Quick test first
-    try {
-        if (window.db) {
-            testOutputDiv.innerHTML += '<div style="color: green; margin: 10px 0;"><strong>✅ QUICK TEST: Firebase DB object exists</strong></div>';
-        } else {
-            testOutputDiv.innerHTML += '<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST: Firebase DB object missing</strong></div>';
-            return;
-        }
-        
-        if (window.firebaseService) {
-            testOutputDiv.innerHTML += '<div style="color: green; margin: 10px 0;"><strong>✅ QUICK TEST: Firebase service exists</strong></div>';
-        } else {
-            testOutputDiv.innerHTML += '<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST: Firebase service missing</strong></div>';
-        }
-    } catch (error) {
-        testOutputDiv.innerHTML += `<div style="color: red; margin: 10px 0;"><strong>❌ QUICK TEST ERROR: ${error.message}</strong></div>`;
-    }
     
     const results = [];
     let passCount = 0;
@@ -671,219 +648,217 @@ window.testFirebaseDB = async function() {
                 ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
             </div>
         `);
-        
-        // 实时更新显示
-        updateTestDisplay(results, passCount, warningCount, totalTests);
     };
     
-    const updateTestDisplay = (results, passed, warnings, total) => {
-        const summary = `<div class="test-summary">Tests: ${passed}/${total} passed${warnings > 0 ? `, ${warnings} warnings` : ''}</div>`;
-        testOutputDiv.innerHTML = summary + results.join('');
-    };
-    
+    // Simple Firebase connectivity test
     try {
-        // 测试 1: Firebase 基础连接
-        try {
-            if (window.db && window.storage && window.firebaseApp) {
-                addTestResult('Firebase Connection', 'pass', 'Firebase app, database, and storage are properly initialized');
-            } else {
-                addTestResult('Firebase Connection', 'fail', 'Firebase components not properly initialized', 
-                    `DB: ${!!window.db}, Storage: ${!!window.storage}, App: ${!!window.firebaseApp}`);
-            }
-        } catch (error) {
-            addTestResult('Firebase Connection', 'fail', 'Firebase initialization error', error.message);
+        // Test 1: Firebase Connection
+        if (window.db && window.storage && window.firebaseApp) {
+            addTestResult('Firebase Connection', 'pass', 'Firebase components are properly initialized');
+        } else {
+            addTestResult('Firebase Connection', 'fail', 'Firebase components not properly initialized');
         }
         
-        // 测试 2: Firebase Service 可用性
-        try {
-            if (window.firebaseService && typeof window.firebaseService.getAllQuizzes === 'function') {
-                addTestResult('Firebase Service', 'pass', 'Firebase service methods are available');
-            } else {
-                addTestResult('Firebase Service', 'fail', 'Firebase service not properly loaded');
-            }
-        } catch (error) {
-            addTestResult('Firebase Service', 'fail', 'Firebase service error', error.message);
+        // Test 2: Firebase Service
+        if (window.firebaseService && typeof window.firebaseService.getAllQuizzes === 'function') {
+            addTestResult('Firebase Service', 'pass', 'Firebase service methods are available');
+        } else {
+            addTestResult('Firebase Service', 'fail', 'Firebase service not properly loaded');
         }
         
-        // 测试 3: getAllQuizzes 操作
-        try {
-            const startTime = Date.now();
-            const quizzes = await window.firebaseService.getAllQuizzes();
-            const duration = Date.now() - startTime;
-            
-            addTestResult('Get All Quizzes', 'pass', 
-                `Successfully retrieved ${quizzes.length} quizzes in ${duration}ms`,
-                quizzes.map(q => `Quiz: ${q.name} (${q.questions.length} questions)`).join('\n'));
-        } catch (error) {
-            addTestResult('Get All Quizzes', 'fail', 'Failed to retrieve quizzes', error.message);
-        }
+        // Test 3: Get Quizzes
+        const quizzes = await window.firebaseService.getAllQuizzes();
+        addTestResult('Get All Quizzes', 'pass', `Successfully retrieved ${quizzes.length} quizzes`);
         
-        // 测试 4: getActiveSession 操作
-        try {
-            const startTime = Date.now();
-            const session = await window.firebaseService.getActiveSession();
-            const duration = Date.now() - startTime;
-            
-            if (session) {
-                addTestResult('Get Active Session', 'pass', 
-                    `Found active session: ${session.quizName} in ${duration}ms`,
-                    `Session ID: ${session.id}\nQuiz ID: ${session.quizId}\nQuestions: ${session.questions?.length || 0}`);
-            } else {
-                addTestResult('Get Active Session', 'pass', 
-                    `No active session found (normal) in ${duration}ms`);
-            }
-        } catch (error) {
-            addTestResult('Get Active Session', 'fail', 'Failed to check active session', error.message);
-        }
-        
-        // 测试 5: 共享图片集合读取
-        try {
-            const db = window.db;
-            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-            
-            const startTime = Date.now();
-            const imagesSnapshot = await getDocs(collection(db, 'shared_images'));
-            const duration = Date.now() - startTime;
-            
-            addTestResult('Shared Images Collection', 'pass', 
-                `Successfully read shared_images collection: ${imagesSnapshot.docs.length} images in ${duration}ms`,
-                imagesSnapshot.docs.map(doc => `Image: ${doc.data().originalName}`).join('\n'));
-        } catch (error) {
-            addTestResult('Shared Images Collection', 'fail', 'Failed to read shared_images collection', error.message);
-        }
-        
-        // 测试 6: Collection Group Query (answers)
-        try {
-            const db = window.db;
-            const { collectionGroup, getDocs, query, limit } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-            
-            const startTime = Date.now();
-            const answersQuery = query(collectionGroup(db, 'answers'), limit(10));
-            const answersSnapshot = await getDocs(answersQuery);
-            const duration = Date.now() - startTime;
-            
-            addTestResult('Collection Group Query (answers)', 'pass', 
-                `Successfully executed collection group query: ${answersSnapshot.docs.length} answers found in ${duration}ms`,
-                'This test verifies that Firebase indexes are properly created for collection group queries');
-        } catch (error) {
-            const isIndexError = error.message.includes('index') || error.message.includes('COLLECTION_GROUP');
-            
-            if (isIndexError) {
-                addTestResult('Collection Group Query (answers)', 'warning', 
-                    'Firebase正在创建索引，这是新项目的正常现象',
-                    `错误: ${error.message}
-
-📋 说明：
-• 这是Firebase的正常行为，不是错误
-• 索引通常会在1-2分钟内自动创建完成
-• 创建完成后，实时监控功能将正常工作
-• 您可以继续使用其他功能`);
-            } else {
-                addTestResult('Collection Group Query (answers)', 'fail', 'Collection group query failed', error.message);
-            }
-        }
-        
-        // 测试 7: Firestore 写入权限 (创建测试文档)
-        try {
-            const db = window.db;
-            const { collection, addDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-            
-            const startTime = Date.now();
-            const testDoc = await addDoc(collection(db, 'test'), {
-                testMessage: 'Firebase DB test',
-                timestamp: new Date()
-            });
-            
-            // 立即删除测试文档
-            await deleteDoc(testDoc);
-            const duration = Date.now() - startTime;
-            
-            addTestResult('Firestore Write Permissions', 'pass', 
-                `Successfully created and deleted test document in ${duration}ms`,
-                'Write permissions are working correctly');
-        } catch (error) {
-            addTestResult('Firestore Write Permissions', 'fail', 'Failed to write to Firestore', error.message);
-        }
-        
-        // 测试 8: Real-time listener test
-        try {
-            const db = window.db;
-            const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-            
-            const startTime = Date.now();
-            let listenerEstablished = false;
-            let timeoutId;
-            
-            const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
-                if (!listenerEstablished) {
-                    listenerEstablished = true;
-                    clearTimeout(timeoutId);
-                    
-                    const duration = Date.now() - startTime;
-                    addTestResult('Real-time Listeners', 'pass', 
-                        `Real-time listener established successfully in ${duration}ms`,
-                        `Found ${snapshot.docs.length} sessions`);
-                    
-                    // 延迟取消监听，确保测试结果显示
-                    setTimeout(() => {
-                        try {
-                            unsubscribe();
-                        } catch (e) {
-                            // 忽略取消监听的错误
-                        }
-                    }, 100);
-                }
-            }, (error) => {
-                // 监听错误回调
-                listenerEstablished = true;
-                clearTimeout(timeoutId);
-                addTestResult('Real-time Listeners', 'fail', 'Real-time listener error', error.message);
-                try {
-                    unsubscribe();
-                } catch (e) {
-                    // 忽略取消监听的错误
-                }
-            });
-            
-            // 增加超时时间到5秒，给Firebase更多时间建立连接
-            timeoutId = setTimeout(() => {
-                if (!listenerEstablished) {
-                    addTestResult('Real-time Listeners', 'fail', 'Real-time listener timeout', 'No callback received within 5 seconds - this may indicate network issues');
-                    try {
-                        unsubscribe();
-                    } catch (e) {
-                        // 忽略取消监听的错误
-                    }
-                }
-            }, 5000);
-            
-        } catch (error) {
-            addTestResult('Real-time Listeners', 'fail', 'Failed to establish real-time listener', error.message);
-        }
-        
-    } catch (overallError) {
-        addTestResult('Overall Test', 'fail', 'Test execution failed', overallError.message);
+    } catch (error) {
+        addTestResult('Overall Test', 'fail', 'Test execution failed', error.message);
     }
     
-    // 添加最终总结  
+    // Display results
     setTimeout(() => {
-        const finalSummary = `
-            <div class="test-final-summary">
-                <h4>📊 Test Summary</h4>
-                <p><strong>Overall Status:</strong> ${passCount === totalTests ? '🟢 All tests passed' : passCount + warningCount >= totalTests * 0.8 ? '🟡 Most tests passed' : '🔴 Multiple failures detected'}</p>
-                <p><strong>Success Rate:</strong> ${passCount}/${totalTests} passed (${Math.round(passCount/totalTests*100)}%)${warningCount > 0 ? `, ${warningCount} warnings` : ''}</p>
-                <p><strong>Recommendation:</strong> ${passCount === totalTests ? 'Firebase DB is working correctly' : passCount + warningCount >= totalTests * 0.8 ? 'Minor issues detected, check failed tests above. Warnings are normal for new projects.' : 'Significant issues detected, check Firebase configuration'}</p>
-                <p><strong>Common Issues:</strong></p>
-                <ul>
-                    <li>Collection group index warnings are normal and self-resolve</li>
-                    <li>Network connectivity issues may cause timeouts</li>
-                    <li>Firebase security rules may block some operations</li>
-                    <li>Real-time listener timeouts may indicate network issues</li>
-                </ul>
-            </div>
-        `;
-        testOutputDiv.innerHTML += finalSummary;
-    }, 6000); // 增加等待时间以确保所有测试完成
+        const summary = `<div class="test-summary">Tests: ${passCount}/${totalTests} passed${warningCount > 0 ? `, ${warningCount} warnings` : ''}</div>`;
+        testOutputDiv.innerHTML = summary + results.join('');
+    }, 100);
+};
+
+// 数据库维护功能
+
+// 加载所有Sessions列表
+window.loadSessionList = async function() {
+    try {
+        const { collection, getDocs, orderBy, query } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const db = window.db;
+        
+        const sessionsQuery = query(collection(db, 'sessions'), orderBy('startTime', 'desc'));
+        const sessionsSnapshot = await getDocs(sessionsQuery);
+        
+        const sessionsList = document.getElementById('sessionsList');
+        
+        if (sessionsSnapshot.empty) {
+            sessionsList.innerHTML = '<p>没有找到任何Sessions</p>';
+            return;
+        }
+        
+        let html = '<div class="sessions-list-container">';
+        html += `<p><strong>找到 ${sessionsSnapshot.docs.length} 个Sessions:</strong></p>`;
+        
+        for (const doc of sessionsSnapshot.docs) {
+            const session = doc.data();
+            const sessionId = doc.id;
+            
+            // 获取该session的用户答案数量
+            const { collectionGroup, where, getDocs: getAnswerDocs } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+            const answersQuery = query(collectionGroup(db, 'answers'), where('sessionId', '==', sessionId));
+            let answerCount = 0;
+            
+            try {
+                const answersSnapshot = await getAnswerDocs(answersQuery);
+                answerCount = answersSnapshot.docs.length;
+            } catch (error) {
+                console.log('Error counting answers for session:', sessionId, error);
+            }
+            
+            html += `
+                <div class="session-item" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: white;">
+                    <div class="session-info">
+                        <h4>${session.quizName} (${session.isActive ? '活跃' : '已结束'})</h4>
+                        <p><strong>Session ID:</strong> ${sessionId}</p>
+                        <p><strong>Quiz ID:</strong> ${session.quizId}</p>
+                        <p><strong>开始时间:</strong> ${session.startTime?.toDate?.()?.toLocaleString() || '未知'}</p>
+                        <p><strong>用户答案数量:</strong> ${answerCount}</p>
+                        <p><strong>问题数量:</strong> ${session.questions?.length || 0}</p>
+                    </div>
+                    <div class="session-actions" style="margin-top: 10px;">
+                        <button onclick="deleteSession('${sessionId}')" class="delete-btn" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                            🗑️ 删除Session (${answerCount} 答案)
+                        </button>
+                        ${session.isActive ? 
+                            `<button onclick="endSession()" class="end-session-btn" style="background-color: #ffc107; color: #000; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                                结束Session
+                            </button>` : ''
+                        }
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        sessionsList.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading sessions list:', error);
+        document.getElementById('sessionsList').innerHTML = `<p style="color: red;">加载Sessions失败: ${error.message}</p>`;
+    }
+};
+
+// 删除Session及其相关的用户答案
+window.deleteSession = async function(sessionId) {
+    if (!confirm(`确定要删除这个Session吗？\n\n这将同时删除所有相关的用户答案，此操作不可撤销！`)) {
+        return;
+    }
     
-    console.log('Firebase DB test completed');
-}; 
+    try {
+        const { doc, deleteDoc, collection, collectionGroup, query, where, getDocs, writeBatch } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const db = window.db;
+        
+        console.log('开始删除Session:', sessionId);
+        
+        // 1. 删除所有相关的用户答案
+        const answersQuery = query(collectionGroup(db, 'answers'), where('sessionId', '==', sessionId));
+        const answersSnapshot = await getDocs(answersQuery);
+        
+        console.log(`找到 ${answersSnapshot.docs.length} 个相关答案需要删除`);
+        
+        // 使用批量写入删除所有答案
+        if (!answersSnapshot.empty) {
+            const batch = writeBatch(db);
+            answersSnapshot.docs.forEach((answerDoc) => {
+                batch.delete(answerDoc.ref);
+            });
+            await batch.commit();
+            console.log('用户答案删除完成');
+        }
+        
+        // 2. 删除Session文档
+        await deleteDoc(doc(db, 'sessions', sessionId));
+        console.log('Session删除完成');
+        
+        alert(`Session删除成功！\n删除了 ${answersSnapshot.docs.length} 个用户答案`);
+        
+        // 刷新Sessions列表
+        loadSessionList();
+        
+        // 如果删除的是当前活跃Session，清空实时监控
+        if (ownerCurrentSession && ownerCurrentSession.id === sessionId) {
+            ownerCurrentSession = null;
+            document.getElementById('activeSessionInfo').style.display = 'none';
+            document.getElementById('realTimeResults').innerHTML = '<p>没有活跃的Session</p>';
+        }
+        
+    } catch (error) {
+        console.error('删除Session失败:', error);
+        alert(`删除Session失败: ${error.message}`);
+    }
+};
+
+// 清理孤立的用户答案（没有对应Session的答案）
+window.cleanupOrphanedAnswers = async function() {
+    if (!confirm('确定要清理孤立的用户答案吗？\n\n这会删除所有没有对应Session的答案，此操作不可撤销！')) {
+        return;
+    }
+    
+    try {
+        const { collection, collectionGroup, getDocs, doc, deleteDoc, writeBatch } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
+        const db = window.db;
+        
+        console.log('开始清理孤立答案...');
+        
+        // 1. 获取所有Sessions的ID
+        const sessionsSnapshot = await getDocs(collection(db, 'sessions'));
+        const validSessionIds = new Set(sessionsSnapshot.docs.map(doc => doc.id));
+        console.log('有效Session数量:', validSessionIds.size);
+        
+        // 2. 获取所有用户答案
+        const allAnswersSnapshot = await getDocs(collectionGroup(db, 'answers'));
+        console.log('总答案数量:', allAnswersSnapshot.docs.length);
+        
+        // 3. 找到孤立的答案
+        const orphanedAnswers = [];
+        allAnswersSnapshot.docs.forEach(answerDoc => {
+            const answerData = answerDoc.data();
+            if (!validSessionIds.has(answerData.sessionId)) {
+                orphanedAnswers.push(answerDoc);
+            }
+        });
+        
+        console.log('孤立答案数量:', orphanedAnswers.length);
+        
+        if (orphanedAnswers.length === 0) {
+            alert('没有找到孤立的答案，数据库很干净！');
+            return;
+        }
+        
+        // 4. 批量删除孤立答案
+        const batchSize = 500; // Firestore批量写入限制
+        for (let i = 0; i < orphanedAnswers.length; i += batchSize) {
+            const batch = writeBatch(db);
+            const batchAnswers = orphanedAnswers.slice(i, i + batchSize);
+            
+            batchAnswers.forEach(answerDoc => {
+                batch.delete(answerDoc.ref);
+            });
+            
+            await batch.commit();
+            console.log(`删除了第 ${i + 1} 到 ${Math.min(i + batchSize, orphanedAnswers.length)} 个孤立答案`);
+        }
+        
+        alert(`清理完成！删除了 ${orphanedAnswers.length} 个孤立的用户答案`);
+        
+        // 刷新Sessions列表
+        loadSessionList();
+        
+    } catch (error) {
+        console.error('清理孤立答案失败:', error);
+        alert(`清理失败: ${error.message}`);
+    }
+};

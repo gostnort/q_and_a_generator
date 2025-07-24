@@ -8,7 +8,7 @@ body {
     width: 100vw;
     max-width: 100vw;
     margin: 0;
-    padding: 0;
+    padding: 20px 0 0 0;
     line-height: 1.6;
     background: #f5f5f5;
     /* 移动端优化 */
@@ -1755,4 +1755,115 @@ button {
 .index-pending-notice small {
     color: #6c757d;
     font-style: italic;
+}
+
+/* Database Maintenance Styles */
+.database-maintenance {
+    margin-bottom: 30px;
+}
+
+.database-maintenance h3 {
+    border-bottom: 2px solid #17a2b8;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #17a2b8;
+}
+
+.maintenance-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.cleanup-btn {
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.cleanup-btn:hover {
+    background-color: #e0a800;
+}
+
+.sessions-list-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.session-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.session-item h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.session-item p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.session-item strong {
+    color: #333;
+}
+
+.session-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.session-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+/* Mobile responsive styles for database maintenance */
+@media (max-width: 768px) {
+    .maintenance-controls {
+        flex-direction: column;
+    }
+    
+    .maintenance-controls button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .session-actions {
+        flex-direction: column;
+    }
+    
+    .session-actions button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .sessions-list-container {
+        max-height: 400px;
+    }
+    
+    .session-item {
+        padding: 10px;
+    }
 } 

@@ -8,6 +8,7 @@ A web-based quiz sharing platform built with Netlify (frontend hosting) and Fire
 - Shared image storage system to prevent duplication
 - Real-time monitoring of client answers
 - Role-based access control (admin owners vs clients)
+- Database maintenance and cleanup tools
 - Cascade deletion for data integrity
 - Mobile-optimized UI
 
@@ -28,7 +29,7 @@ q_and_a_generator/
 ├── styles.css                 # Mobile-first CSS styling 
 ├── netlify.toml               # Deployment config, redirects, CSP headers 
 ├── 404.html                   # Error page for invalid routes 
-├── README.md                  # Project documentation and setup guide 
+├── README.md                  # Chinese documentation for users
 ├── requirement_detail.md      # This comprehensive documentation file 
 ├── LICENSE                    # MIT License file 
 ├── review.ico                 # Favicon for the application
@@ -57,14 +58,14 @@ q_and_a_generator/
 └── .git/                     # Git version control directory
 ```
 
-## File Structure & Purposes
+## Core Application Files
 
 ### Root Files
 - `index.html` - Main SPA entry point, Firebase initialization, UI containers
 - `styles.css` - Mobile-first CSS styling with responsive design
 - `netlify.toml` - Deployment config, redirects, CSP headers
 - `404.html` - Error page for invalid routes and no active sessions
-- `README.md` - Project documentation and setup guide
+- `README.md` - Chinese documentation for common users
 - `requirement_detail.md` - Comprehensive technical documentation (this file)
 - `LICENSE` - MIT License for open source distribution
 - `review.ico` - Application favicon
@@ -73,7 +74,7 @@ q_and_a_generator/
 ### JavaScript Files (`js/` directory)
 
 #### `js/owner.js` - Owner Interface Logic
-**Purpose**: Handles owner dashboard, quiz management, session control, and real-time monitoring
+**Purpose**: Handles owner dashboard, quiz management, session control, real-time monitoring, and database maintenance
 
 **Key Functions**:
 - `initializeOwnerDashboard()` → `void` - Initialize dashboard and load data
@@ -82,11 +83,15 @@ q_and_a_generator/
 - `deleteQuiz(quizId: string)` → `Promise<void>` - Delete quiz with cascade cleanup
 - `endSession()` → `Promise<void>` - End active session with optional answer cleanup  
 - `refreshMonitoring()` → `Promise<void>` - Refresh real-time answer statistics
-- `testFirebaseDB()` → `Promise<void>` - Comprehensive Firebase DB connectivity and functionality testing
 - `displayRealTimeResults(data: Object)` → `void` - Updates UI with answer statistics
 - `checkActiveSession()` → `Promise<void>` - Checks for existing active sessions
 - `displayOwnerStats()` → `void` - Shows client participation statistics
 - `loadOwnerManagement()` → `Promise<void>` - Loads owner list and permissions
+
+**Database Maintenance Functions**:
+- `loadSessionList()` → `Promise<void>` - Loads all sessions with user answer counts for database maintenance
+- `deleteSession(sessionId: string)` → `Promise<void>` - Deletes session and all related user answers using cascade deletion
+- `cleanupOrphanedAnswers()` → `Promise<void>` - Removes user answers that have no corresponding session
 
 #### `js/client.js` - Client Interface Logic
 **Purpose**: Manages client quiz participation, answer submission, and UI rendering
@@ -105,13 +110,6 @@ q_and_a_generator/
 - **Automatic detection**: Determines input type based on number of correct answers in question.options
 - **Unique naming**: Radio buttons share the same name for mutual exclusion, checkboxes have unique names
 
-**Client Interface UI Requirements**:
-- **Title Display**: Shows quiz name without "Quiz" prefix in header
-- **Score Display**: Shows score beside logout button after quiz submission
-- **Score Format**: `correctCount/totalQuestions (percentage%)`
-- **Score Styling**: Green background for passed (≥60%), red for failed (<60%)
-- **Header Layout**: `[Quiz Name] [Username] [Score] [Logout Button]`
-
 #### `js/firebase_service.js` - Firebase Data Layer
 **Purpose**: Centralized Firebase operations, abstracts Firestore interactions
 
@@ -126,52 +124,15 @@ q_and_a_generator/
 - `getRealTimeAnswers(sessionId: string)` → `Promise<Object>` - Gets aggregated answer statistics
 - `onAnswersUpdate(sessionId: string, callback: Function)` → `Function` - Real-time answer listener
 
-**Data Structures**:
-```javascript
-// Quiz Object
-{
-  id: string,
-  name: string,
-  createdAt: Date,
-  questions: Array<Question>
-}
-
-// Question Object  
-{
-  id: string,
-  text: string,
-  imageId: string|null,
-  imageData: {base64: string, originalName: string}|null,
-  options: Array<{text: string, correct: boolean}>
-}
-
-// Session Object
-{
-  id: string,
-  quizId: string,
-  quizName: string,
-  startTime: Date,
-  isActive: boolean,
-  questions: Array<Question>
-}
-```
-
 #### `js/quiz_upload.js` - Quiz Upload Processing
 **Purpose**: Handles CSV parsing, image processing, and structured Firebase upload
 
 **Key Functions**:
 - `parseQuizCSV(csvBuffer: Uint8Array)` → `Array<Question>` - Parses CSV into question objects
-- `uploadImages(images: Array<{name: string, data: Uint8Array}>, onProgress: Function)` → `Promise<Map<string, string>>` - Uploads images to shared_images collection
+- `uploadImages(images: Array<{name: string, data: Uint8Array}>, quizId: string, onProgress: Function)` → `Promise<Map<string, string>>` - Uploads images to shared_images collection with quiz tracking
 - `replaceImageReferences(questions: Array, imageMap: Map)` → `Array<Question>` - Replaces image filenames with Firestore IDs
 - `uploadQuizWithImageIds(quizName: string, questions: Array, onProgress: Function)` → `Promise<string>` - Creates quiz document and questions subcollection
 - `uploadQuizPackage({quizName: string, quizCsv: Uint8Array, images: Array, onProgress: Function})` → `Promise<string>` - Main upload orchestrator
-
-**CSV Format**:
-```
-Row 1: Question texts (comma-separated)
-Row 2: Image filenames (comma-separated, optional)
-Row 3+: Answer options (prefix with ` for correct answers)
-```
 
 #### `js/owner_service.js` - Owner Authentication & Management
 **Purpose**: Manages owner permissions, authentication, and owner data
@@ -183,25 +144,6 @@ Row 3+: Answer options (prefix with ` for correct answers)
 - `getOwnerStats()` → `Object` - Returns owner statistics for dashboard
 - `validateOwnerData(ownerData: Object)` → `boolean` - Validates owner configuration
 
-**Owner Configuration** (`data/owners.json`):
-```javascript
-{
-  "owners": [
-    {
-      "username": "admin",
-      "displayName": "Administrator", 
-      "email": "admin@example.com",
-      "role": "admin",
-      "permissions": ["manage_quizzes", "manage_sessions", "manage_owners"]
-    }
-  ],
-  "settings": {
-    "allowSelfRegistration": false,
-    "defaultRole": "admin"
-  }
-}
-```
-
 #### `js/common.js` - Shared Utilities
 **Purpose**: Common functions used across the application
 
@@ -210,36 +152,67 @@ Row 3+: Answer options (prefix with ` for correct answers)
 - `isValidOwner(username: string)` → `boolean` - Validates owner using owner_service
 - `currentUser: string` - Global variable for current logged-in user
 
-### Data Files (`data/` directory)
+---
 
-#### `data/owners.json` - Owner Configuration
-**Purpose**: Stores authorized owner accounts and system settings
-**Size**: 557 bytes, 19 lines
-**Format**: JSON configuration file with owners array and settings object
+## Database Maintenance System
 
-### Library Files (`js7z/` directory)
+### Overview
+The platform includes comprehensive database maintenance tools to ensure data integrity and system health. These tools are accessible through the owner dashboard and provide automated cleanup capabilities.
 
-#### `js7z/js7z.js` - Archive Processing Library
-**Purpose**: JavaScript wrapper for 7z WebAssembly functionality
-**Size**: 100KB, 22 lines
-**Capabilities**: Extracts ZIP, 7Z, GZ, TAR.GZ, and other archive formats
+### Maintenance Features
 
-#### `js7z/js7z.wasm` - WebAssembly Binary
-**Purpose**: Compiled 7z extraction engine for client-side archive processing
-**Size**: 1.4MB WebAssembly binary
-**Performance**: High-speed archive extraction without server dependency
+#### 1. Session Management
+- **Session Listing**: View all sessions (active and ended) with detailed metadata
+- **Session Information**: Display quiz name, session ID, start time, answer count, question count
+- **Session Status**: Identify active vs ended sessions
+- **Real-time Stats**: Show current participant counts and activity
 
-### Sample Data (`sample_quiz/` directory)
+#### 2. Cascade Deletion System
+- **Session Deletion**: Automatically removes all related user answers when deleting sessions
+- **Quiz Deletion**: Removes quiz, questions, sessions, answers, and related images
+- **Image Cleanup**: Deletes shared images associated with removed quizzes
+- **Batch Operations**: Uses Firebase batch writes for transactional deletion
 
-#### `sample_quiz/quiz.csv` - Sample Quiz Data
-**Purpose**: Example CSV format for quiz questions and answers
-**Size**: 596 bytes, 9 lines
-**Structure**: Questions (row 1), images (row 2), options (rows 3+)
+#### 3. Orphaned Data Cleanup
+- **Answer Orphan Detection**: Identifies user answers without corresponding active sessions
+- **Automated Cleanup**: Batch removes orphaned answers to maintain database efficiency
+- **Data Validation**: Cross-references answer sessionIds with active session list
+- **Safety Confirmation**: Requires user confirmation before cleanup operations
 
-#### `sample_quiz/pic (1-3).png` - Sample Images
-**Purpose**: Example images referenced in the sample quiz
-**Sizes**: 87KB, 149KB, 159KB respectively
-**Usage**: Demonstrates image integration in quiz questions
+#### 4. Image Tracking and Management
+- **Quiz Association**: All shared images now track their parent quiz via `quizId` field
+- **Cascade Image Deletion**: Removing quizzes automatically cleans up associated images
+- **Storage Optimization**: Prevents accumulation of unused image files
+- **Reference Integrity**: Maintains proper image-to-quiz relationships
+
+#### 5. Data Integrity Monitoring
+- **Real-time Validation**: Continuous monitoring of data relationships
+- **Consistency Checks**: Automatic validation of session-answer relationships
+- **Performance Optimization**: Regular cleanup improves query performance
+- **Storage Management**: Efficient use of Firebase storage quotas
+
+### Maintenance Workflows
+
+#### Session Cleanup Workflow
+1. **Load Session List**: Retrieve all sessions with answer counts
+2. **Review Sessions**: Examine session details and associated data
+3. **Select for Deletion**: Choose sessions to remove
+4. **Cascade Delete**: Remove session and all related user answers
+5. **Verification**: Confirm successful deletion
+
+#### Orphaned Data Cleanup Workflow
+1. **Scan Active Sessions**: Get list of all valid session IDs
+2. **Query All Answers**: Retrieve all user answers across collections
+3. **Identify Orphans**: Find answers without corresponding sessions
+4. **Batch Cleanup**: Remove orphaned answers in batches
+5. **Report Results**: Display cleanup statistics
+
+#### Quiz Deletion Enhancement Workflow
+1. **Quiz Selection**: Choose quiz for deletion
+2. **Dependency Check**: Identify related sessions, answers, and images
+3. **Cascade Planning**: Plan deletion sequence for data integrity
+4. **Batch Execution**: Execute coordinated deletion across collections
+5. **Cleanup Verification**: Ensure complete removal of all related data
 
 ---
 
@@ -269,6 +242,7 @@ Row 3+: Answer options (prefix with ` for correct answers)
 {
   originalName: string,
   base64: string,  // Base64 encoded image data
+  quizId: string,  // Reference to parent quiz for cascade deletion
   uploadedAt: Timestamp
 }
 ```
@@ -304,15 +278,23 @@ Row 3+: Answer options (prefix with ` for correct answers)
 ### Quiz Upload Workflow
 1. **Archive Extraction**: JS7z extracts ZIP/7Z/GZ/TAR.GZ files
 2. **CSV Parsing**: Parse quiz.csv into structured question data
-3. **Image Upload**: Upload images to shared_images collection (chunked base64)
-4. **Reference Mapping**: Replace image filenames with Firestore IDs
-5. **Quiz Creation**: Create quiz document with questions subcollection
+3. **Quiz Creation**: Create quiz document first to get quizId
+4. **Image Upload**: Upload images to shared_images collection with quizId tracking (chunked base64)
+5. **Reference Mapping**: Replace image filenames with Firestore IDs
+6. **Questions Upload**: Create questions subcollection with image references
 
 ### Session Management Workflow
 1. **Session Creation**: Owner selects quiz → creates active session
 2. **Client Participation**: Clients load active session and quiz data
 3. **Real-time Monitoring**: Owner sees live answer statistics
 4. **Session End**: Owner ends session with optional answer cleanup
+
+### Database Maintenance Workflow
+1. **Session Listing**: Load all sessions with answer counts and metadata
+2. **Session Deletion**: Delete session and cascade delete all related user answers
+3. **Orphaned Cleanup**: Identify and remove answers without corresponding sessions
+4. **Quiz Deletion**: Delete quiz, questions, sessions, answers, and related images
+5. **Image Tracking**: Shared images track parent quiz for proper cleanup
 
 ### Answer Submission Workflow
 1. **Client Selection**: Client selects answer(s) for question
@@ -322,161 +304,35 @@ Row 3+: Answer options (prefix with ` for correct answers)
 
 ---
 
-## Firebase DB Testing & Diagnostics
-
-### Firebase Test Button
-The owner dashboard includes a comprehensive Firebase DB test button that performs 8 different tests to verify database connectivity and functionality.
-
-#### How to Use
-1. Login as an owner
-2. Navigate to the owner dashboard
-3. Click the blue "Test Firebase DB" button
-4. View real-time test results below
-
-#### Test Coverage
-
-**1. Firebase Connection Test**
-- Verifies Firebase app, database, and storage initialization
-- Checks global Firebase objects availability
-- **Pass Criteria**: All Firebase components properly loaded
-
-**2. Firebase Service Test**
-- Validates firebaseService methods are available
-- Ensures service layer is properly loaded
-- **Pass Criteria**: All service methods are accessible
-
-**3. Get All Quizzes Test**
-- Tests `getAllQuizzes()` functionality
-- Measures query performance and response time
-- **Pass Criteria**: Successfully retrieves quiz data with timing
-- **Details**: Shows quiz count and question counts
-
-**4. Get Active Session Test**
-- Tests `getActiveSession()` functionality
-- Checks for active quiz sessions
-- **Pass Criteria**: Query executes successfully (result can be null)
-- **Details**: Shows session details if active session exists
-
-**5. Shared Images Collection Test**
-- Tests read access to `shared_images` collection
-- Verifies image storage functionality
-- **Pass Criteria**: Successfully reads image collection
-- **Details**: Shows image count and filenames
-
-**6. Collection Group Query Test**
-- Tests collection group queries on `answers` subcollection
-- **Critical Test**: Identifies Firebase index requirements
-- **Pass Criteria**: Query executes without index errors
-- **Expected Behavior**: May fail initially, auto-resolves after index creation
-- **Details**: Explains that index errors are normal for new projects
-
-**7. Firestore Write Permissions Test**
-- Tests write permissions by creating and deleting test document
-- Validates security rules allow necessary operations
-- **Pass Criteria**: Successfully creates and deletes test document
-- **Details**: Measures write operation performance
-
-**8. Real-time Listeners Test**
-- Tests Firebase real-time listener functionality
-- Validates onSnapshot operations for live monitoring
-- **Pass Criteria**: Listener establishes within 3 seconds
-- **Details**: Shows listener response time and session count
-
-#### Test Results Interpretation
-
-**🟢 All Tests Passed (100%)**
-- Firebase DB is fully functional
-- All operations working correctly
-- No action required
-
-**🟡 Most Tests Passed (70-99%)**
-- Minor issues detected
-- Check specific failed tests
-- Common issues: index creation, network timeouts
-
-**🔴 Multiple Failures (<70%)**
-- Significant issues detected
-- Check Firebase configuration
-- Verify network connectivity and security rules
-
-#### Common Expected Issues
-
-**Collection Group Index Errors**
-```
-Error: The query requires a COLLECTION_GROUP_ASC index for collection 'answers'
-```
-- **Status**: Normal for new Firebase projects
-- **Resolution**: Automatic - Firebase creates indexes on first query execution
-- **Action**: No action required, will resolve after index creation
-
-**Network Timeouts**
-- **Cause**: Slow internet connection or Firebase service issues
-- **Resolution**: Retry test or check network connectivity
-
-**Permission Errors**
-- **Cause**: Firebase security rules blocking operations
-- **Resolution**: Review and update Firestore security rules
-
----
-
-## Known Issues & Debugging
-
-### Current Issues
-1. **Firebase Collection Group Queries**: ✅ **FIXED** - Improved error handling for index creation
-   - **Previous Issue**: "The query requires a COLLECTION_GROUP_ASC index for collection 'answers'" errors
-   - **Solution**: Added graceful error handling that treats index creation as warnings rather than failures
-   - **Impact**: Console errors eliminated, user-friendly messages displayed during index creation
-   - **Status**: Real-time monitoring shows helpful "Firebase正在初始化" message during index creation
-
-2. **Missing Input Controls**: ✅ **FIXED** - Replaced innerHTML template strings with proper DOM manipulation
-   - **Root Cause**: HTML escaping issues when option.text contained special characters (quotes, etc.)
-   - **Solution**: Rewritten `displayQuiz()` to use `createElement()`, `appendChild()`, and `addEventListener()` instead of template strings
-   - **Previous Symptoms**: Options displayed as plain text without selection controls
-   - **Fix Details**: 
-     - Eliminated HTML template string generation that could be broken by special characters
-     - Used safe DOM methods: `createElement`, `textContent`, `appendChild`
-     - Replaced inline `onchange` attributes with proper `addEventListener`
-     - Added better error handling and debugging
-
-3. **Real-time Listener Timeout**: ✅ **FIXED** - Improved listener establishment and timeout handling
-   - **Previous Issue**: Firebase test showing "Real-time listener timeout" 
-   - **Solution**: Enhanced listener test with proper error callbacks and increased timeout to 5 seconds
-   - **Improvements**: Better error handling, clearer timeout messages, proper cleanup
-
-### Debugging Tools
-- **Client Interface**: Added console.log statements in `displayQuiz()` function
-- **Input Control Detection**: Logs show whether questions are detected as single/multi-choice
-- **HTML Generation**: Final HTML output is logged for verification
-- **Firebase DB Test Button**: Comprehensive Firebase testing available on owner dashboard
-  - Tests all major Firebase operations (connection, queries, permissions)
-  - Identifies collection group index requirements
-  - Provides detailed error reporting and performance metrics
-  - Real-time test result display with pass/fail status
-
----
-
-## Error Handling & Edge Cases
-
-### Stack Overflow Prevention
-- **Large Image Processing**: Chunked base64 conversion (8KB chunks) for files >10KB
-- **JS7z Timeout**: 30-second timeout for archive extraction
-- **Memory Management**: Process images individually, not in batch
-
-### Data Integrity
-- **Cascade Deletion**: Deleting quiz removes sessions and user answers
-- **Orphan Prevention**: Image references validated before quiz creation
-- **Session Cleanup**: Optional answer deletion when ending sessions
-
-### User Experience
-- **Progress Feedback**: Detailed progress messages during upload
-- **Error Recovery**: Clear error messages with recovery suggestions
-- **Mobile Optimization**: Touch-friendly UI, responsive design
-
----
-
 ## Configuration Files
 
-### `netlify.toml`
+### Owner Configuration (`data/owners.json`)
+```javascript
+{
+  "owners": [
+    {
+      "username": "admin",
+      "displayName": "Administrator", 
+      "email": "admin@example.com",
+      "role": "admin",
+      "permissions": ["manage_quizzes", "manage_sessions", "manage_owners"]
+    }
+  ],
+  "settings": {
+    "allowSelfRegistration": false,
+    "defaultRole": "admin"
+  }
+}
+```
+
+### CSV Format Specification
+```
+Row 1: Question texts (comma-separated)
+Row 2: Image filenames (comma-separated, optional)
+Row 3+: Answer options (prefix with ` for correct answers)
+```
+
+### Netlify Configuration (`netlify.toml`)
 ```toml
 # Redirects
 [[redirects]]
@@ -491,7 +347,7 @@ Error: The query requires a COLLECTION_GROUP_ASC index for collection 'answers'
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com; frame-ancestors 'none'"
 ```
 
-### Firebase Configuration (in `index.html`)
+### Firebase Configuration (embedded in `index.html`)
 ```javascript
 const firebaseConfig = {
   apiKey: "AIzaSyCT4VCPw8QoBrQ3H5VhLDMG7kudyEx_H_w",
@@ -505,31 +361,92 @@ const firebaseConfig = {
 
 ---
 
-## Development Notes
+## Performance Optimizations
 
-### File Naming Convention
-- Use underscores instead of dashes in JavaScript filenames (e.g., `owner_service.js` not `owner-service.js`)
-- Prevents JavaScript module parsing issues
+### Memory Management
+- **Chunked Processing**: Large image files processed in 8KB chunks
+- **Individual Processing**: Images processed one at a time to prevent stack overflow
+- **Timeout Protection**: 30-second timeout for archive extraction operations
 
-### Memory Preferences
-- Avoid try/catch blocks except for external resources or string processing
-- Handle git operations manually (no auto-commit/push)
-- Mobile-first UI design approach
+### Data Efficiency
+- **Shared Image Storage**: Prevents duplicate image uploads across quizzes
+- **Denormalized Session Data**: Reduces client queries for better performance
+- **Collection Group Queries**: Efficient cross-collection answer aggregation
+- **Real-time Listeners**: Minimal data transfer with Firebase onSnapshot
 
-### Performance Optimizations
-- Shared image storage prevents duplication
-- Denormalized session data reduces client queries
-- Real-time listeners use collectionGroup for efficiency
-- Chunked processing for large files
+### Storage Optimization
+- **Cascade Deletion**: Automatic cleanup prevents database bloat
+- **Orphan Removal**: Regular cleanup of unused data maintains efficiency
+- **Image Tracking**: Proper image-quiz relationships enable effective cleanup
+- **Batch Operations**: Transactional operations ensure data consistency
 
 ---
 
-## Future Enhancement Areas
+## Error Handling
 
-1. **Authentication**: Replace JSON-based auth with Firebase Auth
-2. **Image Optimization**: Add image compression/resizing
-3. **Analytics**: Track quiz performance and user engagement  
-4. **Offline Support**: Add service worker for offline quiz taking
-5. **Bulk Operations**: Support multiple quiz uploads
-6. **Export Features**: Export results to CSV/PDF
-7. **Question Types**: Support for drag-drop, fill-in-blank questions
+### Upload Error Management
+- **Archive Validation**: Verify archive integrity before processing
+- **CSV Format Validation**: Check CSV structure and content
+- **Image Processing**: Handle corrupted or oversized images gracefully
+- **Progress Feedback**: Detailed error reporting during upload process
+
+### Database Error Handling
+- **Connection Failures**: Graceful handling of Firebase connectivity issues
+- **Permission Errors**: Clear messaging for access control violations
+- **Index Creation**: Automatic handling of Firebase index creation delays
+- **Batch Operation Failures**: Rollback capabilities for failed batch operations
+
+### Client Interface Error Management
+- **Session Availability**: Handle cases where no active session exists
+- **Answer Submission**: Retry mechanisms for failed answer submissions
+- **Real-time Sync**: Reconnection handling for interrupted connections
+- **Input Validation**: Prevent invalid answer submissions
+
+---
+
+## Development Guidelines
+
+### File Naming Conventions
+- Use underscores instead of dashes in JavaScript filenames
+- Prevents JavaScript module parsing issues
+- Consistent naming across all project files
+
+### Code Organization
+- **Modular Structure**: Separate concerns into dedicated files
+- **Service Layer**: Centralized Firebase operations in firebase_service.js
+- **Error Boundaries**: Consistent error handling patterns
+- **Mobile-First**: UI optimized for mobile devices primarily
+
+### Performance Considerations
+- **Minimize DOM Manipulation**: Use efficient DOM update patterns
+- **Batch Firebase Operations**: Group related database operations
+- **Optimize Real-time Listeners**: Efficient query patterns for live updates
+- **Memory Management**: Proper cleanup of listeners and resources
+
+---
+
+## Future Enhancement Opportunities
+
+### Authentication System
+- **Firebase Auth Integration**: Replace JSON-based authentication
+- **OAuth Providers**: Support for Google, GitHub, Microsoft logins
+- **Role Management**: Enhanced permission system with fine-grained controls
+- **User Registration**: Self-service owner registration system
+
+### Advanced Features
+- **Question Types**: Support for drag-drop, fill-in-blank, matching questions
+- **Analytics Dashboard**: Detailed quiz performance and engagement metrics
+- **Export Capabilities**: CSV/PDF export of results and statistics
+- **Bulk Operations**: Multiple quiz upload and management tools
+
+### Performance Enhancements
+- **Image Optimization**: Automatic image compression and resizing
+- **Offline Support**: Service worker implementation for offline quiz taking
+- **Caching Strategy**: Intelligent caching for improved load times
+- **Progressive Loading**: Lazy loading of quiz content and images
+
+### User Experience
+- **Collaborative Features**: Multiple owner collaboration on quizzes
+- **Theming System**: Customizable UI themes and branding
+- **Accessibility**: Enhanced screen reader and keyboard navigation support
+- **Internationalization**: Multi-language support for global deployment

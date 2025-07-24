@@ -13,15 +13,6 @@
     <script src="js7z/js7z.js"></script>
 </head>
 <body>
-    <!-- Debug Status Display -->
-    <div id="debugStatus" style="position: fixed; top: 0; left: 0; right: 0; background: #ffeb3b; color: #000; padding: 5px; text-align: center; z-index: 9999; font-size: 12px; border-bottom: 2px solid #ff5722;">
-        <strong>DEBUG MODE:</strong> 
-        <span id="firebaseStatus">Firebase: Loading...</span> | 
-        <span id="clientStatus">Client: Not loaded</span> |
-        <button onclick="testBasicFunctionality()" style="margin-left: 10px; font-size: 11px;">Test Now</button>
-        <button onclick="document.getElementById('debugStatus').style.display='none'" style="margin-left: 10px; font-size: 11px;">Hide</button>
-    </div>
-    
     <!-- Login Interface -->
     <div id="loginInterface" class="interface">
         <div class="login-box">
@@ -81,6 +72,18 @@
                     <span id="lastUpdateTime"></span>
                 </div>
                 <div id="realTimeResults"></div>
+            </div>
+            
+            <!-- 数据库维护 -->
+            <div class="database-maintenance">
+                <h3>数据库维护</h3>
+                <div class="maintenance-controls">
+                    <button onclick="loadSessionList()" class="refresh-btn">刷新Session列表</button>
+                    <button onclick="cleanupOrphanedAnswers()" class="cleanup-btn" style="background-color: #ffc107; color: #000;">清理孤立答案</button>
+                </div>
+                <div id="sessionsList">
+                    <p>点击"刷新Session列表"查看所有Sessions</p>
+                </div>
             </div>
             
             <!-- Owner管理 (仅管理员可见) -->
@@ -193,45 +196,6 @@
         window.firebaseApp = app;
         
         console.log('Firebase initialized successfully');
-        
-        // Update debug status
-        document.getElementById('firebaseStatus').textContent = 'Firebase: ✅ Connected';
-        
-        // Test basic Firebase functionality
-        window.testBasicFunctionality = async function() {
-            const statusEl = document.getElementById('clientStatus');
-            statusEl.textContent = 'Testing...';
-            
-            try {
-                // Test 1: Check if db exists
-                if (!window.db) {
-                    throw new Error('Firebase DB not available');
-                }
-                
-                // Test 2: Check if client.js functions exist
-                if (!window.initializeClientInterface) {
-                    throw new Error('Client interface functions not loaded');
-                }
-                
-                // Test 3: Check if DOM elements exist
-                const questionsContainer = document.getElementById('questionsContainer');
-                if (!questionsContainer) {
-                    throw new Error('Questions container not found');
-                }
-                
-                // Test 4: Try to query Firebase
-                const { collection, getDocs, limit, query } = await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js');
-                const testQuery = query(collection(window.db, 'sessions'), limit(1));
-                const testSnapshot = await getDocs(testQuery);
-                
-                statusEl.textContent = `✅ All tests passed! Sessions: ${testSnapshot.docs.length}`;
-                console.log('🔴 DEBUG: All basic functionality tests passed');
-                
-            } catch (error) {
-                statusEl.textContent = `❌ Error: ${error.message}`;
-                console.error('🔴 DEBUG: Test failed:', error);
-            }
-        };
     </script>
     
     <script src="js/firebase_service.js"></script>
