@@ -36,7 +36,7 @@ q_and_a_generator/
 │
 ├── js/                       # JavaScript application files
 │   ├── owner.js              # Owner interface logic (20KB, 596 lines)
-│   ├── client.js             # Client interface logic (5.3KB, 152 lines)
+https://gostnort-review.netlify.app/│   ├── client.js             # Client interface logic (5.3KB, 152 lines)
 │   ├── firebase_service.js   # Firebase data layer abstraction (15KB, 375 lines)
 │   ├── quiz_upload.js        # Quiz upload processing (7.1KB, 179 lines)
 │   ├── owner_service.js      # Owner authentication & management (6.6KB, 219 lines)
@@ -109,6 +109,13 @@ q_and_a_generator/
 - **Multi-choice questions**: Displays checkboxes (multiple options can be selected)
 - **Automatic detection**: Determines input type based on number of correct answers in question.options
 - **Unique naming**: Radio buttons share the same name for mutual exclusion, checkboxes have unique names
+
+**Client Interface UI Requirements**:
+- **Title Display**: Shows quiz name without "Quiz" prefix in header
+- **Score Display**: Shows score beside logout button after quiz submission
+- **Score Format**: `correctCount/totalQuestions (percentage%)`
+- **Score Styling**: Green background for passed (≥60%), red for failed (<60%)
+- **Header Layout**: `[Quiz Name] [Username] [Score] [Logout Button]`
 
 #### `js/firebase_service.js` - Firebase Data Layer
 **Purpose**: Centralized Firebase operations, abstracts Firestore interactions
@@ -330,8 +337,9 @@ Row 3+: Answer options (prefix with ` for correct answers)
 
 2. **Missing Input Controls**: Client interface may show options without radio buttons/checkboxes
    - **Symptoms**: Options display as plain text without selection controls
-   - **Debug**: Check browser console for HTML generation logs
-   - **Cause**: Usually JavaScript execution issues or CSS styling problems
+   - **Debug**: Check browser console for HTML generation logs and input element creation
+   - **Cause**: Usually JavaScript execution issues, CSS styling problems, or script loading order
+   - **Investigation**: Added detailed logging of input element creation and DOM manipulation
 
 ### Debugging Tools
 - **Client Interface**: Added console.log statements in `displayQuiz()` function

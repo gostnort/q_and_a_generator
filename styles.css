@@ -857,6 +857,24 @@ button {
         align-items: center;
         width: 100%;
         font-size: 14px;
+        gap: 10px;
+    }
+    
+    .score-display {
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    .score-display.passed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .score-display.failed {
+        background-color: #f8d7da;
+        color: #721c24;
     }
     
     .logout-btn {

@@ -32,6 +32,8 @@ async function loadActiveQuiz() {
 
 // 显示Quiz
 function displayQuiz(session) {
+    // Set both the header title and quiz title (remove "Quiz" prefix)
+    document.getElementById('clientQuizTitle').textContent = session.quizName;
     document.getElementById('quizTitle').textContent = session.quizName;
     
     const container = document.getElementById('questionsContainer');
@@ -85,6 +87,13 @@ function displayQuiz(session) {
         console.log(`Final HTML for question ${question.id}:`, html);
         questionDiv.innerHTML = html;
         container.appendChild(questionDiv);
+        
+        // Debug: Check if input elements were actually created
+        const inputs = questionDiv.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        console.log(`Created ${inputs.length} input controls for question ${question.id}`);
+        inputs.forEach((input, idx) => {
+            console.log(`Input ${idx}: type=${input.type}, name=${input.name}, value=${input.value}`);
+        });
     });
 }
 
@@ -144,6 +153,14 @@ window.submitQuiz = function() {
     });
     
     const percentage = Math.round((correctCount / totalQuestions) * 100);
+    
+    // 显示分数在头部
+    const scoreElement = document.getElementById('clientScore');
+    if (scoreElement) {
+        scoreElement.textContent = `${correctCount}/${totalQuestions} (${percentage}%)`;
+        scoreElement.style.display = 'inline';
+        scoreElement.className = percentage >= 60 ? 'score-display passed' : 'score-display failed';
+    }
     
     // 显示个人结果
     alert(`Quiz完成！\n正确率: ${correctCount}/${totalQuestions} (${percentage}%)`);
